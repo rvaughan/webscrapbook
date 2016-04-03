@@ -1,4 +1,4 @@
-var frameKeyId = Date.now();
+var frameKeyId = Date.now().toString();
 
  // record and use the initial src, even if it is changed later
 var frameKeySrc = location.href;
@@ -36,9 +36,12 @@ function captureDocument(callback) {
     // log({ src: frameKeySrc, content: result });
   // });
 
-  var frameContentCallback = function (src, result) {
-      log("got frame content: ", { src: src, content: result });
+  var timeId = Date.now();
+
+  var frameContentCallback = function (result) {
+      log("got frame content: ", result);
   };
+
   Array.prototype.slice.call(document.querySelectorAll("frame, iframe")).forEach(function (frame) {
     var doc;
     try {
@@ -48,15 +51,15 @@ function captureDocument(callback) {
     }
     if (doc) {
       getDocumentContent(frame.contentDocument, function (result) {
-        frameContentCallback(frame.src, result);
+        frameContentCallback({ timeId: timeId, src: frame.src, content: result });
       });
     } else {
       chrome.runtime.sendMessage({
         cmd: "get-frame-content",
+        timeId: timeId,
         src: frame.src
       }, function (response) {
-log("receive from background:", response);
-        frameContentCallback(response.src, response.content);
+        frameContentCallback({ timeId: response.timeId, src: response.src, content: response.content });
       });
     }
   });
@@ -80,11 +83,12 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.cmd === "capture-tab") {
     if (!isMainFrame) { return; }
     captureDocument();
-  } else if (message.cmd === "get-frame-content") {
+  } else if (message.cmd === "get-frame-content-cs") {
     if (message.id !== frameKeyId) { return; }
     getDocumentContent(document, function (result) {
-      sendResponse({ src: frameKeySrc, content: result });
+      sendResponse({ timeId: message.timeId, src: frameKeySrc, content: result });
     });
+    return true; // mark this as having an async response and keep the channel open
   }
 });
 

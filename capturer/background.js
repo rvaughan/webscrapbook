@@ -6,7 +6,7 @@ var capturer = {};
 capturer.contentFrames = {};
 
 chrome.browserAction.onClicked.addListener(function (tab) {
-  // log("capturer/background.js browserAction.onClicked", tab);
+  log("capturer/background.js browserAction.onClicked", tab);
   
   var tabId = tab.id;
   chrome.tabs.sendMessage(tabId, {
@@ -44,22 +44,26 @@ chrome.runtime.onMessage.addListener(
       // log(capturer.contentFrames);
     } else if (message.cmd === "get-frame-content") {
       var tabId = sender.tab.id;
+      var timeId = message.timeId;
       var frameKeySrc = message.src;
       if (capturer.contentFrames[tabId][frameKeySrc]) {
         for (var id in capturer.contentFrames[tabId][frameKeySrc]) {
           var frameKeyId = id;
           chrome.tabs.sendMessage(tabId, {
-            cmd: "get-frame-content",
+            cmd: "get-frame-content-cs",
+            timeId: timeId,
             id: frameKeyId,
             src: frameKeySrc
           }, null, function (response) {
-            log("receive get-frame-content response:", response);
+            // log("receive get-frame-content response:", response);
             sendResponse(response);
           });
+          return true; // mark this as having an async response and keep the channel open
           break;
         }
       } else {
-        throw "content script of `" + frameKeySrc + "' is not initialized yet.";
+        console.error("content script of `" + frameKeySrc + "' is not initialized yet.");
+        sendResponse({ timeId: timeId, src: frameKeySrc, content: "" });
       }
     }
   }
