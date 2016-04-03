@@ -6,7 +6,7 @@ var capturer = {};
 capturer.contentFrames = {};
 
 chrome.browserAction.onClicked.addListener(function (tab) {
-  log("capturer/background.js browserAction.onClicked", tab);
+  scrapbook.log("capturer/background.js browserAction.onClicked", tab);
   
   var tabId = tab.id;
   chrome.tabs.sendMessage(tabId, {
@@ -16,7 +16,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
 
 chrome.runtime.onMessage.addListener(
   function (message, sender, sendResponse) {
-    // log("capturer/background.js onMessage", message, sender);
+    // scrapbook.log("capturer/background.js onMessage", message, sender);
 
     if (message.cmd === "init-content-script") {
       var tabId = sender.tab.id;
@@ -27,7 +27,7 @@ chrome.runtime.onMessage.addListener(
       capturer.contentFrames[tabId] = capturer.contentFrames[tabId] || {};
       capturer.contentFrames[tabId][frameKeySrc] = capturer.contentFrames[tabId][frameKeySrc] || {};
       capturer.contentFrames[tabId][frameKeySrc][frameKeyId] = {};
-      // log(capturer.contentFrames);
+      // scrapbook.log(capturer.contentFrames);
     } else if (message.cmd === "uninit-content-script") {
       var tabId = sender.tab.id;
       // var frameId = sender.frameId;
@@ -41,7 +41,7 @@ chrome.runtime.onMessage.addListener(
           delete(capturer.contentFrames[tabId][frameKeySrc][frameKeyId]);
         }
       }
-      // log(capturer.contentFrames);
+      // scrapbook.log(capturer.contentFrames);
     } else if (message.cmd === "get-frame-content") {
       var tabId = sender.tab.id;
       var timeId = message.timeId;
@@ -55,7 +55,7 @@ chrome.runtime.onMessage.addListener(
             id: frameKeyId,
             src: frameKeySrc
           }, null, function (response) {
-            // log("receive get-frame-content response:", response);
+            // scrapbook.log("receive get-frame-content response:", response);
             sendResponse(response);
           });
           return true; // mark this as having an async response and keep the channel open
