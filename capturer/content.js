@@ -9,7 +9,8 @@ function initFrame(callback) {
   chrome.runtime.sendMessage({
     cmd: "init-content-script",
     id: frameKeyId,
-    src: frameKeySrc
+    src: frameKeySrc,
+    isMainFrame: isMainFrame
   }, function (response) {
     if (callback) {
       callback();
@@ -21,7 +22,8 @@ function uninitFrame(callback) {
   chrome.runtime.sendMessage({
     cmd: "uninit-content-script",
     id: frameKeyId,
-    src: frameKeySrc
+    src: frameKeySrc,
+    isMainFrame: isMainFrame
   }, function (response) {
     if (callback) {
       callback();
