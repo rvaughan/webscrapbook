@@ -30,13 +30,38 @@ function uninitFrame(callback) {
 }
 
 function captureDocument(callback) {
-  getDocumentContent(function (result) {
-    log({ src: frameKeySrc, content: result });
+  // getDocumentContent(document, function (result) {
+    // log({ src: frameKeySrc, content: result });
+  // });
+
+  var frameContentCallback = function (src, result) {
+      log("got frame content: ", { src: src, content: result });
+  };
+  Array.prototype.slice.call(document.querySelectorAll("frame, iframe")).forEach(function (frame) {
+    var doc;
+    try {
+      doc = frame.contentDocument;
+    } catch (ex) {
+      // log(ex);
+    }
+    if (doc) {
+      getDocumentContent(frame.contentDocument, function (result) {
+        frameContentCallback(frame.src, result);
+      });
+    } else {
+      chrome.runtime.sendMessage({
+        cmd: "get-frame-content",
+        src: frame.src
+      }, function (response) {
+log("receive from background:", response);
+        frameContentCallback(response.src, response.content);
+      });
+    }
   });
 }
 
-function getDocumentContent(callback) {
-  var result = document.documentElement.outerHTML;
+function getDocumentContent(doc, callback) {
+  var result = doctypeToString(doc.doctype) + doc.documentElement.outerHTML;
 
   if (callback) {
     callback(result);
@@ -50,9 +75,14 @@ window.addEventListener("unload", function (event) {
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   // log("capturer/content.js onMessage", message, sender);
-  if (message === "capture-tab") {
+  if (message.cmd === "capture-tab") {
     if (!isMainFrame) { return; }
     captureDocument();
+  } else if (message.cmd === "get-frame-content") {
+    if (message.id !== frameKeyId) { return; }
+    getDocumentContent(document, function (result) {
+      sendResponse({ src: frameKeySrc, content: result });
+    });
   }
 });
 
