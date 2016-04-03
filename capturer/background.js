@@ -6,36 +6,32 @@ var capturer = {};
 capturer.contentFrames = {};
 
 chrome.browserAction.onClicked.addListener(function (tab) {
-  log("browserAction.onClicked", tab);
+  log("capturer/background.js browserAction.onClicked", tab);
   
-  var tabId = sender.tab.id;
-  chrome.tabs.sendMessage(tabId, {
-    cmd: "capture-page"
-  }, function(response) {});
+  var tabId = tab.id;
+  chrome.tabs.sendMessage(tabId, "capture-tab", {}, function (response) {});
 });
 
 chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    log("capturer/background.js receive", request, sender);
+  function(message, sender, sendResponse) {
+    // log("capturer/background.js onMessage", message, sender);
 
-    if (request.cmd === "init-content-script") {
+    if (message.cmd === "init-content-script") {
       var tabId = sender.tab.id;
       // var frameId = sender.frameId;
-      var frameKeyId = request.id;
-      var frameKeySrc = request.src;
-      
+      var frameKeyId = message.id;
+      var frameKeySrc = message.src;
       capturer.contentFrames[tabId] = capturer.contentFrames[tabId] || {};
       capturer.contentFrames[tabId][frameKeySrc] = capturer.contentFrames[tabId][frameKeySrc] || [];
       capturer.contentFrames[tabId][frameKeySrc].push({ frameKeyId: frameKeyId });
-      log(capturer.contentFrames);
-    } else if (request.cmd === "uninit-content-script") {
+      // log(capturer.contentFrames);
+    } else if (message.cmd === "uninit-content-script") {
       var tabId = sender.tab.id;
       // var frameId = sender.frameId;
-      var frameKeyId = request.id;
-      var frameKeySrc = request.src;
-
+      var frameKeyId = message.id;
+      var frameKeySrc = message.src;
       delete(capturer.contentFrames[tabId]);
-      log(capturer.contentFrames);
+      // log(capturer.contentFrames);
     }
   }
 );
