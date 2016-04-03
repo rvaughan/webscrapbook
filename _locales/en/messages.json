@@ -1,0 +1,14 @@
+{
+  "BrowserActionTitle": {
+    "description": "Title for the browser action that's visible to the user of extension",
+    "message": "Capture the web page with ScrapBook X"
+  },
+  "ExtensionName": {
+    "description": "Name of the extension as it's visible to the outside world",
+    "message": "ScrapBook X Web Capturer"
+  },
+  "ExtensionDescription": {
+    "description": "Description of the extension as it's visible to the outside world",
+    "message": "Captures the web page with highly customizable configurations."
+  }
+}
