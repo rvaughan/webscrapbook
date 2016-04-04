@@ -42,13 +42,23 @@ function capture(settings, options, callback) {
   switch (settings.captureType) {
     case "tab":
     default:
-      captureDocument(document, settings, options, callback);
+      captureDocumentOrFile(document, settings, options, callback);
       break;
   }
 }
 
+function captureDocumentOrFile(doc, settings, options, callback) {
+  // if not HTML document, capture as file
+  if (["text/html", "application/xhtml+xml"].indexOf(doc.contentType) === -1) {
+    if (!scrapbook.getOptions("capture.saveInlineAsHtml")) {
+      captureFile(doc.location.href, settings, options, callback);
+      return;
+    }
+  }
+  captureDocument(doc, settings, options, callback);
+}
+
 function captureDocument(doc, settings, options, callback) {
-  var remainingTasks = 0;
 
   var checkDone = function () {
     if (remainingTasks <= 0) {
@@ -57,62 +67,167 @@ function captureDocument(doc, settings, options, callback) {
   };
 
   var done = function () {
-    var result = {
-      timeId: settings.timeId,
-      src: frameKeySrc,
-      filename: scrapbook.urlToFilename(doc.location.href),
-      content: scrapbook.doctypeToString(doc.doctype) + doc.documentElement.outerHTML,
-    };
+    var content = scrapbook.doctypeToString(doc.doctype) + rootNode.outerHTML;
 
-    var subdir = scrapbook.dateToId(new Date(settings.timeId));
     chrome.runtime.sendMessage({
       cmd: "download-data",
-      timeId: settings.timeId,
+      timeId: timeId,
       src: frameKeySrc,
       id: frameKeyId,
       options: {
-        url: scrapbook.stringToDataUri(result.content, "text/html"),
-        filename: subdir + "/" + result.filename,
+        url: scrapbook.stringToDataUri(content, mime),
+        filename: targetDir + "/" + filename,
         conflictAction: "uniquify",
       }
     }, function (response) {
       if (callback) {
-        callback(result);
+        callback({ timeId: timeId, src: frameKeySrc, targetDir: targetDir, filename: filename });
       }
     });
   };
 
-  Array.prototype.slice.call(doc.querySelectorAll("frame, iframe")).forEach(function (frame) {
+  var remainingTasks = 0;
+  var timeId = settings.timeId;
+  var mime = doc.contentType;
+  var targetDir = scrapbook.dateToId(new Date(timeId));
+  var fileBase = settings.isMainFrame ? "index" : "frame";
+  var fileExt = (mime === "text/html") ? "html" : "xhtml";
+  var filename = fileBase + "." + fileExt;
+  
+  // give certain nodes an unique id for later refrence,
+  // since cloned nodes may not have some information
+  // e.g. cloned iframes has no content, cloned canvas has no image
+  var origRefKey = "data-sb-id-" + Date.now();
+  var origRefNodes = Array.prototype.slice.call(doc.querySelectorAll("frame, iframe, canvas"));
+  origRefNodes.forEach(function (elem, index) {
+    elem.setAttribute(origRefKey, index);
+  });
+
+  // construct the node list
+  var htmlNode = doc.documentElement;
+  var rootNode;
+  var headNode;
+  var selection = doc.getSelection();
+  if (selection.isCollapsed) { selection = null; }
+  if (scrapbook.getOption("capture.saveSelectionOnly") && selection) {
+    var selNodeTree = []; // it's not enough to preserve order of sparsely selected table cells
+    for (var iRange = 0, iRangeMax = selection.rangeCount; iRange < iRangeMax; ++iRange) {
+      var myRange = selection.getRangeAt(iRange);
+      var curNode = myRange.commonAncestorContainer;
+      if (curNode.nodeName.toUpperCase() == "HTML") {
+        // in some case (e.g. view image) the selection is the html node
+        // and will cause subsequent errors.
+        // in this case we just process as if there's no selection
+        selection = null;
+        break;
+      }
+
+      if (iRange === 0) {
+        rootNode = htmlNode.cloneNode(false);
+        headNode = doc.querySelector("head");
+        headNode = headNode ? headNode.cloneNode(true) : doc.createElement("head");
+        rootNode.appendChild(headNode);
+        rootNode.appendChild(doc.createTextNode("\n"));
+      }
+
+      if (curNode.nodeName == "#text") { curNode = curNode.parentNode; }
+
+      var tmpNodeList = [];
+      do {
+        tmpNodeList.unshift(curNode);
+        curNode = curNode.parentNode;
+      } while (curNode.nodeName.toUpperCase() != "HTML");
+
+      var parentNode = rootNode;
+      var branchList = selNodeTree;
+      var matchedDepth = -2;
+      for(var iDepth = 0; iDepth < tmpNodeList.length; ++iDepth) {
+        for (var iBranch = 0; iBranch < branchList.length; ++iBranch) {
+          if (tmpNodeList[iDepth] === branchList[iBranch].origNode) {
+            matchedDepth = iDepth;
+            break;
+          }
+        }
+
+        if (iBranch === branchList.length) {
+          var clonedNode = tmpNodeList[iDepth].cloneNode(false);
+          parentNode.appendChild(clonedNode);
+          branchList.push({
+            origNode: tmpNodeList[iDepth],
+            clonedNode: clonedNode,
+            children: []
+          });
+        }
+        parentNode = branchList[iBranch].clonedNode;
+        branchList = branchList[iBranch].children;
+      }
+      if (matchedDepth === tmpNodeList.length - 1) {
+        // @TODO:
+        // Perhaps a similar splitter should be added for any node type
+        // but some tags e.g. <td> require special care
+        if (myRange.commonAncestorContainer.nodeName === "#text") {
+          parentNode.appendChild(doc.createComment("DOCUMENT_FRAGMENT_SPLITTER"));
+          parentNode.appendChild(doc.createTextNode(" … "));
+          parentNode.appendChild(doc.createComment("/DOCUMENT_FRAGMENT_SPLITTER"));
+        }
+      }
+      parentNode.appendChild(doc.createComment("DOCUMENT_FRAGMENT"));
+      parentNode.appendChild(myRange.cloneContents());
+      parentNode.appendChild(doc.createComment("/DOCUMENT_FRAGMENT"));
+    }
+  }
+  if (!selection) {
+    rootNode = htmlNode.cloneNode(true);
+    headNode = rootNode.querySelector("head");
+    if (!headNode) {
+      headNode = doc.createElement("head");
+      rootNode.insertBefore(headNode, rootNode.firstChild);
+      rootNode.insertBefore(doc.createTextNode("\n"), headNode.nextSibling);
+    }
+  }
+
+  // remove the temporary map key
+  origRefNodes.forEach(function (elem) {
+    elem.removeAttribute(origRefKey);
+  });
+
+  Array.prototype.slice.call(rootNode.querySelectorAll("frame, iframe")).forEach(function (frame) {
 
     var captureFrameCallback = function (result) {
-      scrapbook.log("capture frame", result);
+      scrapbook.debug("capture frame", result);
       remainingTasks--;
       checkDone();
     };
 
+    var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
+    frame.removeAttribute(origRefKey);
+
+    var frameSettings = JSON.parse(JSON.stringify(settings));
+    frameSettings.isMainFrame = false;
+
     var doc;
     try {
-      doc = frame.contentDocument;
+      doc = frameSrc.contentDocument;
     } catch (ex) {
       // scrapbook.debug(ex);
     }
     if (doc) {
       remainingTasks++;
-      captureDocument(frame.contentDocument, settings, options, function (result) {
+      captureDocumentOrFile(doc, frameSettings, options, function (result) {
         captureFrameCallback(result);
       });
     } else {
       remainingTasks++;
       chrome.runtime.sendMessage({
         cmd: "get-frame-content",
-        settings: settings,
+        settings: frameSettings,
         options: options,
         src: frame.src
       }, function (response) {
         if (!response.isError) {
           captureFrameCallback(response);
         } else {
-          var result = { timeId: settings.timeId, src: frameKeySrc, filename: "data:,", content: "" };
+          var result = { timeId: timeId, src: frameKeySrc, filename: "data:," };
           captureFrameCallback(result);
         }
       });
@@ -120,6 +235,9 @@ function captureDocument(doc, settings, options, callback) {
   });
 
   checkDone();
+}
+
+function captureFile(doc, settings, options, callback) {
 }
 
 window.addEventListener("unload", function (event) {
@@ -131,12 +249,13 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   // scrapbook.debug("capturer/content.js onMessage", message, sender);
   if (message.cmd === "capture-tab") {
     if (!isMainFrame) { return; }
-    capture(message.settings, message.options, function (settings, options) {
-      scrapbook.log("capture-tab done", settings, options);
+    capture(message.settings, message.options, function (response) {
+      sendResponse(response);
     });
+    return true; // mark this as having an async response and keep the channel open
   } else if (message.cmd === "get-frame-content-cs") {
     if (message.id !== frameKeyId) { return; }
-    captureDocument(document, message.settings, message.options, function (response) {
+    captureDocumentOrFile(document, message.settings, message.options, function (response) {
       sendResponse(response);
     });
     return true; // mark this as having an async response and keep the channel open

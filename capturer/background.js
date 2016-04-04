@@ -18,19 +18,21 @@ capturer.downloadIds = {};
 capturer.init = function () {
 
   chrome.browserAction.onClicked.addListener(function (tab) {
-    scrapbook.debug("capturer/background.js onClicked", tab);
-    
+    // scrapbook.debug("capturer/background.js onClicked", tab);
     var tabId = tab.id;
     var options = scrapbook.getOptions("capture");
     var settings = {
       timeId: Date.now(),
       captureType: "tab",
+      isMainFrame: true,
     };
     chrome.tabs.sendMessage(tabId, {
       cmd: "capture-tab",
       settings: settings,
       options: options,
-    }, null, function (response) {});
+    }, null, function (response) {
+      scrapbook.debug("capture-tab done", response);
+    });
   });
 
   chrome.runtime.onMessage.addListener(
