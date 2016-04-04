@@ -19,15 +19,6 @@ scrapbook.options = {
 
 scrapbook.isOptionsSynced = false;
 
-scrapbook.setOption = function (key, value, callback) {
-  scrapbook.options[key] = value;
-  chrome.storage.sync.set({ key: value }, function () {
-    if (callback) {
-      callback({ key: value });
-    }
-  });
-};
-
 scrapbook.getOption = function (key, defaultValue) {
   var result = scrapbook.options[key];
   if (result === undefined) {
@@ -36,10 +27,11 @@ scrapbook.getOption = function (key, defaultValue) {
   return result;
 };
 
-scrapbook.saveOptions = function (callback) {
-  chrome.storage.sync.set(scrapbook.options, function () {
+scrapbook.setOption = function (key, value, callback) {
+  scrapbook.options[key] = value;
+  chrome.storage.sync.set({ key: value }, function () {
     if (callback) {
-      callback(scrapbook.options);
+      callback({ key: value });
     }
   });
 };
@@ -51,6 +43,14 @@ scrapbook.loadOptions = function (callback) {
     }
     if (callback) {
       scrapbook.isOptionsSynced = true;
+      callback(scrapbook.options);
+    }
+  });
+};
+
+scrapbook.saveOptions = function (callback) {
+  chrome.storage.sync.set(scrapbook.options, function () {
+    if (callback) {
       callback(scrapbook.options);
     }
   });
