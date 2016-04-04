@@ -27,6 +27,17 @@ scrapbook.getOption = function (key, defaultValue) {
   return result;
 };
 
+scrapbook.getOptions = function (keyPrefix) {
+  var result = {};
+  var regex = new RegExp("^" + scrapbook.escapeRegExp(keyPrefix) + ".");
+  for (var key in scrapbook.options) {
+    if (regex.test(key)) {
+      result[key] = scrapbook.getOption(key);
+    }
+  }
+  return result;
+};
+
 scrapbook.setOption = function (key, value, callback) {
   scrapbook.options[key] = value;
   chrome.storage.sync.set({ key: value }, function () {
@@ -101,6 +112,15 @@ scrapbook.error = function () {
   if (scrapbook.getOption("console.logLevel") >= 1) {
     Function.apply.call(console.error, console, arguments);
   }
+};
+
+
+/********************************************************************
+ * String handling
+ *******************************************************************/
+
+scrapbook.escapeRegExp = function (str) {
+  return str.replace(/([\*\+\?\.\^\/\$\\\|\[\]\{\}\(\)])/g, "\\$1");
 };
 
 
