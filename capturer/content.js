@@ -94,7 +94,12 @@ function captureDocument(doc, settings, options, callback) {
         options: options,
         src: frame.src
       }, function (response) {
-        captureFrameCallback(response);
+        if (!response.isError) {
+          captureFrameCallback(response);
+        } else {
+          var result = { timeId: settings.timeId, src: frameKeySrc, filename: "data:,", content: "" };
+          captureFrameCallback(result);
+        }
         remainingTasks--;
         checkDone();
       });

@@ -82,7 +82,7 @@ capturer.init = function () {
           }
         } else {
           scrapbook.error("content script of `" + frameKeySrc + "' is not initialized yet.");
-          sendResponse({ timeId: settings.timeId, src: frameKeySrc, filename: "data:,", content: "" });
+          sendResponse({ isError: true });
         }
       }
     }
