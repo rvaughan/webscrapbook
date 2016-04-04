@@ -134,6 +134,38 @@ scrapbook.error = function () {
  * ScrapBook related path/file/string/etc handling
  *******************************************************************/
 
+/**
+ * Escapes the given filename string to be used in the URI
+ *
+ * Preserves other chars for beauty
+ *
+ * see also: validateFilename
+ */
+scrapbook.escapeFilename = function (filename) {
+  return filename.replace(/[#]+|(?:%[0-9A-Fa-f]{2})+/g, function (m) { return encodeURIComponent(m); });
+};
+
+/**
+ * Transliterates the given string to be a safe filename
+ *
+ * see also: escapeFileName
+ *
+ * @param string filename
+ * @param bool   forceAscii  also escapes all non-ASCII chars
+ */
+scrapbook.validateFilename = function (filename, forceAscii) {
+  filename = filename
+               .replace(/[\x00-\x1F\x7F]+|^ +/g, "")
+               .replace(/[:*]/g, " ")
+               .replace(/[\"\?\*\\\/\|]/g, "_")
+               .replace(/[\<]/g, "(")
+               .replace(/[\>]/g, ")");
+  if (forceAscii) {
+    filename = filename.replace(/[^\x00-\x7F]+/g, function (m) { return encodeURI(m); });
+  }
+  return filename;
+};
+
 scrapbook.urlToFilename = function (url) {
   var name = url, pos;
   pos = name.indexOf("?");
@@ -151,6 +183,65 @@ scrapbook.urlToFilename = function (url) {
   return name;
 };
 
+/**
+ * Returns the ScrapBook ID from a given Date object
+ *
+ * @param {Date} date Given day, or now if undefined
+ */
+scrapbook.dateToId = function(date) {
+  var dd = date || new Date();
+  return dd.getUTCFullYear() +
+    this.intToFixedStr(dd.getUTCMonth() + 1, 2) +
+    this.intToFixedStr(dd.getUTCDate(), 2) +
+    this.intToFixedStr(dd.getUTCHours(), 2) +
+    this.intToFixedStr(dd.getUTCMinutes(), 2) +
+    this.intToFixedStr(dd.getUTCSeconds(), 2) +
+    this.intToFixedStr(dd.getUTCMilliseconds(), 3);
+};
+
+scrapbook.idToDate = function(id) {
+  var dd;
+  if (id.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{3})$/)) {
+    dd = new Date(
+      parseInt(RegExp.$1, 10), parseInt(RegExp.$2, 10) - 1, parseInt(RegExp.$3, 10),
+      parseInt(RegExp.$4, 10), parseInt(RegExp.$5, 10), parseInt(RegExp.$6, 10), parseInt(RegExp.$7, 10)
+    );
+    dd.setTime(dd.valueOf() - dd.getTimezoneOffset() * 60 * 1000);
+  }
+  return dd;
+};
+
+/**
+ * Returns the ScrapBook ID from a given Date object
+ *
+ * @deprecated Used by older ScrapBook 1.x, may get inaccurate if used across different timezone
+ * @param {Date} date Given day, or now if undefined
+ */
+scrapbook.dateToIdOld = function(date) {
+  var dd = date || new Date();
+  return dd.getFullYear() +
+    this.intToFixedStr(dd.getMonth() + 1, 2) +
+    this.intToFixedStr(dd.getDate(), 2) +
+    this.intToFixedStr(dd.getHours(), 2) +
+    this.intToFixedStr(dd.getMinutes(), 2) +
+    this.intToFixedStr(dd.getSeconds(), 2);
+};
+
+/**
+ * @deprecated Used by older ScrapBook 1.x, may get inaccurate if used across different timezone
+ * @param {Date} id Given id
+ */
+scrapbook.idToDateOld = function(id) {
+  var dd;
+  if (id.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/)) {
+    dd = new Date(
+      parseInt(RegExp.$1, 10), parseInt(RegExp.$2, 10) - 1, parseInt(RegExp.$3, 10),
+      parseInt(RegExp.$4, 10), parseInt(RegExp.$5, 10), parseInt(RegExp.$6, 10)
+    );
+  }
+  return dd;
+};
+
  
 /********************************************************************
  * String handling
@@ -158,6 +249,25 @@ scrapbook.urlToFilename = function (url) {
 
 scrapbook.escapeRegExp = function (str) {
   return str.replace(/([\*\+\?\.\^\/\$\\\|\[\]\{\}\(\)])/g, "\\$1");
+};
+
+scrapbook.stringToDataUri = function (str, mime) {
+  mime = mime || "";
+  return "data:" + mime + ";base64," + this.unicodeToBase64(str);
+};
+
+scrapbook.unicodeToBase64 = function (str) {
+    return btoa(unescape(encodeURIComponent(str)));
+};
+
+scrapbook.base64ToUnicode = function (str) {
+    return decodeURIComponent(escape(atob(str)));
+};
+
+scrapbook.intToFixedStr = function (number, width, padder) {
+  padder = padder || "0";
+  number = number.toString(10);
+  return number.length >= width ? number : new Array(width - number.length + 1).join(padder) + number;
 };
 
 

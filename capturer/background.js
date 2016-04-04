@@ -13,6 +13,8 @@ var capturer = {};
  */
 capturer.contentFrames = {};
 
+capturer.downloadIds = {};
+
 capturer.init = function () {
 
   chrome.browserAction.onClicked.addListener(function (tab) {
@@ -84,10 +86,26 @@ capturer.init = function () {
           scrapbook.error("content script of `" + frameKeySrc + "' is not initialized yet.");
           sendResponse({ isError: true });
         }
+      } else if (message.cmd === "download-data") {
+        chrome.downloads.download(message.options, function (downloadId) {
+          capturer.downloadIds[downloadId] = true;
+          sendResponse(downloadId);
+        });
+        return true; // mark this as having an async response and keep the channel open
       }
     }
   );
 
+  chrome.downloads.onChanged.addListener(function (downloadDelta) {
+    // erase the download history of those downloaded by the capturer
+    if (downloadDelta.state && downloadDelta.state.current === "complete") {
+      var id = downloadDelta.id;
+      if (capturer.downloadIds[id]) {
+        delete(capturer.downloadIds[id]);
+        chrome.downloads.erase({ id: id }, function (erasedIds) {});
+      }
+    }
+  });
 };
 
 scrapbook.loadOptions(function () {

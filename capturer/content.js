@@ -63,9 +63,23 @@ function captureDocument(doc, settings, options, callback) {
       filename: scrapbook.urlToFilename(doc.location.href),
       content: scrapbook.doctypeToString(doc.doctype) + doc.documentElement.outerHTML,
     };
-    if (callback) {
-      callback(result);
-    }
+
+    var subdir = scrapbook.dateToId(new Date(settings.timeId));
+    chrome.runtime.sendMessage({
+      cmd: "download-data",
+      timeId: settings.timeId,
+      src: frameKeySrc,
+      id: frameKeyId,
+      options: {
+        url: scrapbook.stringToDataUri(result.content, "text/html"),
+        filename: subdir + "/" + result.filename,
+        conflictAction: "uniquify",
+      }
+    }, function (response) {
+      if (callback) {
+        callback(result);
+      }
+    });
   };
 
   var captureFrameCallback = function (result) {

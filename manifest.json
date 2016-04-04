@@ -24,6 +24,7 @@
 
   "permissions": [
     // "activeTab",
+    "downloads",
     // "tabs",
     // "notifications",
     // "contextMenus",
