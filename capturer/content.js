@@ -1,3 +1,10 @@
+/********************************************************************
+ *
+ * The content script for capture functionality
+ *
+ * @require {object} scrapbook
+ *******************************************************************/
+
 var frameKeyId = Date.now().toString();
 
  // record and use the initial src, even if it is changed later
@@ -31,18 +38,41 @@ function uninitFrame(callback) {
   });
 }
 
-function captureDocument(callback) {
-  // getDocumentContent(document, function (result) {
-    // scrapbook.debug({ src: frameKeySrc, content: result });
-  // });
+function capture(settings, options, callback) {
+  switch (settings.captureType) {
+    case "tab":
+    default:
+      captureDocument(document, settings, options, callback);
+      break;
+  }
+}
 
-  var timeId = Date.now();
+function captureDocument(doc, settings, options, callback) {
+  var remainingTasks = 0;
 
-  var frameContentCallback = function (result) {
-      scrapbook.debug("got frame content: ", result);
+  var checkDone = function () {
+    if (remainingTasks <= 0) {
+      done();
+    }
   };
 
-  Array.prototype.slice.call(document.querySelectorAll("frame, iframe")).forEach(function (frame) {
+  var done = function () {
+    var result = {
+      timeId: settings.timeId,
+      src: frameKeySrc,
+      filename: scrapbook.urlToFilename(doc.location.href),
+      content: scrapbook.doctypeToString(doc.doctype) + doc.documentElement.outerHTML,
+    };
+    if (callback) {
+      callback(result);
+    }
+  };
+
+  var captureFrameCallback = function (result) {
+      scrapbook.log("capture frame", result);
+  };
+
+  Array.prototype.slice.call(doc.querySelectorAll("frame, iframe")).forEach(function (frame) {
     var doc;
     try {
       doc = frame.contentDocument;
@@ -50,27 +80,28 @@ function captureDocument(callback) {
       // scrapbook.debug(ex);
     }
     if (doc) {
-      getDocumentContent(frame.contentDocument, function (result) {
-        frameContentCallback({ timeId: timeId, src: frame.src, content: result });
+      remainingTasks++;
+      captureDocument(frame.contentDocument, settings, options, function (result) {
+        captureFrameCallback(result);
+        remainingTasks--;
+        checkDone();
       });
     } else {
+      remainingTasks++;
       chrome.runtime.sendMessage({
         cmd: "get-frame-content",
-        timeId: timeId,
+        settings: settings,
+        options: options,
         src: frame.src
       }, function (response) {
-        frameContentCallback({ timeId: response.timeId, src: response.src, content: response.content });
+        captureFrameCallback(response);
+        remainingTasks--;
+        checkDone();
       });
     }
   });
-}
 
-function getDocumentContent(doc, callback) {
-  var result = scrapbook.doctypeToString(doc.doctype) + doc.documentElement.outerHTML;
-
-  if (callback) {
-    callback(result);
-  }
+  checkDone();
 }
 
 window.addEventListener("unload", function (event) {
@@ -82,14 +113,18 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   // scrapbook.debug("capturer/content.js onMessage", message, sender);
   if (message.cmd === "capture-tab") {
     if (!isMainFrame) { return; }
-    captureDocument();
+    capture(message.settings, message.options, function (settings, options) {
+      scrapbook.log("capture-tab done", settings, options);
+    });
   } else if (message.cmd === "get-frame-content-cs") {
     if (message.id !== frameKeyId) { return; }
-    getDocumentContent(document, function (result) {
-      sendResponse({ timeId: message.timeId, src: frameKeySrc, content: result });
+    captureDocument(document, message.settings, message.options, function (response) {
+      sendResponse(response);
     });
     return true; // mark this as having an async response and keep the channel open
   }
 });
 
-initFrame();
+scrapbook.loadOptions(function () {
+  initFrame();
+});

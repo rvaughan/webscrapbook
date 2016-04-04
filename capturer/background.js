@@ -20,8 +20,13 @@ capturer.init = function () {
     
     var tabId = tab.id;
     var options = scrapbook.getOptions("capture");
+    var settings = {
+      timeId: Date.now(),
+      captureType: "tab",
+    };
     chrome.tabs.sendMessage(tabId, {
       cmd: "capture-tab",
+      settings: settings,
       options: options,
     }, null, function (response) {});
   });
@@ -56,16 +61,18 @@ capturer.init = function () {
         // scrapbook.debug(capturer.contentFrames);
       } else if (message.cmd === "get-frame-content") {
         var tabId = sender.tab.id;
-        var timeId = message.timeId;
+        var settings = message.settings;
+        var options = message.options;
         var frameKeySrc = message.src;
         if (capturer.contentFrames[tabId][frameKeySrc]) {
           for (var id in capturer.contentFrames[tabId][frameKeySrc]) {
             var frameKeyId = id;
             chrome.tabs.sendMessage(tabId, {
               cmd: "get-frame-content-cs",
-              timeId: timeId,
+              settings: settings,
+              options: options,
+              src: frameKeySrc,
               id: frameKeyId,
-              src: frameKeySrc
             }, null, function (response) {
               // scrapbook.debug("get-frame-content-cs response", response);
               sendResponse(response);
@@ -75,7 +82,7 @@ capturer.init = function () {
           }
         } else {
           scrapbook.error("content script of `" + frameKeySrc + "' is not initialized yet.");
-          sendResponse({ timeId: timeId, src: frameKeySrc, content: "" });
+          sendResponse({ timeId: settings.timeId, src: frameKeySrc, filename: "data:,", content: "" });
         }
       }
     }

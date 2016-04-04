@@ -131,6 +131,28 @@ scrapbook.error = function () {
 
 
 /********************************************************************
+ * ScrapBook related path/file/string/etc handling
+ *******************************************************************/
+
+scrapbook.urlToFilename = function (url) {
+  var name = url, pos;
+  pos = name.indexOf("?");
+  if (pos !== -1) { name = name.substring(0, pos); }
+  pos = name.indexOf("#");
+  if (pos !== -1) { name = name.substring(0, pos); }
+  pos = name.lastIndexOf("/");
+  if (pos !== -1) { name = name.substring(pos + 1); }
+
+  // decode %xx%xx%xx only if it's correctly UTF-8 encoded
+  // @TODO: decode using a specified charset
+  try {
+    name = decodeURIComponent(name);
+  } catch (ex) {}
+  return name;
+};
+
+ 
+/********************************************************************
  * String handling
  *******************************************************************/
 
