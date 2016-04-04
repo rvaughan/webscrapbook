@@ -67,7 +67,7 @@ capturer.init = function () {
               id: frameKeyId,
               src: frameKeySrc
             }, null, function (response) {
-              // scrapbook.debug("get-frame-content response", response);
+              // scrapbook.debug("get-frame-content-cs response", response);
               sendResponse(response);
             });
             return true; // mark this as having an async response and keep the channel open
