@@ -82,13 +82,14 @@ function captureDocument(doc, settings, options, callback) {
     });
   };
 
-  var captureFrameCallback = function (result) {
-    scrapbook.log("capture frame", result);
-    remainingTasks--;
-    checkDone();
-  };
-
   Array.prototype.slice.call(doc.querySelectorAll("frame, iframe")).forEach(function (frame) {
+
+    var captureFrameCallback = function (result) {
+      scrapbook.log("capture frame", result);
+      remainingTasks--;
+      checkDone();
+    };
+
     var doc;
     try {
       doc = frame.contentDocument;
