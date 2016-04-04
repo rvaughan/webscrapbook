@@ -10,5 +10,8 @@
   "ExtensionDescription": {
     "description": "Description of the extension as it's visible to the outside world",
     "message": "擷取網頁內容，提供多種客製化設定。"
+  },
+  "OptionPageTitle": {
+    "message": "選項設定"
   }
 }

@@ -27,6 +27,7 @@
     // "tabs",
     // "notifications",
     // "contextMenus",
+    "storage",
     // "unlimitedStorage",
     "http://*/*",
     "https://*/*"
@@ -40,7 +41,11 @@
     ]
   },
 
-  // "options_page": "pages/options.html",
+  "options_ui": { // Chrome 42+
+    "chrome_style": true,
+    "page": "core/options.html"
+  },
+  "options_page": "core/options.html", // for backward compatibility
 
   "browser_action": {
     "default_icon": {
