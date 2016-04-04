@@ -19,8 +19,10 @@ capturer.init = function () {
     scrapbook.debug("capturer/background.js onClicked", tab);
     
     var tabId = tab.id;
+    var options = scrapbook.getOptions("capture");
     chrome.tabs.sendMessage(tabId, {
-      cmd: "capture-tab"
+      cmd: "capture-tab",
+      options: options,
     }, null, function (response) {});
   });
 

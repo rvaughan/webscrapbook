@@ -15,6 +15,21 @@ var scrapbook = {};
 
 scrapbook.options = {
   "console.logLevel": 3, // 0: none, 1: error, 2: warn, 3: log, 4: debug
+
+  "capture.saveSelectionOnly": true,
+  "capture.saveAsUtf8": true,
+  "capture.saveAsciiFilename": false,
+  "capture.saveInlineAsHtml": false,
+  "capture.image": "save", // "save", "link", "blank", "remove"
+  "capture.audio": "save", // "save", "link", "blank", "remove"
+  "capture.vedio": "save", // "save", "link", "blank", "remove"
+  "capture.canvas": "save", // "save", "link", "blank", "remove"
+  "capture.embed": "save", // "save", "link", "blank", "remove"
+  "capture.object": "save", // "save", "link", "blank", "remove"
+  "capture.applet": "save", // "save", "link", "blank", "remove"
+  "capture.font": "save", // "save", "link", "blank", "remove"
+  "capture.style": "save", // "save", "link", "blank", "remove"
+  "capture.script": "save", // "save", "link", "blank", "remove"
 };
 
 scrapbook.isOptionsSynced = false;
