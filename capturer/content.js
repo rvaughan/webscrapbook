@@ -69,7 +69,9 @@ function captureDocument(doc, settings, options, callback) {
   };
 
   var captureFrameCallback = function (result) {
-      scrapbook.log("capture frame", result);
+    scrapbook.log("capture frame", result);
+    remainingTasks--;
+    checkDone();
   };
 
   Array.prototype.slice.call(doc.querySelectorAll("frame, iframe")).forEach(function (frame) {
@@ -83,8 +85,6 @@ function captureDocument(doc, settings, options, callback) {
       remainingTasks++;
       captureDocument(frame.contentDocument, settings, options, function (result) {
         captureFrameCallback(result);
-        remainingTasks--;
-        checkDone();
       });
     } else {
       remainingTasks++;
@@ -100,8 +100,6 @@ function captureDocument(doc, settings, options, callback) {
           var result = { timeId: settings.timeId, src: frameKeySrc, filename: "data:,", content: "" };
           captureFrameCallback(result);
         }
-        remainingTasks--;
-        checkDone();
       });
     }
   });
