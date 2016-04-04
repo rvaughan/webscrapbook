@@ -116,10 +116,3 @@ scrapbook.doctypeToString = function (doctype) {
   ret += ">\n";
   return ret;
 };
-
-
-/********************************************************************
- * Initialization tasks
- *******************************************************************/
-
-scrapbook.loadOptions();

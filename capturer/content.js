@@ -33,13 +33,13 @@ function uninitFrame(callback) {
 
 function captureDocument(callback) {
   // getDocumentContent(document, function (result) {
-    // scrapbook.log({ src: frameKeySrc, content: result });
+    // scrapbook.debug({ src: frameKeySrc, content: result });
   // });
 
   var timeId = Date.now();
 
   var frameContentCallback = function (result) {
-      scrapbook.log("got frame content: ", result);
+      scrapbook.debug("got frame content: ", result);
   };
 
   Array.prototype.slice.call(document.querySelectorAll("frame, iframe")).forEach(function (frame) {
@@ -47,7 +47,7 @@ function captureDocument(callback) {
     try {
       doc = frame.contentDocument;
     } catch (ex) {
-      // scrapbook.log(ex);
+      // scrapbook.debug(ex);
     }
     if (doc) {
       getDocumentContent(frame.contentDocument, function (result) {
@@ -74,12 +74,12 @@ function getDocumentContent(doc, callback) {
 }
 
 window.addEventListener("unload", function (event) {
-  // scrapbook.log("capturer/content.js unload", isMainFrame);
+  // scrapbook.debug("capturer/content.js unload", isMainFrame);
   uninitFrame();
 });
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  // scrapbook.log("capturer/content.js onMessage", message, sender);
+  // scrapbook.debug("capturer/content.js onMessage", message, sender);
   if (message.cmd === "capture-tab") {
     if (!isMainFrame) { return; }
     captureDocument();
