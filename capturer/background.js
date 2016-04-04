@@ -13,6 +13,11 @@ var capturer = {};
  */
 capturer.contentFrames = {};
 
+/**
+ * { timeId: { documentName: count } } 
+ */
+capturer.usedDocumentNames = {};
+
 capturer.downloadIds = {};
 
 capturer.init = function () {
@@ -25,6 +30,7 @@ capturer.init = function () {
       timeId: Date.now(),
       captureType: "tab",
       isMainFrame: true,
+      documentName: "index",
     };
     chrome.tabs.sendMessage(tabId, {
       cmd: "capture-tab",
@@ -32,6 +38,7 @@ capturer.init = function () {
       options: options,
     }, null, function (response) {
       scrapbook.debug("capture-tab done", response);
+      delete(capturer.usedDocumentNames[settings.timeId]);
     });
   });
 
@@ -88,10 +95,28 @@ capturer.init = function () {
           scrapbook.error("content script of `" + frameKeySrc + "' is not initialized yet.");
           sendResponse({ isError: true });
         }
-      } else if (message.cmd === "download-data") {
-        chrome.downloads.download(message.options, function (downloadId) {
+      } else if (message.cmd === "register-document") {
+        var timeId = message.settings.timeId;
+        var documentName = message.settings.documentName;
+        var fixedDocumentName = documentName;
+        capturer.usedDocumentNames[timeId] = capturer.usedDocumentNames[timeId] || {};
+        capturer.usedDocumentNames[timeId][documentName] = capturer.usedDocumentNames[timeId][documentName] || 0;
+        if (capturer.usedDocumentNames[timeId][documentName] > 0) {
+          fixedDocumentName = fixedDocumentName + "_" + capturer.usedDocumentNames[timeId][documentName];
+        }
+        capturer.usedDocumentNames[timeId][documentName]++;
+        sendResponse({ documentName: fixedDocumentName });
+      } else if (message.cmd === "save-document") {
+        var targetDir = scrapbook.dateToId(new Date(message.settings.timeId));
+        var filename = message.data.documentName + "." + ((message.data.mime === "text/html") ? "html" : "xhtml");
+        var params = {
+          url: scrapbook.stringToDataUri(message.data.content, message.data.mime),
+          filename: targetDir + "/" + filename,
+          conflictAction: "uniquify",
+        };
+        chrome.downloads.download(params, function (downloadId) {
           capturer.downloadIds[downloadId] = true;
-          sendResponse(downloadId);
+          sendResponse({ timeId: message.settings.timeId, src: message.src, targetDir: targetDir, filename: filename });
         });
         return true; // mark this as having an async response and keep the channel open
       }
