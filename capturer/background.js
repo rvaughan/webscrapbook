@@ -156,7 +156,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     var targetDir = scrapbook.dateToId(new Date(timeId));
     var filename = message.data.documentName + "." + ((message.data.mime === "text/html") ? "html" : "xhtml");
     var params = {
-      url: scrapbook.stringToDataUri(message.data.content, message.data.mime),
+      url: URL.createObjectURL(new Blob([message.data.content], { type: message.data.mime })),
       filename: targetDir + "/" + filename,
       conflictAction: "uniquify",
     };
