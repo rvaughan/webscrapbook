@@ -5,19 +5,17 @@
  * @require {object} scrapbook
  *******************************************************************/
 
-var frameKeyId = Date.now().toString();
-
- // record and use the initial src, even if it is changed later
-var frameKeySrc = location.href;
-
-var isMainFrame = (window === window.top);
+// record and use the initial stat, even if it is changed later
+var frameInitId = Date.now().toString();
+var frameInitSrc = location.href;
+var frameIsMain = (window === window.top);
 
 function initFrame(callback) {
   var message = {
     cmd: "init-content-script",
-    id: frameKeyId,
-    src: frameKeySrc,
-    isMainFrame: isMainFrame,
+    frameInitId: frameInitId,
+    frameInitSrc: frameInitSrc,
+    frameIsMain: frameIsMain,
   };
 
   console.debug("init-content-script send", message);
@@ -32,9 +30,9 @@ function initFrame(callback) {
 function uninitFrame(callback) {
   var message = {
     cmd: "uninit-content-script",
-    id: frameKeyId,
-    src: frameKeySrc,
-    isMainFrame: isMainFrame,
+    frameInitId: frameInitId,
+    frameInitSrc: frameInitSrc,
+    frameIsMain: frameIsMain,
   };
 
   console.debug("uninit-content-script send", message);
@@ -178,7 +176,7 @@ function captureDocument(doc, settings, options, callback) {
       frame.removeAttribute(origRefKey);
 
       var frameSettings = JSON.parse(JSON.stringify(settings));
-      frameSettings.isMainFrame = false;
+      frameSettings.frameIsMain = false;
 
       var frameDoc;
       try {
@@ -195,9 +193,9 @@ function captureDocument(doc, settings, options, callback) {
         remainingTasks++;
         var message = {
           cmd: "get-frame-content",
+          frameInitSrc: frame.src,
           settings: frameSettings,
           options: options,
-          src: frame.src,
         };
 
         console.debug("get-frame-content send", message);
@@ -206,7 +204,7 @@ function captureDocument(doc, settings, options, callback) {
           if (!response.isError) {
             captureFrameCallback(response);
           } else {
-            var result = { timeId: timeId, src: frameKeySrc, filename: "data:," };
+            var result = { timeId: timeId, frameInitSrc: frameInitSrc, filename: "data:," };
             captureFrameCallback(result);
           }
         });
@@ -226,8 +224,8 @@ function captureDocument(doc, settings, options, callback) {
     var content = scrapbook.doctypeToString(doc.doctype) + rootNode.outerHTML;
     var message = {
       cmd: "save-document",
-      src: frameKeySrc,
-      id: frameKeyId,
+      frameInitSrc: frameInitSrc,
+      frameInitId: frameInitId,
       settings: settings,
       options: options,
       data: {
@@ -284,13 +282,13 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   console.debug(message.cmd + " receive", message, sender);
 
   if (message.cmd === "capture-tab") {
-    if (!isMainFrame) { return; }
+    if (!frameIsMain) { return; }
     capture(message.settings, message.options, function (response) {
       sendResponse(response);
     });
     return true; // mark this as having an async response and keep the channel open
   } else if (message.cmd === "get-frame-content-cs") {
-    if (message.id !== frameKeyId) { return; }
+    if (message.frameInitId !== frameInitId) { return; }
     captureDocumentOrFile(document, message.settings, message.options, function (response) {
       sendResponse(response);
     });

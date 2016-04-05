@@ -9,7 +9,7 @@
 var capturer = {};
 
 /**
- * { tabId: { frameKeySrc: { frameKeyId: } } } 
+ * { tabId: { frameInitSrc: { frameInitId: } } } 
  */
 capturer.contentFrames = {};
 
@@ -28,7 +28,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
     settings: {
       timeId: timeId,
       captureType: "tab",
-      isMainFrame: true,
+      frameIsMain: true,
       documentName: "index",
     },
     options: scrapbook.getOptions("capture"),
@@ -47,25 +47,23 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
   if (message.cmd === "init-content-script") {
     var tabId = sender.tab.id;
-    // var frameId = sender.frameId;
-    var frameKeyId = message.id;
-    var frameKeySrc = message.src;
+    var frameInitId = message.frameInitId;
+    var frameInitSrc = message.frameInitSrc;
 
     capturer.contentFrames[tabId] = capturer.contentFrames[tabId] || {};
-    capturer.contentFrames[tabId][frameKeySrc] = capturer.contentFrames[tabId][frameKeySrc] || {};
-    capturer.contentFrames[tabId][frameKeySrc][frameKeyId] = {};
+    capturer.contentFrames[tabId][frameInitSrc] = capturer.contentFrames[tabId][frameInitSrc] || {};
+    capturer.contentFrames[tabId][frameInitSrc][frameInitId] = {};
     // console.debug(capturer.contentFrames);
   } else if (message.cmd === "uninit-content-script") {
     var tabId = sender.tab.id;
-    // var frameId = sender.frameId;
-    var frameKeyId = message.id;
-    var frameKeySrc = message.src;
+    var frameInitId = message.frameInitId;
+    var frameInitSrc = message.frameInitSrc;
 
     if (capturer.contentFrames[tabId]) {
-      if (message.isMainFrame) {
+      if (message.frameIsMain) {
         delete(capturer.contentFrames[tabId]);
       } else {
-        delete(capturer.contentFrames[tabId][frameKeySrc][frameKeyId]);
+        delete(capturer.contentFrames[tabId][frameInitSrc][frameInitId]);
       }
     }
     // console.debug(capturer.contentFrames);
@@ -73,16 +71,15 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     var tabId = sender.tab.id;
     var settings = message.settings;
     var options = message.options;
-    var frameKeySrc = message.src;
-    if (capturer.contentFrames[tabId][frameKeySrc]) {
-      for (var id in capturer.contentFrames[tabId][frameKeySrc]) {
-        var frameKeyId = id;
+    var frameInitSrc = message.frameInitSrc;
+    if (capturer.contentFrames[tabId][frameInitSrc]) {
+      for (var frameInitId in capturer.contentFrames[tabId][frameInitSrc]) {
         var message = {
           cmd: "get-frame-content-cs",
+          frameInitSrc: frameInitSrc,
+          frameInitId: frameInitId,
           settings: settings,
           options: options,
-          src: frameKeySrc,
-          id: frameKeyId,
         };
 
         console.debug("get-frame-content-cs send", tabId, message);
@@ -94,7 +91,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         break;
       }
     } else {
-      console.error("content script of `" + frameKeySrc + "' is not initialized yet.");
+      console.error("content script of `" + frameInitSrc + "' is not initialized yet.");
       sendResponse({ isError: true });
     }
   } else if (message.cmd === "register-document") {
@@ -118,7 +115,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     };
     chrome.downloads.download(params, function (downloadId) {
       capturer.downloadIds[downloadId] = true;
-      sendResponse({ timeId: message.settings.timeId, src: message.src, targetDir: targetDir, filename: filename });
+      sendResponse({ timeId: message.settings.timeId, frameInitSrc: message.frameInitSrc, targetDir: targetDir, filename: filename });
     });
     return true; // mark this as having an async response and keep the channel open
   }
