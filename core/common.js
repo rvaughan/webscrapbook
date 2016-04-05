@@ -227,11 +227,11 @@ scrapbook.stringToDataUri = function (str, mime) {
 };
 
 scrapbook.unicodeToBase64 = function (str) {
-    return btoa(unescape(encodeURIComponent(str)));
+  return btoa(unescape(encodeURIComponent(str)));
 };
 
 scrapbook.base64ToUnicode = function (str) {
-    return decodeURIComponent(escape(atob(str)));
+  return decodeURIComponent(escape(atob(str)));
 };
 
 scrapbook.intToFixedStr = function (number, width, padder) {

@@ -114,7 +114,8 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     capturer.usedDocumentNames[timeId][documentName]++;
     sendResponse({ documentName: fixedDocumentName });
   } else if (message.cmd === "save-document") {
-    var targetDir = scrapbook.dateToId(new Date(message.settings.timeId));
+    var timeId = message.settings.timeId;
+    var targetDir = scrapbook.dateToId(new Date(timeId));
     var filename = message.data.documentName + "." + ((message.data.mime === "text/html") ? "html" : "xhtml");
     var params = {
       url: scrapbook.stringToDataUri(message.data.content, message.data.mime),
@@ -123,7 +124,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     };
     chrome.downloads.download(params, function (downloadId) {
       capturer.downloadIds[downloadId] = true;
-      sendResponse({ timeId: message.settings.timeId, frameInitSrc: message.frameInitSrc, targetDir: targetDir, filename: filename });
+      sendResponse({ timeId: timeId, frameInitSrc: message.frameInitSrc, targetDir: targetDir, filename: filename });
     });
     return true; // mark this as having an async response and keep the channel open
   }
