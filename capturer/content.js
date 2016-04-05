@@ -13,12 +13,16 @@ var frameKeySrc = location.href;
 var isMainFrame = (window === window.top);
 
 function initFrame(callback) {
-  chrome.runtime.sendMessage({
+  var message = {
     cmd: "init-content-script",
     id: frameKeyId,
     src: frameKeySrc,
-    isMainFrame: isMainFrame
-  }, function (response) {
+    isMainFrame: isMainFrame,
+  };
+
+  console.debug("init-content-script send", message);
+  chrome.runtime.sendMessage(message, function (response) {
+    console.debug("init-content-script response", response);
     if (callback) {
       callback();
     }
@@ -26,12 +30,16 @@ function initFrame(callback) {
 }
 
 function uninitFrame(callback) {
-  chrome.runtime.sendMessage({
+  var message = {
     cmd: "uninit-content-script",
     id: frameKeyId,
     src: frameKeySrc,
-    isMainFrame: isMainFrame
-  }, function (response) {
+    isMainFrame: isMainFrame,
+  };
+
+  console.debug("uninit-content-script send", message);
+  chrome.runtime.sendMessage(message, function (response) {
+    console.debug("uninit-content-script response", response);
     if (callback) {
       callback();
     }
@@ -48,6 +56,7 @@ function capture(settings, options, callback) {
 }
 
 function captureDocumentOrFile(doc, settings, options, callback) {
+  console.debug("call:", arguments.callee.name);
   // if not HTML document, capture as file
   if (["text/html", "application/xhtml+xml"].indexOf(doc.contentType) === -1) {
     if (!scrapbook.getOptions("capture.saveInlineAsHtml")) {
@@ -59,6 +68,7 @@ function captureDocumentOrFile(doc, settings, options, callback) {
 }
 
 function captureDocument(doc, settings, options, callback) {
+  console.debug("call:", arguments.callee.name);
 
   var captureMain = function () {
     // give certain nodes an unique id for later refrence,
@@ -183,12 +193,16 @@ function captureDocument(doc, settings, options, callback) {
         });
       } else {
         remainingTasks++;
-        chrome.runtime.sendMessage({
+        var message = {
           cmd: "get-frame-content",
           settings: frameSettings,
           options: options,
           src: frame.src,
-        }, function (response) {
+        };
+
+        console.debug("get-frame-content send", message);
+        chrome.runtime.sendMessage(message, function (response) {
+          console.debug("get-frame-content response", response);
           if (!response.isError) {
             captureFrameCallback(response);
           } else {
@@ -210,8 +224,7 @@ function captureDocument(doc, settings, options, callback) {
 
   var captureDone = function () {
     var content = scrapbook.doctypeToString(doc.doctype) + rootNode.outerHTML;
-
-    chrome.runtime.sendMessage({
+    var message = {
       cmd: "save-document",
       src: frameKeySrc,
       id: frameKeyId,
@@ -222,7 +235,11 @@ function captureDocument(doc, settings, options, callback) {
         mime: mime,
         content: content,
       }
-    }, function (response) {
+    };
+
+    console.debug("save-document send", message);
+    chrome.runtime.sendMessage(message, function (response) {
+      console.debug("save-document response", response);
       if (callback) {
         callback(response);
       }
@@ -237,26 +254,35 @@ function captureDocument(doc, settings, options, callback) {
   var rootNode;
   var headNode;
 
-  chrome.runtime.sendMessage({
+  var message = {
     cmd: "register-document",
     settings: settings,
     options: options,
-  }, function (response) {
+  };
+
+  console.debug("register-document send", message);
+  chrome.runtime.sendMessage(message, function (response) {
+    console.debug("register-document response", response);
     documentName = response.documentName;
     captureMain();
   });
 }
 
 function captureFile(doc, settings, options, callback) {
+  console.debug("call:", arguments.callee.name);
 }
 
+window.addEventListener("DOMContentLoaded", function (event) {
+  initFrame();
+});
+
 window.addEventListener("unload", function (event) {
-  // console.debug("capturer/content.js unload", isMainFrame);
   uninitFrame();
 });
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  // console.debug("capturer/content.js onMessage", message, sender);
+  console.debug(message.cmd + " receive", message, sender);
+
   if (message.cmd === "capture-tab") {
     if (!isMainFrame) { return; }
     capture(message.settings, message.options, function (response) {
@@ -270,8 +296,4 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     });
     return true; // mark this as having an async response and keep the channel open
   }
-});
-
-scrapbook.loadOptions(function () {
-  initFrame();
 });

@@ -21,27 +21,29 @@ capturer.usedDocumentNames = {};
 capturer.downloadIds = {};
 
 chrome.browserAction.onClicked.addListener(function (tab) {
-  // console.debug("capturer/background.js onClicked", tab);
   var tabId = tab.id;
-  var options = scrapbook.getOptions("capture");
-  var settings = {
-    timeId: Date.now(),
-    captureType: "tab",
-    isMainFrame: true,
-    documentName: "index",
-  };
-  chrome.tabs.sendMessage(tabId, {
+  var timeId = Date.now();
+  var message = {
     cmd: "capture-tab",
-    settings: settings,
-    options: options,
-  }, null, function (response) {
-    console.debug("capture-tab done", response);
-    delete(capturer.usedDocumentNames[settings.timeId]);
+    settings: {
+      timeId: timeId,
+      captureType: "tab",
+      isMainFrame: true,
+      documentName: "index",
+    },
+    options: scrapbook.getOptions("capture"),
+  };
+
+  console.debug("capture-tab send", tabId, message);
+  chrome.tabs.sendMessage(tabId, message, null, function (response) {
+    console.debug("capture-tab response", tabId, response);
+    if (!response) { return; }
+    delete(capturer.usedDocumentNames[timeId]);
   });
 });
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  // console.debug("capturer/background.js onMessage", message, sender);
+  console.debug(message.cmd + " receive", sender.tab.id, message);
 
   if (message.cmd === "init-content-script") {
     var tabId = sender.tab.id;
@@ -75,14 +77,17 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     if (capturer.contentFrames[tabId][frameKeySrc]) {
       for (var id in capturer.contentFrames[tabId][frameKeySrc]) {
         var frameKeyId = id;
-        chrome.tabs.sendMessage(tabId, {
+        var message = {
           cmd: "get-frame-content-cs",
           settings: settings,
           options: options,
           src: frameKeySrc,
           id: frameKeyId,
-        }, null, function (response) {
-          // console.debug("get-frame-content-cs response", response);
+        };
+
+        console.debug("get-frame-content-cs send", tabId, message);
+        chrome.tabs.sendMessage(tabId, message, null, function (response) {
+          console.debug("get-frame-content-cs response", tabId, response);
           sendResponse(response);
         });
         return true; // mark this as having an async response and keep the channel open
