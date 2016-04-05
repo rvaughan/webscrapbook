@@ -165,8 +165,6 @@ function captureDocument(doc, settings, options, callback) {
 
     Array.prototype.slice.call(rootNode.querySelectorAll("frame, iframe")).forEach(function (frame) {
       switch (options["capture.frame"]) {
-        case "save":
-          break;
         case "link":
           frame.setAttribute("src", frame.src);
           return;
@@ -179,6 +177,7 @@ function captureDocument(doc, settings, options, callback) {
         case "remove":
           frame.parentNode.removeChild(frame);
           return;
+        case "save":
         default:
           break;
       }
@@ -231,8 +230,6 @@ function captureDocument(doc, settings, options, callback) {
 
     Array.prototype.slice.call(rootNode.querySelectorAll('img[src], input[type="img"][src]')).forEach(function (elem) {
       switch (options["capture.img"]) {
-        case "save":
-          break;
         case "link":
           elem.setAttribute("src", elem.src);
           return;
@@ -245,25 +242,25 @@ function captureDocument(doc, settings, options, callback) {
         case "remove":
           elem.parentNode.removeChild(elem);
           return;
+        case "save":
         default:
+          remainingTasks++;
+          var message = {
+            cmd: "download-file",
+            url: elem.src,
+            settings: settings,
+            options: options,
+          };
+
+          console.debug("download-file send", message);
+          chrome.runtime.sendMessage(message, function (response) {
+            console.debug("download-file response", response);
+            elem.src = response.filename;
+            remainingTasks--;
+            captureCheckDone();
+          });
           break;
       }
-
-      remainingTasks++;
-      var message = {
-        cmd: "download-file",
-        url: elem.src,
-        settings: settings,
-        options: options,
-      };
-
-      console.debug("download-file send", message);
-      chrome.runtime.sendMessage(message, function (response) {
-        console.debug("download-file response", response);
-        elem.src = response.filename;
-        remainingTasks--;
-        captureCheckDone();
-      });
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll('audio')).forEach(function (elem) {
@@ -350,8 +347,6 @@ function captureDocument(doc, settings, options, callback) {
 
     Array.prototype.slice.call(rootNode.querySelectorAll('script')).forEach(function (elem) {
       switch (options["capture.script"]) {
-        case "save":
-          break;
         case "link":
           if (elem.src) {
             elem.setAttribute("src", elem.src);
@@ -370,25 +365,25 @@ function captureDocument(doc, settings, options, callback) {
         case "remove":
           elem.parentNode.removeChild(elem);
           return;
+        case "save":
         default:
+          remainingTasks++;
+          var message = {
+            cmd: "download-file",
+            url: elem.src,
+            settings: settings,
+            options: options,
+          };
+
+          console.debug("download-file send", message);
+          chrome.runtime.sendMessage(message, function (response) {
+            console.debug("download-file response", response);
+            elem.src = response.filename;
+            remainingTasks--;
+            captureCheckDone();
+          });
           break;
       }
-
-      remainingTasks++;
-      var message = {
-        cmd: "download-file",
-        url: elem.src,
-        settings: settings,
-        options: options,
-      };
-
-      console.debug("download-file send", message);
-      chrome.runtime.sendMessage(message, function (response) {
-        console.debug("download-file response", response);
-        elem.src = response.filename;
-        remainingTasks--;
-        captureCheckDone();
-      });
     });
 
     captureCheckDone();
