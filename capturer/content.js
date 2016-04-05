@@ -361,6 +361,115 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    Array.prototype.slice.call(rootNode.querySelectorAll('embed')).forEach(function (elem) {
+      switch (options["capture.embed"]) {
+        case "link":
+          elem.setAttribute("src", elem.src);
+          return;
+        case "blank":
+          elem.setAttribute("src", "about:blank");
+          return;
+        case "comment":
+          elem.setAttribute("src", elem.src);
+          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          return;
+        case "remove":
+          elem.parentNode.removeChild(elem);
+          return;
+        case "save":
+        default:
+          remainingTasks++;
+          var message = {
+            cmd: "download-file",
+            url: elem.src,
+            settings: settings,
+            options: options,
+          };
+
+          console.debug("download-file send", message);
+          chrome.runtime.sendMessage(message, function (response) {
+            console.debug("download-file response", response);
+            elem.src = response.filename;
+            remainingTasks--;
+            captureCheckDone();
+          });
+          break;
+      }
+    });
+
+    Array.prototype.slice.call(rootNode.querySelectorAll('object')).forEach(function (elem) {
+      switch (options["capture.object"]) {
+        case "link":
+          elem.setAttribute("data", elem.data);
+          return;
+        case "blank":
+          elem.setAttribute("data", "about:blank");
+          return;
+        case "comment":
+          elem.setAttribute("data", elem.data);
+          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          return;
+        case "remove":
+          elem.parentNode.removeChild(elem);
+          return;
+        case "save":
+        default:
+          remainingTasks++;
+          var message = {
+            cmd: "download-file",
+            url: elem.data,
+            settings: settings,
+            options: options,
+          };
+
+          console.debug("download-file send", message);
+          chrome.runtime.sendMessage(message, function (response) {
+            console.debug("download-file response", response);
+            elem.data = response.filename;
+            remainingTasks--;
+            captureCheckDone();
+          });
+          break;
+      }
+    });
+
+    Array.prototype.slice.call(rootNode.querySelectorAll('applet')).forEach(function (elem) {
+      var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("archive"));
+      switch (options["capture.applet"]) {
+        case "link":
+          elem.setAttribute("archive", rewriteUrl);
+          return;
+        case "blank":
+          elem.setAttribute("archive", "about:blank");
+          return;
+        case "comment":
+          elem.setAttribute("archive", rewriteUrl);
+          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          return;
+        case "remove":
+          elem.parentNode.removeChild(elem);
+          return;
+        case "save":
+        default:
+          remainingTasks++;
+          var message = {
+            cmd: "download-file",
+            url: rewriteUrl,
+            settings: settings,
+            options: options,
+          };
+
+          console.debug("download-file send", message);
+          chrome.runtime.sendMessage(message, function (response) {
+            console.debug("download-file response", response);
+            elem.setAttribute("archive", response.filename);
+            remainingTasks--;
+            captureCheckDone();
+          });
+          break;
+      }
+    });
+
     Array.prototype.slice.call(rootNode.querySelectorAll('script')).forEach(function (elem) {
       switch (options["capture.script"]) {
         case "link":
@@ -438,6 +547,15 @@ function captureDocument(doc, settings, options, callback) {
         callback(response);
       }
     });
+  };
+
+  var rewriteRelativeUrl = function (url) {
+    if (!arguments.callee.rewriter) {
+      arguments.callee.rewriter = document.createElement("a");
+    }
+    var rewriter = arguments.callee.rewriter;
+    rewriter.setAttribute("href", url);
+    return rewriter.href;
   };
 
   var remainingTasks = 0;
