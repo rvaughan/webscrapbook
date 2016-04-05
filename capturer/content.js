@@ -164,6 +164,21 @@ function captureDocument(doc, settings, options, callback) {
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll("frame, iframe")).forEach(function (frame) {
+      switch (options["capture.frame"]) {
+        case "save":
+          break;
+        case "link":
+          frame.setAttribute("src", frame.src);
+          return;
+        case "blank":
+          frame.setAttribute("src", "about:blank");
+          return;
+        case "remove":
+          frame.parentNode.removeChild(frame);
+          return;
+        default:
+          break;
+      }
 
       var captureFrameCallback = function (result) {
         frame.src = result.filename;

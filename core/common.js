@@ -25,6 +25,7 @@ scrapbook.options = {
   "capture.embed": "save", // "save", "link", "blank", "remove"
   "capture.object": "save", // "save", "link", "blank", "remove"
   "capture.applet": "save", // "save", "link", "blank", "remove"
+  "capture.frame": "save", // "save", "link", "blank", "remove"
   "capture.font": "save", // "save", "link", "blank", "remove"
   "capture.style": "save", // "save", "link", "blank", "remove"
   "capture.script": "save", // "save", "link", "blank", "remove"
