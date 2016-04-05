@@ -18,6 +18,9 @@ capturer.contentFrames = {};
  */
 capturer.usedDocumentNames = {};
 
+/**
+ * { downloadId: true } 
+ */
 capturer.downloadIds = {};
 
 chrome.browserAction.onClicked.addListener(function (tab) {
