@@ -9,7 +9,7 @@
 var capturer = {};
 
 /**
- * { tabId: { frameInitSrc: { frameInitId: } } } 
+ * { tabId: { frameInitSrc: { frameInitId: true } } } 
  */
 capturer.contentFrames = {};
 
@@ -49,18 +49,20 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     var tabId = sender.tab.id;
     var frameInitId = message.frameInitId;
     var frameInitSrc = message.frameInitSrc;
+    var frameIsMain = message.frameIsMain;
 
     capturer.contentFrames[tabId] = capturer.contentFrames[tabId] || {};
     capturer.contentFrames[tabId][frameInitSrc] = capturer.contentFrames[tabId][frameInitSrc] || {};
-    capturer.contentFrames[tabId][frameInitSrc][frameInitId] = {};
+    capturer.contentFrames[tabId][frameInitSrc][frameInitId] = true;
     // console.debug(capturer.contentFrames);
   } else if (message.cmd === "uninit-content-script") {
     var tabId = sender.tab.id;
     var frameInitId = message.frameInitId;
     var frameInitSrc = message.frameInitSrc;
+    var frameIsMain = message.frameIsMain;
 
     if (capturer.contentFrames[tabId]) {
-      if (message.frameIsMain) {
+      if (frameIsMain) {
         delete(capturer.contentFrames[tabId]);
       } else {
         delete(capturer.contentFrames[tabId][frameInitSrc][frameInitId]);
