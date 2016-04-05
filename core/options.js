@@ -33,9 +33,7 @@ window.addEventListener("DOMContentLoaded", function (event) {
   scrapbook.loadLanguages(document);
 
   // form
-  var form = document.getElementById("options");
-
-  form.addEventListener("submit", function (event) {
+  document.getElementById("options").addEventListener("submit", function (event) {
     for (var id in scrapbook.options) {
       scrapbook.options[id] = getOptionFromDocument(id);
     }
@@ -45,12 +43,12 @@ window.addEventListener("DOMContentLoaded", function (event) {
     event.preventDefault();
   });
 
-  // default options
+  // create elements for default options
   for (var id in scrapbook.options) {
     var value = scrapbook.options[id];
 
     var p = document.createElement("p");
-    form.appendChild(p);
+    document.getElementById("optionsWrapper").appendChild(p);
 
     var label = document.createElement("label");
     label.setAttribute("for", id);
@@ -81,19 +79,6 @@ window.addEventListener("DOMContentLoaded", function (event) {
         break;
     }
   }
-
-  // submit, reset
-  var p = document.createElement("p");
-
-  var submit = document.createElement("input");
-  submit.type = "submit";
-  p.appendChild(submit);
-
-  var reset = document.createElement("input");
-  reset.type = "reset";
-  p.appendChild(reset);
-
-  form.appendChild(p);
 
   // load from sync
   scrapbook.loadOptions(function (options) {
