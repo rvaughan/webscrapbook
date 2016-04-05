@@ -307,6 +307,47 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    Array.prototype.slice.call(rootNode.querySelectorAll('video')).forEach(function (elem) {
+      switch (options["capture.video"]) {
+        case "link":
+          Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
+            elem.setAttribute("src", elem.src);
+          });
+          return;
+        case "blank":
+          Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
+            elem.setAttribute("src", "about:blank");
+          });
+          return;
+        case "comment":
+          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          return;
+        case "remove":
+          elem.parentNode.removeChild(elem);
+          return;
+        case "save":
+        default:
+          Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
+            remainingTasks++;
+            var message = {
+              cmd: "download-file",
+              url: elem.src,
+              settings: settings,
+              options: options,
+            };
+
+            console.debug("download-file send", message);
+            chrome.runtime.sendMessage(message, function (response) {
+              console.debug("download-file response", response);
+              elem.src = response.filename;
+              remainingTasks--;
+              captureCheckDone();
+            });
+          });
+          break;
+      }
+    });
+
     Array.prototype.slice.call(rootNode.querySelectorAll('script')).forEach(function (elem) {
       switch (options["capture.script"]) {
         case "save":
