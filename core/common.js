@@ -18,17 +18,17 @@ scrapbook.options = {
   "capture.saveAsUtf8": true,
   "capture.saveAsciiFilename": false,
   "capture.saveInlineAsHtml": false,
-  "capture.img": "save", // "save", "link", "blank", "remove"
-  "capture.audio": "save", // "save", "link", "blank", "remove"
-  "capture.vedio": "save", // "save", "link", "blank", "remove"
-  "capture.canvas": "save", // "save", "link", "blank", "remove"
-  "capture.embed": "save", // "save", "link", "blank", "remove"
-  "capture.object": "save", // "save", "link", "blank", "remove"
-  "capture.applet": "save", // "save", "link", "blank", "remove"
-  "capture.frame": "save", // "save", "link", "blank", "remove"
-  "capture.font": "save", // "save", "link", "blank", "remove"
-  "capture.style": "save", // "save", "link", "blank", "remove"
-  "capture.script": "save", // "save", "link", "blank", "remove"
+  "capture.img": "save", // "save", "link", "blank", "comment", "remove"
+  "capture.audio": "save", // "save", "link", "blank", "comment", "remove"
+  "capture.vedio": "save", // "save", "link", "blank", "comment", "remove"
+  "capture.canvas": "save", // "save", "link", "blank", "comment", "remove"
+  "capture.embed": "save", // "save", "link", "blank", "comment", "remove"
+  "capture.object": "save", // "save", "link", "blank", "comment", "remove"
+  "capture.applet": "save", // "save", "link", "blank", "comment", "remove"
+  "capture.frame": "save", // "save", "link", "blank", "comment", "remove"
+  "capture.font": "save", // "save", "link", "blank", "comment", "remove"
+  "capture.style": "save", // "save", "link", "blank", "comment", "remove"
+  "capture.script": "save", // "save", "link", "blank", "comment", "remove"
 };
 
 scrapbook.isOptionsSynced = false;
