@@ -164,6 +164,9 @@ function captureDocument(doc, settings, options, callback) {
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll("frame, iframe")).forEach(function (frame) {
+      var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
+      frame.removeAttribute(origRefKey);
+
       switch (options["capture.frame"]) {
         case "link":
           frame.setAttribute("src", frame.src);
@@ -189,9 +192,6 @@ function captureDocument(doc, settings, options, callback) {
         remainingTasks--;
         captureCheckDone();
       };
-
-      var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
-      frame.removeAttribute(origRefKey);
 
       var frameSettings = JSON.parse(JSON.stringify(settings));
       frameSettings.frameIsMain = false;
