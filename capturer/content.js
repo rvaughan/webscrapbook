@@ -266,6 +266,10 @@ function captureDocument(doc, settings, options, callback) {
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll('audio')).forEach(function (elem) {
+      Array.prototype.slice.call(elem.querySelectorAll('track')).forEach(function (elem) {
+        elem.setAttribute("src", elem.src);
+      });
+
       switch (options["capture.audio"]) {
         case "link":
           Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
@@ -310,6 +314,10 @@ function captureDocument(doc, settings, options, callback) {
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll('video')).forEach(function (elem) {
+      Array.prototype.slice.call(elem.querySelectorAll('track')).forEach(function (elem) {
+        elem.setAttribute("src", elem.src);
+      });
+
       switch (options["capture.video"]) {
         case "link":
           Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
