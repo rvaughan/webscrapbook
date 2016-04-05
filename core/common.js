@@ -14,8 +14,6 @@ var scrapbook = {};
  *******************************************************************/
 
 scrapbook.options = {
-  "console.logLevel": 3, // 0: none, 1: error, 2: warn, 3: log, 4: debug
-
   "capture.saveSelectionOnly": true,
   "capture.saveAsUtf8": true,
   "capture.saveAsciiFilename": false,
@@ -98,35 +96,6 @@ scrapbook.loadLanguages = function (rootNode) {
 
 scrapbook.lang = function (key, args) {
   return chrome.i18n.getMessage(key, args);
-};
-
-
-/********************************************************************
- * Console
- *******************************************************************/
-
-scrapbook.debug = function () {
-  if (scrapbook.getOption("console.logLevel") >= 4) {
-    Function.apply.call(console.debug, console, arguments);
-  }
-};
-
-scrapbook.log = function () {
-  if (scrapbook.getOption("console.logLevel") >= 3) {
-    Function.apply.call(console.log, console, arguments);
-  }
-};
-
-scrapbook.warn = function () {
-  if (scrapbook.getOption("console.logLevel") >= 2) {
-    Function.apply.call(console.warn, console, arguments);
-  }
-};
-
-scrapbook.error = function () {
-  if (scrapbook.getOption("console.logLevel") >= 1) {
-    Function.apply.call(console.error, console, arguments);
-  }
 };
 
 

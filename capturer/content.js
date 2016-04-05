@@ -159,7 +159,7 @@ function captureDocument(doc, settings, options, callback) {
 
       var captureFrameCallback = function (result) {
         frame.src = result.filename;
-        scrapbook.debug("capture frame", result);
+        console.debug("capture frame", result);
         remainingTasks--;
         captureCheckDone();
       };
@@ -174,7 +174,7 @@ function captureDocument(doc, settings, options, callback) {
       try {
         frameDoc = frameSrc.contentDocument;
       } catch (ex) {
-        // scrapbook.debug(ex);
+        // console.debug(ex);
       }
       if (frameDoc) {
         remainingTasks++;
@@ -251,12 +251,12 @@ function captureFile(doc, settings, options, callback) {
 }
 
 window.addEventListener("unload", function (event) {
-  // scrapbook.debug("capturer/content.js unload", isMainFrame);
+  // console.debug("capturer/content.js unload", isMainFrame);
   uninitFrame();
 });
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  // scrapbook.debug("capturer/content.js onMessage", message, sender);
+  // console.debug("capturer/content.js onMessage", message, sender);
   if (message.cmd === "capture-tab") {
     if (!isMainFrame) { return; }
     capture(message.settings, message.options, function (response) {
