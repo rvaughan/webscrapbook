@@ -378,21 +378,23 @@ function captureDocument(doc, settings, options, callback) {
           return;
         case "save":
         default:
-          remainingTasks++;
-          var message = {
-            cmd: "download-file",
-            url: elem.src,
-            settings: settings,
-            options: options,
-          };
+          if (elem.src) {
+            remainingTasks++;
+            var message = {
+              cmd: "download-file",
+              url: elem.src,
+              settings: settings,
+              options: options,
+            };
 
-          console.debug("download-file send", message);
-          chrome.runtime.sendMessage(message, function (response) {
-            console.debug("download-file response", response);
-            elem.src = response.filename;
-            remainingTasks--;
-            captureCheckDone();
-          });
+            console.debug("download-file send", message);
+            chrome.runtime.sendMessage(message, function (response) {
+              console.debug("download-file response", response);
+              elem.src = response.filename;
+              remainingTasks--;
+              captureCheckDone();
+            });
+          }
           break;
       }
     });
