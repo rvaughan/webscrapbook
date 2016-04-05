@@ -29,22 +29,29 @@ capturer.fileToUrl = {};
 capturer.downloadIds = {};
 
 /**
+ * Prevent filename conflictAction. Appends a number if the given filename is used.
+ *
+ * @param {String} timeId
+ * @param {String} filename
+ * The unfixed filename.
+ * @param {String|true} src
+ * The source URL of the filename source. Use true means always create a new filename.
  * @return {Array} [{String} newFilename, {bool} isDuplicate]
  */
 capturer.getUniqueFilename = function (timeId, filename, src) {
-  var newFilename = filename || "untitled";
-  newFilename = scrapbook.validateFilename(newFilename);
-  var [newFilenameBase, newFilenameExt] = scrapbook.filenameParts(newFilename);
-  newFilenameBase = scrapbook.crop(scrapbook.crop(newFilenameBase, 240, true), 128);
-  newFilenameExt = newFilenameExt || "dat";
-  tokenSrc = scrapbook.splitUrlByAnchor(src)[0];
-
   capturer.fileToUrl[timeId] = capturer.fileToUrl[timeId] || {
     "index.html": true,
     "index.xhtml": true,
     "index.dat": true,
     "index.rdf": true,
   };
+
+  var newFilename = filename || "untitled";
+  newFilename = scrapbook.validateFilename(newFilename);
+  var [newFilenameBase, newFilenameExt] = scrapbook.filenameParts(newFilename);
+  newFilenameBase = scrapbook.crop(scrapbook.crop(newFilenameBase, 240, true), 128);
+  newFilenameExt = newFilenameExt || "dat";
+  tokenSrc = (typeof src === "string") ? scrapbook.splitUrlByAnchor(src)[0] : src;
 
   var seq = 0;
   newFilename = newFilenameBase + "." + newFilenameExt;
@@ -155,6 +162,8 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     var timeId = message.settings.timeId;
     var targetDir = scrapbook.dateToId(new Date(timeId));
     var filename = message.data.documentName + "." + ((message.data.mime === "text/html") ? "html" : "xhtml");
+    filename = scrapbook.validateFilename(filename);
+    filename = capturer.getUniqueFilename(timeId, filename, true)[0];
     var params = {
       url: URL.createObjectURL(new Blob([message.data.content], { type: message.data.mime })),
       filename: targetDir + "/" + filename,
