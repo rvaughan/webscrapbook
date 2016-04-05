@@ -266,6 +266,49 @@ function captureDocument(doc, settings, options, callback) {
       });
     });
 
+    Array.prototype.slice.call(rootNode.querySelectorAll('script')).forEach(function (elem) {
+      switch (options["capture.script"]) {
+        case "save":
+          break;
+        case "link":
+          if (elem.src) {
+            elem.setAttribute("src", elem.src);
+          }
+          return;
+        case "blank":
+          if (elem.src) {
+            elem.setAttribute("src", "about:blank");
+          } else {
+            elem.textContent = "";
+          }
+          return;
+        case "comment":
+          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          return;
+        case "remove":
+          elem.parentNode.removeChild(elem);
+          return;
+        default:
+          break;
+      }
+
+      remainingTasks++;
+      var message = {
+        cmd: "download-file",
+        url: elem.src,
+        settings: settings,
+        options: options,
+      };
+
+      console.debug("download-file send", message);
+      chrome.runtime.sendMessage(message, function (response) {
+        console.debug("download-file response", response);
+        elem.src = response.filename;
+        remainingTasks--;
+        captureCheckDone();
+      });
+    });
+
     captureCheckDone();
   };
 

@@ -28,7 +28,7 @@ scrapbook.options = {
   "capture.frame": "save", // "save", "link", "blank", "comment", "remove"
   "capture.font": "save", // "save", "link", "blank", "comment", "remove"
   "capture.style": "save", // "save", "link", "blank", "comment", "remove"
-  "capture.script": "save", // "save", "link", "blank", "comment", "remove"
+  "capture.script": "comment", // "save", "link", "blank", "comment", "remove"
 };
 
 scrapbook.isOptionsSynced = false;
