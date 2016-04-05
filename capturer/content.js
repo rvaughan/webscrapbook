@@ -172,6 +172,7 @@ function captureDocument(doc, settings, options, callback) {
           frame.setAttribute("src", "about:blank");
           return;
         case "comment":
+          frame.setAttribute("src", frame.src);
           frame.parentNode.replaceChild(doc.createComment(frame.outerHTML), frame);
           return;
         case "remove":
@@ -237,6 +238,7 @@ function captureDocument(doc, settings, options, callback) {
           elem.setAttribute("src", "about:blank");
           return;
         case "comment":
+          elem.setAttribute("src", elem.src);
           elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
           return;
         case "remove":
@@ -276,6 +278,9 @@ function captureDocument(doc, settings, options, callback) {
           });
           return;
         case "comment":
+          Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
+            elem.setAttribute("src", elem.src);
+          });
           elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
           return;
         case "remove":
@@ -317,6 +322,9 @@ function captureDocument(doc, settings, options, callback) {
           });
           return;
         case "comment":
+          Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
+            elem.setAttribute("src", elem.src);
+          });
           elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
           return;
         case "remove":
@@ -360,6 +368,9 @@ function captureDocument(doc, settings, options, callback) {
           }
           return;
         case "comment":
+          if (elem.src) {
+            elem.setAttribute("src", elem.src);
+          }
           elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
           return;
         case "remove":
