@@ -30,7 +30,7 @@ function setOptionFromDocument(id, value) {
 
 window.addEventListener("DOMContentLoaded", function (event) {
   // load languages
-  scrapbook.loadLanguages();
+  scrapbook.loadLanguages(document);
 
   // form
   var form = document.getElementById("options");

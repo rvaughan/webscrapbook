@@ -87,8 +87,8 @@ scrapbook.saveOptions = function (callback) {
  * Lang
  *******************************************************************/
 
-scrapbook.loadLanguages = function () {
-  Array.prototype.slice.call(document.getElementsByTagName("*")).forEach(function (elem) {
+scrapbook.loadLanguages = function (rootNode) {
+  Array.prototype.slice.call(rootNode.getElementsByTagName("*")).forEach(function (elem) {
     var str = elem.textContent;
     if (/^__MSG_(.*?)__$/.test(str)) {
       elem.textContent = chrome.i18n.getMessage(RegExp.$1);
