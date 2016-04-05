@@ -40,7 +40,10 @@ chrome.browserAction.onClicked.addListener(function (tab) {
   console.debug("capture-tab send", tabId, message);
   chrome.tabs.sendMessage(tabId, message, null, function (response) {
     console.debug("capture-tab response", tabId, response);
-    if (!response) { return; }
+    if (!response) {
+      alert(scrapbook.lang("ErrorContentScriptNotReady"));
+      return;
+    }
     delete(capturer.usedDocumentNames[timeId]);
   });
 });

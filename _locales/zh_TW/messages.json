@@ -3,13 +3,16 @@
     "description": "Title for the browser action that's visible to the user of extension",
     "message": "用 ScrapBook X 擷取網頁"
   },
-  "ExtensionName": {
-    "description": "Name of the extension as it's visible to the outside world",
-    "message": "ScrapBook X 網頁擷取器"
+  "ErrorContentScriptNotReady": {
+    "message": "內容處理腳本未就緒，請重新整理本頁面再試一次。"
   },
   "ExtensionDescription": {
     "description": "Description of the extension as it's visible to the outside world",
     "message": "擷取網頁內容，提供多種客製化設定。"
+  },
+  "ExtensionName": {
+    "description": "Name of the extension as it's visible to the outside world",
+    "message": "ScrapBook X 網頁擷取器"
   },
   "OptionPageTitle": {
     "message": "選項設定"
