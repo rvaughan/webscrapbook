@@ -61,7 +61,8 @@
       "run_at" : "document_start",
       "matches" : [
         "http://*/*",
-        "https://*/*"
+        "https://*/*",
+        "file://*/*"
       ],
       "js" : [
         "core/common.js",
