@@ -73,7 +73,7 @@ function captureDocument(doc, settings, options, callback) {
     // since cloned nodes may not have some information
     // e.g. cloned iframes has no content, cloned canvas has no image
     var origRefKey = "data-sb-id-" + timeId;
-    var origRefNodes = Array.prototype.slice.call(doc.querySelectorAll("frame, iframe"));
+    var origRefNodes = Array.prototype.slice.call(doc.querySelectorAll("frame, iframe, canvas"));
     origRefNodes.forEach(function (elem, index) {
       elem.setAttribute(origRefKey, index);
     });
@@ -516,6 +516,30 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    // must placed after scripts to prevent an overwrite
+    Array.prototype.slice.call(rootNode.querySelectorAll('canvas')).forEach(function (elem) {
+      var canvasOrig = origRefNodes[elem.getAttribute(origRefKey)];
+      elem.removeAttribute(origRefKey);
+
+      switch (options["capture.canvas"]) {
+        case "blank":
+          // do nothing
+          break;
+        case "comment":
+          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          return;
+        case "remove":
+          elem.parentNode.removeChild(elem);
+          return;
+        case "save":
+        default:
+          var canvasScript = doc.createElement("script");
+          canvasScript.textContent = "(" + canvasDataScript.toString().replace(/\s+/g, " ") + ")('" + canvasOrig.toDataURL() + "')";
+          elem.parentNode.insertBefore(canvasScript, elem.nextSibling);
+          break;
+      }
+    });
+
     captureCheckDone();
   };
 
@@ -556,6 +580,15 @@ function captureDocument(doc, settings, options, callback) {
     var rewriter = arguments.callee.rewriter;
     rewriter.setAttribute("href", url);
     return rewriter.href;
+  };
+
+  var canvasDataScript = function (data) {
+    var scripts = document.getElementsByTagName("script");
+    var script = scripts[scripts.length-1], canvas = script.previousSibling;
+    var img = new Image();
+    img.onload = function(){ canvas.getContext('2d').drawImage(img, 0, 0); };
+    img.src = data;
+    script.parentNode.removeChild(script);
   };
 
   var remainingTasks = 0;
