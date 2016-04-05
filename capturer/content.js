@@ -226,6 +226,40 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    Array.prototype.slice.call(rootNode.querySelectorAll('img[src], input[type="img"][src]')).forEach(function (elem) {
+      switch (options["capture.img"]) {
+        case "save":
+          break;
+        case "link":
+          elem.setAttribute("src", elem.src);
+          return;
+        case "blank":
+          elem.setAttribute("src", "about:blank");
+          return;
+        case "remove":
+          elem.parentNode.removeChild(elem);
+          return;
+        default:
+          break;
+      }
+
+      remainingTasks++;
+      var message = {
+        cmd: "download-file",
+        url: elem.src,
+        settings: settings,
+        options: options,
+      };
+
+      console.debug("download-file send", message);
+      chrome.runtime.sendMessage(message, function (response) {
+        console.debug("download-file response", response);
+        elem.src = response.filename;
+        remainingTasks--;
+        captureCheckDone();
+      });
+    });
+
     captureCheckDone();
   };
 

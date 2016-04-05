@@ -19,9 +19,46 @@ capturer.contentFrames = {};
 capturer.usedDocumentNames = {};
 
 /**
+ * { timeId: { filename: src } } 
+ */
+capturer.fileToUrl = {};
+
+/**
  * { downloadId: true } 
  */
 capturer.downloadIds = {};
+
+/**
+ * @return {Array} [{String} newFilename, {bool} isDuplicate]
+ */
+capturer.getUniqueFilename = function (timeId, filename, src) {
+  var newFilename = filename || "untitled";
+  newFilename = scrapbook.validateFilename(newFilename);
+  var [newFilenameBase, newFilenameExt] = scrapbook.filenameParts(newFilename);
+  newFilenameBase = scrapbook.crop(scrapbook.crop(newFilenameBase, 240, true), 128);
+  newFilenameExt = newFilenameExt || "dat";
+  tokenSrc = scrapbook.splitUrlByAnchor(src)[0];
+
+  capturer.fileToUrl[timeId] = capturer.fileToUrl[timeId] || {
+    "index.html": true,
+    "index.xhtml": true,
+    "index.dat": true,
+    "index.rdf": true,
+  };
+
+  var seq = 0;
+  newFilename = newFilenameBase + "." + newFilenameExt;
+  var newFilenameCI = newFilename.toLowerCase();
+  while (capturer.fileToUrl[timeId][newFilenameCI] !== undefined) {
+    if (capturer.fileToUrl[timeId][newFilenameCI] === tokenSrc) {
+      return [newFilename, true];
+    }
+    newFilename = newFilenameBase + "-" + (++seq) + "." + newFilenameExt;
+    newFilenameCI = newFilename.toLowerCase(); 
+  }
+  capturer.fileToUrl[timeId][newFilenameCI] = tokenSrc;
+  return [newFilename, false];
+};
 
 chrome.browserAction.onClicked.addListener(function (tab) {
   var tabId = tab.id;
@@ -45,6 +82,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
       return;
     }
     delete(capturer.usedDocumentNames[timeId]);
+    delete(capturer.fileToUrl[timeId]);
   });
 });
 
@@ -126,6 +164,61 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       capturer.downloadIds[downloadId] = true;
       sendResponse({ timeId: timeId, frameInitSrc: message.frameInitSrc, targetDir: targetDir, filename: filename });
     });
+    return true; // mark this as having an async response and keep the channel open
+  } else if (message.cmd === "download-file") {
+    console.log("download-file", message);
+    var timeId = message.settings.timeId;
+    var targetDir = scrapbook.dateToId(new Date(timeId));
+    var sourceUrl = message.url;
+    sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
+    var filename;
+    var isDuplicate;
+
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 2) {
+        if (xhr.status === 200) {
+          // if header Content-Disposition is defined, use it
+          try {
+            var headerContentDisposition = xhr.getResponseHeader("Content-Disposition");
+            var contentDisposition = scrapbook.parseHeaderContentDisposition(headerContentDisposition);
+            filename = contentDisposition.parameters.filename;
+          } catch (ex) {}
+
+          // determine the filename
+          // @TODO: 
+          //   if header Content-Disposition is not defined but Content-Type is defined, 
+          //   make file extension compatible with it.
+          filename = filename || scrapbook.urlToFilename(sourceUrl);
+          filename = scrapbook.validateFilename(filename);
+          [filename, isDuplicate] = capturer.getUniqueFilename(timeId, filename, sourceUrl);
+          if (isDuplicate) {
+            sendResponse({ filename: filename });
+            xhr.abort();
+          }
+        }
+      } else if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          // download 
+          var params = {
+            url: URL.createObjectURL(xhr.response),
+            filename: targetDir + "/" + filename,
+            conflictAction: "uniquify",
+          };
+          chrome.downloads.download(params, function (downloadId) {
+            capturer.downloadIds[downloadId] = true;
+            sendResponse({ filename: filename });
+          });
+        }
+      }
+    };
+    xhr.onerror = xhr.ontimeout = function () {
+      sendResponse({ isError: true });
+    };
+    xhr.responseType = "blob";
+    xhr.open("GET", sourceUrl, true);
+    xhr.send();
+
     return true; // mark this as having an async response and keep the channel open
   }
 });

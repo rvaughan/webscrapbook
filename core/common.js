@@ -18,7 +18,7 @@ scrapbook.options = {
   "capture.saveAsUtf8": true,
   "capture.saveAsciiFilename": false,
   "capture.saveInlineAsHtml": false,
-  "capture.image": "save", // "save", "link", "blank", "remove"
+  "capture.img": "save", // "save", "link", "blank", "remove"
   "capture.audio": "save", // "save", "link", "blank", "remove"
   "capture.vedio": "save", // "save", "link", "blank", "remove"
   "capture.canvas": "save", // "save", "link", "blank", "remove"
@@ -153,6 +153,26 @@ scrapbook.urlToFilename = function (url) {
   return name;
 };
 
+scrapbook.splitUrlByAnchor = function(url) {
+  var pos = url.indexOf("#");
+  if (pos >= 0) {
+    return [url.substring(0, pos), url.substring(pos, url.length)];
+  }
+  return [url, ""];
+},
+
+/**
+ * @return {Array} [filename, extension]
+ * The returned extension does not contain leading "."
+ */
+scrapbook.filenameParts = function (filename) {
+  var pos = filename.lastIndexOf(".");
+  if (pos != -1) {
+    return [filename.substring(0, pos), filename.substring(pos + 1, filename.length)];
+  }
+  return [filename, ""];
+};
+
 /**
  * Returns the ScrapBook ID from a given Date object
  *
@@ -217,6 +237,30 @@ scrapbook.idToDateOld = function(id) {
  * String handling
  *******************************************************************/
 
+/**
+ * Crops the given string
+ *
+ * @param bool byUtf8    true to crop texts according to each byte under UTF-8 encoding
+ *                       false to crop according to each UTF-16 char
+ * @param bool ellipsis  string for ellipsis
+ */
+scrapbook.crop = function (str, maxLength, byUtf8, ellipsis) {
+  if (typeof ellipsis  === "undefined") { ellipsis = "..."; }
+  if (byUtf8) {
+    var bytes = this.unicodeToUtf8(str);
+    if (bytes.length <= maxLength) { return str; }
+    bytes = bytes.substring(0, maxLength - this.unicodeToUtf8(ellipsis).length);
+    while (true) {
+      try {
+        return this.utf8ToUnicode(bytes) + ellipsis;
+      } catch (ex) {}
+      bytes= bytes.substring(0, bytes.length-1);
+    }
+  } else {
+    return (str.length > maxLength) ? str.substr(0, maxLength - ellipsis.length) + ellipsis : str;
+  }
+};
+
 scrapbook.escapeRegExp = function (str) {
   return str.replace(/([\*\+\?\.\^\/\$\\\|\[\]\{\}\(\)])/g, "\\$1");
 };
@@ -224,6 +268,14 @@ scrapbook.escapeRegExp = function (str) {
 scrapbook.stringToDataUri = function (str, mime) {
   mime = mime || "";
   return "data:" + mime + ";base64," + this.unicodeToBase64(str);
+};
+
+scrapbook.unicodeToUtf8 = function (chars) {
+  return unescape(encodeURIComponent(chars));
+};
+
+scrapbook.utf8ToUnicode = function (bytes) {
+  return decodeURIComponent(escape(bytes));
 };
 
 scrapbook.unicodeToBase64 = function (str) {
@@ -238,6 +290,144 @@ scrapbook.intToFixedStr = function (number, width, padder) {
   padder = padder || "0";
   number = number.toString(10);
   return number.length >= width ? number : new Array(width - number.length + 1).join(padder) + number;
+};
+
+
+/********************************************************************
+ * String handling - HTML Header parsing
+ *******************************************************************/
+
+/**
+ * Parse Content-Type string from the HTTP Header
+ *
+ * @return {Array} [{String} contentType, {String} charset]
+ */
+scrapbook.parseHeaderContentType = function (string) {
+  var match = string.match(/^\s*(.*?)(?:\s*;\s*charset\s*=\s*(.*?))$/i);
+  return [match[1], match[2]];
+};
+
+/**
+ * Parse Content-Disposition string from the HTTP Header
+ *
+ * ref: https://github.com/jshttp/content-disposition/blob/master/index.js
+ *
+ * @param  string  string   The string to parse, not including "Content-Disposition: "
+ * @return object  {}
+ *         string    .type        "inline" or "attachment"
+ *         object    .parameters
+ *         string      .filename  The filename to be used on saving
+ */
+scrapbook.parseHeaderContentDisposition = function (string) {
+  var dispositionTypeRegExp = /^([!#$%&'\*\+\-\.0-9A-Z\^_`a-z\|~]+) *(?:$|;)/;
+  var paramRegExp = /; *([!#$%&'\*\+\-\.0-9A-Z\^_`a-z\|~]+) *= *("(?:[ !\x23-\x5b\x5d-\x7e\x80-\xff]|\\[\x20-\x7e])*"|[!#$%&'\*\+\-\.0-9A-Z\^_`a-z\|~]+) */g;
+  var qescRegExp = /\\([\u0000-\u007f])/g;
+  var extValueRegExp = /^([A-Za-z0-9!#$%&+\-^_`{}~]+)'(?:[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}|[A-Za-z]{4,8}|)'((?:%[0-9A-Fa-f]{2}|[A-Za-z0-9!#$&+\-\.^_`|~])+)$/;
+  var hexEscapeReplaceRegExp = /%([0-9A-Fa-f]{2})/g;
+  var nonLatin1RegExp = /[^\x20-\x7e\xa0-\xff]/g;
+
+  if (!string || typeof string !== 'string') {
+    throw new TypeError('argument string is required');
+  }
+
+  var match = dispositionTypeRegExp.exec(string);
+
+  if (!match) {
+    throw new TypeError('invalid type format');
+  }
+
+  // normalize type
+  var index = match[0].length;
+  var type = match[1].toLowerCase();
+
+  var key;
+  var names = [];
+  var params = {};
+  var value;
+
+  // calculate index to start at
+  index = paramRegExp.lastIndex = match[0].substr(-1) === ';' ? index - 1 : index;
+
+  // match parameters
+  while (match = paramRegExp.exec(string)) {
+    if (match.index !== index) {
+      throw new TypeError('invalid parameter format');
+    }
+
+    index += match[0].length;
+    key = match[1].toLowerCase();
+    value = match[2];
+
+    if (names.indexOf(key) !== -1) {
+      throw new TypeError('invalid duplicate parameter');
+    }
+
+    names.push(key);
+
+    if (key.indexOf('*') + 1 === key.length) {
+      // decode extended value
+      key = key.slice(0, -1);
+      value = decodefield(value);
+
+      // overwrite existing value
+      params[key] = value;
+      continue;
+    }
+
+    if (typeof params[key] === 'string') {
+      continue;
+    }
+
+    if (value[0] === '"') {
+      // remove quotes and escapes
+      value = value.substr(1, value.length - 2).replace(qescRegExp, '$1');
+    }
+
+    params[key] = value;
+  }
+
+  if (index !== -1 && index !== string.length) {
+    throw new TypeError('invalid parameter format');
+  }
+
+  return { type: type, parameters: params };
+
+  function decodefield(str) {
+    var match = extValueRegExp.exec(str);
+
+    if (!match) {
+      throw new TypeError('invalid extended field value')
+    }
+
+    var charset = match[1].toLowerCase();
+    var encoded = match[2];
+    var value;
+
+    // to binary string
+    var binary = encoded.replace(hexEscapeReplaceRegExp, pdecode);
+
+    switch (charset) {
+      case 'iso-8859-1':
+        value = getlatin1(binary);
+        break;
+      case 'utf-8':
+        value = binary;
+        break;
+      default:
+        throw new TypeError('unsupported charset in extended field');
+    }
+
+    return value;
+  }
+
+  function getlatin1(val) {
+    // simple Unicode -> ISO-8859-1 transformation
+    return String(val).replace(nonLatin1RegExp, '?');
+  }
+
+  function pdecode(str, hex) {
+    return String.fromCharCode(parseInt(hex, 16));
+  }
 };
 
 
