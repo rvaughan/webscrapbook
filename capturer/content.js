@@ -274,24 +274,26 @@ window.addEventListener("DOMContentLoaded", function (event) {
   initFrame();
 });
 
-window.addEventListener("unload", function (event) {
-  uninitFrame();
+window.addEventListener("load", function (event) {
+  chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    console.debug(message.cmd + " receive", message, sender);
+
+    if (message.cmd === "capture-tab") {
+      if (!frameIsMain) { return; }
+      capture(message.settings, message.options, function (response) {
+        sendResponse(response);
+      });
+      return true; // mark this as having an async response and keep the channel open
+    } else if (message.cmd === "get-frame-content-cs") {
+      if (message.frameInitId !== frameInitId) { return; }
+      captureDocumentOrFile(document, message.settings, message.options, function (response) {
+        sendResponse(response);
+      });
+      return true; // mark this as having an async response and keep the channel open
+    }
+  });
 });
 
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  console.debug(message.cmd + " receive", message, sender);
-
-  if (message.cmd === "capture-tab") {
-    if (!frameIsMain) { return; }
-    capture(message.settings, message.options, function (response) {
-      sendResponse(response);
-    });
-    return true; // mark this as having an async response and keep the channel open
-  } else if (message.cmd === "get-frame-content-cs") {
-    if (message.frameInitId !== frameInitId) { return; }
-    captureDocumentOrFile(document, message.settings, message.options, function (response) {
-      sendResponse(response);
-    });
-    return true; // mark this as having an async response and keep the channel open
-  }
+window.addEventListener("unload", function (event) {
+  uninitFrame();
 });
