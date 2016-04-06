@@ -372,7 +372,7 @@ function captureDocument(doc, settings, options, callback) {
       }
       if (elem.hasAttribute("srcset")) {
         elem.setAttribute("srcset",
-          parseSrcset(elem.getAttribute("srcset"), function (url) {
+          scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
             return rewriteRelativeUrl(url);
           })
         );
@@ -388,7 +388,7 @@ function captureDocument(doc, settings, options, callback) {
     Array.prototype.slice.call(rootNode.querySelectorAll('picture')).forEach(function (elem) {
       Array.prototype.slice.call(elem.querySelectorAll('source[srcset]')).forEach(function (elem) {
         elem.setAttribute("srcset",
-          parseSrcset(elem.getAttribute("srcset"), function (url) {
+          scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
             return rewriteRelativeUrl(url);
           })
         );
@@ -815,17 +815,11 @@ function captureDocument(doc, settings, options, callback) {
     return rewriter.href;
   };
 
-  var parseSrcset = function (srcset, replaceFunc) {
-    return srcset.replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
-      return m1 + replaceFunc(m2) + m3;
-    });
-  };
-
   var downloadSrcset = function (srcset, callback) {
     var srcsetUrls = [], srcsetRewrittenCount = 0;
 
     var onAllDownloaded = function () {
-      var srcsetNew = parseSrcset(srcset, function (url) {
+      var srcsetNew = scrapbook.parseSrcset(srcset, function (url) {
         return srcsetUrls.shift();
       });
       if (callback) {
@@ -833,7 +827,7 @@ function captureDocument(doc, settings, options, callback) {
       }
     };
 
-    parseSrcset(srcset, function (url) {
+    scrapbook.parseSrcset(srcset, function (url) {
       srcsetUrls.push(url);
       return "";
     });

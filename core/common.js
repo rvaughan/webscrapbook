@@ -452,3 +452,12 @@ scrapbook.doctypeToString = function (doctype) {
   ret += ">\n";
   return ret;
 };
+
+/**
+ * @param {Function} replaceFunc = function (url) { return ...; }
+ */
+scrapbook.parseSrcset = function (srcset, replaceFunc) {
+  return srcset.replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
+    return m1 + replaceFunc(m2) + m3;
+  });
+};
