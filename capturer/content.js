@@ -166,16 +166,16 @@ function captureDocument(doc, settings, options, callback) {
     Array.prototype.slice.call(rootNode.querySelectorAll("frame, iframe")).forEach(function (frame) {
       var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
       frame.removeAttribute(origRefKey);
+      frame.setAttribute("src", frame.src);
 
       switch (options["capture.frame"]) {
         case "link":
-          frame.setAttribute("src", frame.src);
+          // do nothing
           return;
         case "blank":
           frame.setAttribute("src", "about:blank");
           return;
         case "comment":
-          frame.setAttribute("src", frame.src);
           frame.parentNode.replaceChild(doc.createComment(frame.outerHTML), frame);
           return;
         case "remove":
@@ -230,15 +230,16 @@ function captureDocument(doc, settings, options, callback) {
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll('img[src], input[type="img"][src]')).forEach(function (elem) {
+      elem.setAttribute("src", elem.src);
+
       switch (options["capture.img"]) {
         case "link":
-          elem.setAttribute("src", elem.src);
+          // do nothing
           return;
         case "blank":
           elem.setAttribute("src", "about:blank");
           return;
         case "comment":
-          elem.setAttribute("src", elem.src);
           elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
           return;
         case "remove":
@@ -266,15 +267,13 @@ function captureDocument(doc, settings, options, callback) {
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll('audio')).forEach(function (elem) {
-      Array.prototype.slice.call(elem.querySelectorAll('track')).forEach(function (elem) {
+      Array.prototype.slice.call(elem.querySelectorAll('source, track')).forEach(function (elem) {
         elem.setAttribute("src", elem.src);
       });
 
       switch (options["capture.audio"]) {
         case "link":
-          Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
-            elem.setAttribute("src", elem.src);
-          });
+          // do nothing
           return;
         case "blank":
           Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
@@ -282,9 +281,6 @@ function captureDocument(doc, settings, options, callback) {
           });
           return;
         case "comment":
-          Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
-            elem.setAttribute("src", elem.src);
-          });
           elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
           return;
         case "remove":
@@ -314,15 +310,13 @@ function captureDocument(doc, settings, options, callback) {
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll('video')).forEach(function (elem) {
-      Array.prototype.slice.call(elem.querySelectorAll('track')).forEach(function (elem) {
+      Array.prototype.slice.call(elem.querySelectorAll('source, track')).forEach(function (elem) {
         elem.setAttribute("src", elem.src);
       });
 
       switch (options["capture.video"]) {
         case "link":
-          Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
-            elem.setAttribute("src", elem.src);
-          });
+          // do nothing
           return;
         case "blank":
           Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
@@ -330,9 +324,6 @@ function captureDocument(doc, settings, options, callback) {
           });
           return;
         case "comment":
-          Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
-            elem.setAttribute("src", elem.src);
-          });
           elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
           return;
         case "remove":
@@ -362,15 +353,16 @@ function captureDocument(doc, settings, options, callback) {
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll('embed')).forEach(function (elem) {
+      elem.setAttribute("src", elem.src);
+
       switch (options["capture.embed"]) {
         case "link":
-          elem.setAttribute("src", elem.src);
+          // do nothing
           return;
         case "blank":
           elem.setAttribute("src", "about:blank");
           return;
         case "comment":
-          elem.setAttribute("src", elem.src);
           elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
           return;
         case "remove":
@@ -398,15 +390,16 @@ function captureDocument(doc, settings, options, callback) {
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll('object')).forEach(function (elem) {
+      elem.setAttribute("data", elem.data);
+
       switch (options["capture.object"]) {
         case "link":
-          elem.setAttribute("data", elem.data);
+          // do nothing
           return;
         case "blank":
           elem.setAttribute("data", "about:blank");
           return;
         case "comment":
-          elem.setAttribute("data", elem.data);
           elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
           return;
         case "remove":
@@ -435,15 +428,16 @@ function captureDocument(doc, settings, options, callback) {
 
     Array.prototype.slice.call(rootNode.querySelectorAll('applet')).forEach(function (elem) {
       var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("archive"));
+      elem.setAttribute("archive", rewriteUrl);
+
       switch (options["capture.applet"]) {
         case "link":
-          elem.setAttribute("archive", rewriteUrl);
+          // do nothing
           return;
         case "blank":
           elem.setAttribute("archive", "about:blank");
           return;
         case "comment":
-          elem.setAttribute("archive", rewriteUrl);
           elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
           return;
         case "remove":
@@ -471,11 +465,13 @@ function captureDocument(doc, settings, options, callback) {
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll('script')).forEach(function (elem) {
+      if (elem.src) {
+        elem.setAttribute("src", elem.src);
+      }
+
       switch (options["capture.script"]) {
         case "link":
-          if (elem.src) {
-            elem.setAttribute("src", elem.src);
-          }
+          // do nothing
           return;
         case "blank":
           if (elem.src) {
@@ -485,9 +481,6 @@ function captureDocument(doc, settings, options, callback) {
           }
           return;
         case "comment":
-          if (elem.src) {
-            elem.setAttribute("src", elem.src);
-          }
           elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
           return;
         case "remove":
