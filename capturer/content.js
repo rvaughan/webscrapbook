@@ -248,6 +248,22 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    Array.prototype.slice.call(rootNode.querySelectorAll([
+      'meta[property="og:image"][content]',
+      'meta[property="og:image:url"][content]',
+      'meta[property="og:image:secure_url"][content]',
+      'meta[property="og:audio"][content]',
+      'meta[property="og:audio:url"][content]',
+      'meta[property="og:audio:secure_url"][content]',
+      'meta[property="og:video"][content]',
+      'meta[property="og:video:url"][content]',
+      'meta[property="og:video:secure_url"][content]',
+      'meta[property="og:url"][content]',
+    ].join(', '))).forEach(function (elem) {
+      var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("content"));
+      elem.setAttribute("content", rewriteUrl);
+    });
+
     Array.prototype.slice.call(rootNode.querySelectorAll('a[href], area[href], link[href]')).forEach(function (elem) {
       elem.setAttribute("href", elem.href);
     });
