@@ -69,7 +69,7 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
 
 chrome.browserAction.onClicked.addListener(function (tab) {
   var tabId = tab.id;
-  var timeId = Date.now();
+  var timeId = scrapbook.dateToId();
   var message = {
     cmd: "capture-tab",
     settings: {
@@ -160,7 +160,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     sendResponse({ documentName: fixedDocumentName });
   } else if (message.cmd === "save-document") {
     var timeId = message.settings.timeId;
-    var targetDir = scrapbook.dateToId(new Date(timeId));
+    var targetDir = timeId;
     var filename = message.data.documentName + "." + ((message.data.mime === "text/html") ? "html" : "xhtml");
     filename = scrapbook.validateFilename(filename);
     filename = capturer.getUniqueFilename(timeId, filename, true)[0];
@@ -177,7 +177,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   } else if (message.cmd === "download-file") {
     console.log("download-file", message);
     var timeId = message.settings.timeId;
-    var targetDir = scrapbook.dateToId(new Date(timeId));
+    var targetDir = timeId;
     var sourceUrl = message.url;
     sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
     var filename;

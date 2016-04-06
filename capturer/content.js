@@ -6,7 +6,7 @@
  *******************************************************************/
 
 // record and use the initial stat, even if it is changed later
-var frameInitId = Date.now().toString();
+var frameInitId = scrapbook.dateToId();
 var frameInitSrc = location.href;
 var frameIsMain = (window === window.top);
 
