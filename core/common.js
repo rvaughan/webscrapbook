@@ -270,6 +270,10 @@ scrapbook.escapeRegExp = function (str) {
   return str.replace(/([\*\+\?\.\^\/\$\\\|\[\]\{\}\(\)])/g, "\\$1");
 };
 
+scrapbook.escapeHtmlComment = function (str) {
+  return " " + str.replace(/--/g, "- - ") + " ";
+};
+
 scrapbook.stringToDataUri = function (str, mime) {
   mime = mime || "";
   return "data:" + mime + ";base64," + this.unicodeToBase64(str);

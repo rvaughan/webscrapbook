@@ -218,7 +218,7 @@ function captureDocument(doc, settings, options, callback) {
           }
           return;
         case "comment":
-          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
           return;
         case "remove":
           elem.parentNode.removeChild(elem);
@@ -250,7 +250,7 @@ function captureDocument(doc, settings, options, callback) {
     Array.prototype.slice.call(rootNode.querySelectorAll('noscript')).forEach(function (elem) {
       switch (options["capture.noscript"]) {
         case "comment":
-          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
           return;
         case "remove":
           elem.parentNode.removeChild(elem);
@@ -310,7 +310,7 @@ function captureDocument(doc, settings, options, callback) {
           frame.setAttribute("src", "about:blank");
           return;
         case "comment":
-          frame.parentNode.replaceChild(doc.createComment(frame.outerHTML), frame);
+          frame.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(frame.outerHTML)), frame);
           return;
         case "remove":
           frame.parentNode.removeChild(frame);
@@ -404,7 +404,7 @@ function captureDocument(doc, settings, options, callback) {
           });
           return;
         case "comment":
-          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
           return;
         case "remove":
           elem.parentNode.removeChild(elem);
@@ -438,7 +438,7 @@ function captureDocument(doc, settings, options, callback) {
           }
           return;
         case "comment":
-          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
           return;
         case "remove":
           elem.parentNode.removeChild(elem);
@@ -484,7 +484,7 @@ function captureDocument(doc, settings, options, callback) {
           elem.setAttribute("src", "about:blank");
           return;
         case "comment":
-          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
           return;
         case "remove":
           elem.parentNode.removeChild(elem);
@@ -526,7 +526,7 @@ function captureDocument(doc, settings, options, callback) {
           });
           return;
         case "comment":
-          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
           return;
         case "remove":
           elem.parentNode.removeChild(elem);
@@ -570,7 +570,7 @@ function captureDocument(doc, settings, options, callback) {
           });
           return;
         case "comment":
-          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
           return;
         case "remove":
           elem.parentNode.removeChild(elem);
@@ -610,7 +610,7 @@ function captureDocument(doc, settings, options, callback) {
           elem.setAttribute("src", "about:blank");
           return;
         case "comment":
-          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
           return;
         case "remove":
           elem.parentNode.removeChild(elem);
@@ -648,7 +648,7 @@ function captureDocument(doc, settings, options, callback) {
           elem.setAttribute("data", "about:blank");
           return;
         case "comment":
-          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
           return;
         case "remove":
           elem.parentNode.removeChild(elem);
@@ -687,7 +687,7 @@ function captureDocument(doc, settings, options, callback) {
           elem.setAttribute("archive", "about:blank");
           return;
         case "comment":
-          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
           return;
         case "remove":
           elem.parentNode.removeChild(elem);
@@ -724,7 +724,7 @@ function captureDocument(doc, settings, options, callback) {
           // do nothing
           break;
         case "comment":
-          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
           return;
         case "remove":
           elem.parentNode.removeChild(elem);
