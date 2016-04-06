@@ -620,6 +620,23 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    Array.prototype.slice.call(rootNode.querySelectorAll('noscript')).forEach(function (elem) {
+      switch (options["capture.script"]) {
+        case "comment":
+          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          return;
+        case "remove":
+          elem.parentNode.removeChild(elem);
+          return;
+        case "save":
+        case "link":
+        case "blank":
+        default:
+          // do nothing
+          break;
+      }
+    });
+
     // must placed after scripts to prevent an overwrite
     Array.prototype.slice.call(rootNode.querySelectorAll('canvas')).forEach(function (elem) {
       var canvasOrig = origRefNodes[elem.getAttribute(origRefKey)];
