@@ -163,6 +163,106 @@ function captureDocument(doc, settings, options, callback) {
       elem.removeAttribute(origRefKey);
     });
 
+    // base
+    Array.prototype.slice.call(rootNode.querySelectorAll('base[href]')).forEach(function (elem) {
+      elem.setAttribute("href", elem.href);
+
+      switch (options["capture.base"]) {
+        case "empty":
+          elem.removeAttribute("href");
+          return;
+        case "save":
+        default:
+          // do nothing
+          break;
+      }
+    });
+
+    // meta
+    Array.prototype.slice.call(rootNode.querySelectorAll([
+      'meta[property="og:image"][content]',
+      'meta[property="og:image:url"][content]',
+      'meta[property="og:image:secure_url"][content]',
+      'meta[property="og:audio"][content]',
+      'meta[property="og:audio:url"][content]',
+      'meta[property="og:audio:secure_url"][content]',
+      'meta[property="og:video"][content]',
+      'meta[property="og:video:url"][content]',
+      'meta[property="og:video:secure_url"][content]',
+      'meta[property="og:url"][content]',
+    ].join(', '))).forEach(function (elem) {
+      var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("content"));
+      elem.setAttribute("content", rewriteUrl);
+    });
+
+    // link and anchor
+    Array.prototype.slice.call(rootNode.querySelectorAll('link[href], a[href], area[href]')).forEach(function (elem) {
+      elem.setAttribute("href", elem.href);
+    });
+
+    // scripts
+    Array.prototype.slice.call(rootNode.querySelectorAll('script')).forEach(function (elem) {
+      if (elem.src) {
+        elem.setAttribute("src", elem.src);
+      }
+
+      switch (options["capture.script"]) {
+        case "link":
+          // do nothing
+          return;
+        case "blank":
+          if (elem.src) {
+            elem.setAttribute("src", "about:blank");
+          } else {
+            elem.textContent = "";
+          }
+          return;
+        case "comment":
+          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          return;
+        case "remove":
+          elem.parentNode.removeChild(elem);
+          return;
+        case "save":
+        default:
+          if (elem.src) {
+            remainingTasks++;
+            var message = {
+              cmd: "download-file",
+              url: elem.src,
+              settings: settings,
+              options: options,
+            };
+
+            console.debug("download-file send", message);
+            chrome.runtime.sendMessage(message, function (response) {
+              console.debug("download-file response", response);
+              elem.src = response.url;
+              remainingTasks--;
+              captureCheckDone();
+            });
+          }
+          break;
+      }
+    });
+
+    // scripts: noscript
+    Array.prototype.slice.call(rootNode.querySelectorAll('noscript')).forEach(function (elem) {
+      switch (options["capture.noscript"]) {
+        case "comment":
+          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          return;
+        case "remove":
+          elem.parentNode.removeChild(elem);
+          return;
+        case "save":
+        default:
+          // do nothing
+          break;
+      }
+    });
+
+    // scripts: script-like attributes
     // remove attributes that acts like a javascript
     switch (options["capture.scriptAttr"]) {
       case "save":
@@ -182,6 +282,20 @@ function captureDocument(doc, settings, options, callback) {
         });
     }
 
+    // scripts: script-like anchors
+    Array.prototype.slice.call(rootNode.querySelectorAll('a[href^="javascript:"], area[href^="javascript:"]')).forEach(function (elem) {
+      switch (options["capture.scriptAnchor"]) {
+        case "save":
+          // do nothing
+          break;
+        case "remove":
+        default:
+          elem.removeAttribute("href");
+          break;
+      }
+    });
+
+    // frames
     Array.prototype.slice.call(rootNode.querySelectorAll("frame[src], iframe[src]")).forEach(function (frame) {
       var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
       frame.removeAttribute(origRefKey);
@@ -249,40 +363,7 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
-    Array.prototype.slice.call(rootNode.querySelectorAll('base[href]')).forEach(function (elem) {
-      elem.setAttribute("href", elem.href);
-
-      switch (options["capture.base"]) {
-        case "empty":
-          elem.removeAttribute("href");
-          return;
-        case "save":
-        default:
-          // do nothing
-          break;
-      }
-    });
-
-    Array.prototype.slice.call(rootNode.querySelectorAll([
-      'meta[property="og:image"][content]',
-      'meta[property="og:image:url"][content]',
-      'meta[property="og:image:secure_url"][content]',
-      'meta[property="og:audio"][content]',
-      'meta[property="og:audio:url"][content]',
-      'meta[property="og:audio:secure_url"][content]',
-      'meta[property="og:video"][content]',
-      'meta[property="og:video:url"][content]',
-      'meta[property="og:video:secure_url"][content]',
-      'meta[property="og:url"][content]',
-    ].join(', '))).forEach(function (elem) {
-      var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("content"));
-      elem.setAttribute("content", rewriteUrl);
-    });
-
-    Array.prototype.slice.call(rootNode.querySelectorAll('a[href], area[href], link[href]')).forEach(function (elem) {
-      elem.setAttribute("href", elem.href);
-    });
-
+    // images: img, pre-set
     // rewrite the url for img and input[type="image"] beforehand so that these nodes in a
     // picture node won't get non-fixed if the picture is commented-out
     Array.prototype.slice.call(rootNode.querySelectorAll('img[src], img[srcset]')).forEach(function (elem) {
@@ -298,10 +379,12 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    // images: input, pre-set
     Array.prototype.slice.call(rootNode.querySelectorAll('input[type="image"][src]')).forEach(function (elem) {
       elem.setAttribute("src", elem.src);
     });
 
+    // images: picture
     Array.prototype.slice.call(rootNode.querySelectorAll('picture')).forEach(function (elem) {
       Array.prototype.slice.call(elem.querySelectorAll('source[srcset]')).forEach(function (elem) {
         elem.setAttribute("srcset",
@@ -340,6 +423,7 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    // images: img, post-set
     Array.prototype.slice.call(rootNode.querySelectorAll('img[src], img[srcset]')).forEach(function (elem) {
       switch (options["capture.image"]) {
         case "link":
@@ -390,6 +474,7 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    // images: input, post-set
     Array.prototype.slice.call(rootNode.querySelectorAll('input[type="image"][src]')).forEach(function (elem) {
       switch (options["capture.image"]) {
         case "link":
@@ -425,41 +510,7 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
-    // handle "background" attribute (HTML5 deprecated)
-    Array.prototype.slice.call(rootNode.querySelectorAll(
-      'body[background], table[background], tr[background], th[background], td[background]'
-    )).forEach(function (elem) {
-      var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("background"));
-      elem.setAttribute("background", rewriteUrl);
-
-      switch (options["capture.imageBackground"]) {
-        case "link":
-          // do nothing
-          return;
-        case "remove":
-          elem.removeAttribute("background");
-          return;
-        case "save":
-        default:
-          remainingTasks++;
-          var message = {
-            cmd: "download-file",
-            url: rewriteUrl,
-            settings: settings,
-            options: options,
-          };
-
-          console.debug("download-file send", message);
-          chrome.runtime.sendMessage(message, function (response) {
-            console.debug("download-file response", response);
-            elem.setAttribute("background", response.url);
-            remainingTasks--;
-            captureCheckDone();
-          });
-          break;
-      }
-    });
-
+    // other media: audio
     Array.prototype.slice.call(rootNode.querySelectorAll('audio')).forEach(function (elem) {
       Array.prototype.slice.call(elem.querySelectorAll('source, track')).forEach(function (elem) {
         elem.setAttribute("src", elem.src);
@@ -503,6 +554,7 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    // other media: video
     Array.prototype.slice.call(rootNode.querySelectorAll('video')).forEach(function (elem) {
       Array.prototype.slice.call(elem.querySelectorAll('source, track')).forEach(function (elem) {
         elem.setAttribute("src", elem.src);
@@ -546,6 +598,7 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    // other media: embed
     Array.prototype.slice.call(rootNode.querySelectorAll('embed')).forEach(function (elem) {
       elem.setAttribute("src", elem.src);
 
@@ -583,6 +636,7 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    // other media: object
     Array.prototype.slice.call(rootNode.querySelectorAll('object')).forEach(function (elem) {
       elem.setAttribute("data", elem.data);
 
@@ -620,6 +674,7 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    // other media: applet
     Array.prototype.slice.call(rootNode.querySelectorAll('applet')).forEach(function (elem) {
       var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("archive"));
       elem.setAttribute("archive", rewriteUrl);
@@ -658,79 +713,8 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
-    Array.prototype.slice.call(rootNode.querySelectorAll('script')).forEach(function (elem) {
-      if (elem.src) {
-        elem.setAttribute("src", elem.src);
-      }
-
-      switch (options["capture.script"]) {
-        case "link":
-          // do nothing
-          return;
-        case "blank":
-          if (elem.src) {
-            elem.setAttribute("src", "about:blank");
-          } else {
-            elem.textContent = "";
-          }
-          return;
-        case "comment":
-          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
-          return;
-        case "remove":
-          elem.parentNode.removeChild(elem);
-          return;
-        case "save":
-        default:
-          if (elem.src) {
-            remainingTasks++;
-            var message = {
-              cmd: "download-file",
-              url: elem.src,
-              settings: settings,
-              options: options,
-            };
-
-            console.debug("download-file send", message);
-            chrome.runtime.sendMessage(message, function (response) {
-              console.debug("download-file response", response);
-              elem.src = response.url;
-              remainingTasks--;
-              captureCheckDone();
-            });
-          }
-          break;
-      }
-    });
-
-    Array.prototype.slice.call(rootNode.querySelectorAll('noscript')).forEach(function (elem) {
-      switch (options["capture.noscript"]) {
-        case "comment":
-          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
-          return;
-        case "remove":
-          elem.parentNode.removeChild(elem);
-          return;
-        case "save":
-        default:
-          // do nothing
-          break;
-      }
-    });
-
-    Array.prototype.slice.call(rootNode.querySelectorAll('a[href^="javascript:"], area[href^="javascript:"]')).forEach(function (elem) {
-      switch (options["capture.scriptAnchor"]) {
-        case "save":
-          // do nothing
-          break;
-        case "remove":
-        default:
-          elem.removeAttribute("href");
-          break;
-      }
-    });
-
-    // must placed after scripts to prevent an overwrite
+    // other media: canvas
+    // must place after scripts are parsed to prevent an overwrite
     Array.prototype.slice.call(rootNode.querySelectorAll('canvas')).forEach(function (elem) {
       var canvasOrig = origRefNodes[elem.getAttribute(origRefKey)];
       elem.removeAttribute(origRefKey);
@@ -750,6 +734,41 @@ function captureDocument(doc, settings, options, callback) {
           var canvasScript = doc.createElement("script");
           canvasScript.textContent = "(" + canvasDataScript.toString().replace(/\s+/g, " ") + ")('" + canvasOrig.toDataURL() + "')";
           elem.parentNode.insertBefore(canvasScript, elem.nextSibling);
+          break;
+      }
+    });
+
+    // deprecated: background attribute (deprecated since HTML5)
+    Array.prototype.slice.call(rootNode.querySelectorAll(
+      'body[background], table[background], tr[background], th[background], td[background]'
+    )).forEach(function (elem) {
+      var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("background"));
+      elem.setAttribute("background", rewriteUrl);
+
+      switch (options["capture.imageBackground"]) {
+        case "link":
+          // do nothing
+          return;
+        case "remove":
+          elem.removeAttribute("background");
+          return;
+        case "save":
+        default:
+          remainingTasks++;
+          var message = {
+            cmd: "download-file",
+            url: rewriteUrl,
+            settings: settings,
+            options: options,
+          };
+
+          console.debug("download-file send", message);
+          chrome.runtime.sendMessage(message, function (response) {
+            console.debug("download-file response", response);
+            elem.setAttribute("background", response.url);
+            remainingTasks--;
+            captureCheckDone();
+          });
           break;
       }
     });
