@@ -163,7 +163,7 @@ function captureDocument(doc, settings, options, callback) {
       elem.removeAttribute(origRefKey);
     });
 
-    Array.prototype.slice.call(rootNode.querySelectorAll("frame, iframe")).forEach(function (frame) {
+    Array.prototype.slice.call(rootNode.querySelectorAll("frame[src], iframe[src]")).forEach(function (frame) {
       var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
       frame.removeAttribute(origRefKey);
       frame.setAttribute("src", frame.src);
