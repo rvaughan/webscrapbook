@@ -283,6 +283,25 @@ function captureDocument(doc, settings, options, callback) {
       elem.setAttribute("href", elem.href);
     });
 
+    // rewrite the url for img and input[type="image"] beforehand so that these nodes in a
+    // picture node won't get non-fixed if the picture is commented-out
+    Array.prototype.slice.call(rootNode.querySelectorAll('img[src], img[srcset]')).forEach(function (elem) {
+      if (elem.hasAttribute("src")) {
+        elem.setAttribute("src", elem.src);
+      }
+      if (elem.hasAttribute("srcset")) {
+        elem.setAttribute("srcset", 
+          elem.getAttribute("srcset").replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
+            return m1 + rewriteRelativeUrl(m2) + m3;
+          })
+        );
+      }
+    });
+
+    Array.prototype.slice.call(rootNode.querySelectorAll('input[type="image"][src]')).forEach(function (elem) {
+      elem.setAttribute("src", elem.src);
+    });
+
     Array.prototype.slice.call(rootNode.querySelectorAll('picture')).forEach(function (elem) {
       Array.prototype.slice.call(elem.querySelectorAll('source[srcset]')).forEach(function (elem) {
         elem.setAttribute("srcset", 
@@ -326,17 +345,6 @@ function captureDocument(doc, settings, options, callback) {
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll('img[src], img[srcset]')).forEach(function (elem) {
-      if (elem.hasAttribute("src")) {
-        elem.setAttribute("src", elem.src);
-      }
-      if (elem.hasAttribute("srcset")) {
-        elem.setAttribute("srcset", 
-          elem.getAttribute("srcset").replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
-            return m1 + rewriteRelativeUrl(m2) + m3;
-          })
-        );
-      }
-
       switch (options["capture.image"]) {
         case "link":
           // do nothing
@@ -391,8 +399,6 @@ function captureDocument(doc, settings, options, callback) {
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll('input[type="image"][src]')).forEach(function (elem) {
-      elem.setAttribute("src", elem.src);
-
       switch (options["capture.image"]) {
         case "link":
           // do nothing
