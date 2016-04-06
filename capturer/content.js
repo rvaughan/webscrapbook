@@ -691,7 +691,7 @@ function captureDocument(doc, settings, options, callback) {
     });
 
     Array.prototype.slice.call(rootNode.querySelectorAll('noscript')).forEach(function (elem) {
-      switch (options["capture.script"]) {
+      switch (options["capture.noscript"]) {
         case "comment":
           elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
           return;
@@ -699,8 +699,6 @@ function captureDocument(doc, settings, options, callback) {
           elem.parentNode.removeChild(elem);
           return;
         case "save":
-        case "link":
-        case "blank":
         default:
           // do nothing
           break;
