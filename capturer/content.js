@@ -258,7 +258,7 @@ function captureDocument(doc, settings, options, callback) {
           console.debug("download-file send", message);
           chrome.runtime.sendMessage(message, function (response) {
             console.debug("download-file response", response);
-            elem.src = response.filename;
+            elem.src = response.url;
             remainingTasks--;
             captureCheckDone();
           });
@@ -300,7 +300,7 @@ function captureDocument(doc, settings, options, callback) {
             console.debug("download-file send", message);
             chrome.runtime.sendMessage(message, function (response) {
               console.debug("download-file response", response);
-              elem.src = response.filename;
+              elem.src = response.url;
               remainingTasks--;
               captureCheckDone();
             });
@@ -343,7 +343,7 @@ function captureDocument(doc, settings, options, callback) {
             console.debug("download-file send", message);
             chrome.runtime.sendMessage(message, function (response) {
               console.debug("download-file response", response);
-              elem.src = response.filename;
+              elem.src = response.url;
               remainingTasks--;
               captureCheckDone();
             });
@@ -381,7 +381,7 @@ function captureDocument(doc, settings, options, callback) {
           console.debug("download-file send", message);
           chrome.runtime.sendMessage(message, function (response) {
             console.debug("download-file response", response);
-            elem.src = response.filename;
+            elem.src = response.url;
             remainingTasks--;
             captureCheckDone();
           });
@@ -418,7 +418,7 @@ function captureDocument(doc, settings, options, callback) {
           console.debug("download-file send", message);
           chrome.runtime.sendMessage(message, function (response) {
             console.debug("download-file response", response);
-            elem.data = response.filename;
+            elem.data = response.url;
             remainingTasks--;
             captureCheckDone();
           });
@@ -456,7 +456,7 @@ function captureDocument(doc, settings, options, callback) {
           console.debug("download-file send", message);
           chrome.runtime.sendMessage(message, function (response) {
             console.debug("download-file response", response);
-            elem.setAttribute("archive", response.filename);
+            elem.setAttribute("archive", response.url);
             remainingTasks--;
             captureCheckDone();
           });
@@ -500,7 +500,7 @@ function captureDocument(doc, settings, options, callback) {
             console.debug("download-file send", message);
             chrome.runtime.sendMessage(message, function (response) {
               console.debug("download-file response", response);
-              elem.src = response.filename;
+              elem.src = response.url;
               remainingTasks--;
               captureCheckDone();
             });

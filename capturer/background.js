@@ -184,6 +184,9 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     var isDuplicate;
 
     var xhr = new XMLHttpRequest();
+    var xhr_shutdown = function () {
+      xhr.onreadystatechange = xhr.onerror = xhr.ontimeout = null;
+    };
     xhr.onreadystatechange = function () {
       if (xhr.readyState === 2) {
         // if header Content-Disposition is defined, use it
@@ -201,24 +204,29 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         filename = scrapbook.validateFilename(filename);
         [filename, isDuplicate] = capturer.getUniqueFilename(timeId, filename, sourceUrl);
         if (isDuplicate) {
-          sendResponse({ filename: filename });
-          xhr.abort();
+          sendResponse({ url: filename, isDuplicate: true });
+          xhr_shutdown();
         }
       } else if (xhr.readyState === 4) {
-        // download 
-        var params = {
-          url: URL.createObjectURL(xhr.response),
-          filename: targetDir + "/" + filename,
-          conflictAction: "uniquify",
-        };
-        chrome.downloads.download(params, function (downloadId) {
-          capturer.downloadIds[downloadId] = true;
-          sendResponse({ filename: filename });
-        });
+        if ((xhr.status == 200 || xhr.status == 0) && xhr.response) {
+          // download 
+          var params = {
+            url: URL.createObjectURL(xhr.response),
+            filename: targetDir + "/" + filename,
+            conflictAction: "uniquify",
+          };
+          chrome.downloads.download(params, function (downloadId) {
+            capturer.downloadIds[downloadId] = true;
+            sendResponse({ url: filename });
+          });
+        } else {
+          xhr.onerror();
+        }
       }
     };
     xhr.onerror = xhr.ontimeout = function () {
-      sendResponse({ isError: true });
+      sendResponse({ url: sourceUrl, isError: true });
+      xhr_shutdown();
     };
     xhr.responseType = "blob";
     xhr.open("GET", sourceUrl, true);
