@@ -261,7 +261,7 @@ function captureDocument(doc, settings, options, callback) {
         );
       });
 
-      switch (options["capture.img"]) {
+      switch (options["capture.image"]) {
         case "link":
           // do nothing
           return;
@@ -306,7 +306,7 @@ function captureDocument(doc, settings, options, callback) {
         );
       }
 
-      switch (options["capture.img"]) {
+      switch (options["capture.image"]) {
         case "link":
           // do nothing
           return;
@@ -362,7 +362,7 @@ function captureDocument(doc, settings, options, callback) {
     Array.prototype.slice.call(rootNode.querySelectorAll('input[type="image"][src]')).forEach(function (elem) {
       elem.setAttribute("src", elem.src);
 
-      switch (options["capture.img"]) {
+      switch (options["capture.image"]) {
         case "link":
           // do nothing
           return;

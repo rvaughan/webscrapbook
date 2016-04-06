@@ -18,7 +18,7 @@ scrapbook.options = {
   "capture.saveAsUtf8": true,
   "capture.saveAsciiFilename": false,
   "capture.saveInlineAsHtml": false,
-  "capture.img": "save", // "save", "link", "blank", "comment", "remove"
+  "capture.image": "save", // "save", "link", "blank", "comment", "remove"
   "capture.audio": "save", // "save", "link", "blank", "comment", "remove"
   "capture.video": "save", // "save", "link", "blank", "comment", "remove"
   "capture.embed": "save", // "save", "link", "blank", "comment", "remove"
