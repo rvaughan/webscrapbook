@@ -33,6 +33,7 @@ scrapbook.options = {
   "capture.noscript": "save", // "save", "comment", "remove"
   "capture.scriptAttr": "remove", // "save", "remove"
   "capture.scriptAnchor": "remove", // "save", "remove"
+  "capture.base": "save", // "save", "empty"
 };
 
 scrapbook.isOptionsSynced = false;

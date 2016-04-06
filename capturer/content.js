@@ -249,6 +249,20 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    Array.prototype.slice.call(rootNode.querySelectorAll('base[href]')).forEach(function (elem) {
+      elem.setAttribute("href", elem.href);
+
+      switch (options["capture.base"]) {
+        case "empty":
+          elem.removeAttribute("href");
+          return;
+        case "save":
+        default:
+          // do nothing
+          break;
+      }
+    });
+
     Array.prototype.slice.call(rootNode.querySelectorAll([
       'meta[property="og:image"][content]',
       'meta[property="og:image:url"][content]',
