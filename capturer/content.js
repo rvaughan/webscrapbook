@@ -229,15 +229,33 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
-    Array.prototype.slice.call(rootNode.querySelectorAll('img[src], input[type="img"][src]')).forEach(function (elem) {
-      elem.setAttribute("src", elem.src);
+    Array.prototype.slice.call(rootNode.querySelectorAll('img[src], img[srcset], input[type="img"][src], input[type="img"][srcset]')).forEach(function (elem) {
+      if (elem.hasAttribute("src")) {
+        elem.setAttribute("src", elem.src);
+      }
+      if (elem.hasAttribute("srcset")) {
+        elem.setAttribute("srcset", 
+          elem.getAttribute("srcset").replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
+            return m1 + rewriteRelativeUrl(m2) + m3;
+          })
+        );
+      }
 
       switch (options["capture.img"]) {
         case "link":
           // do nothing
           return;
         case "blank":
-          elem.setAttribute("src", "about:blank");
+          if (elem.hasAttribute("src")) {
+            elem.setAttribute("src", "about:blank");
+          }
+          if (elem.hasAttribute("srcset")) {
+            elem.setAttribute("srcset", 
+              elem.getAttribute("srcset").replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
+                return m1 + "about:blank" + m3;
+              })
+            );
+          }
           return;
         case "comment":
           elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
@@ -247,21 +265,31 @@ function captureDocument(doc, settings, options, callback) {
           return;
         case "save":
         default:
-          remainingTasks++;
-          var message = {
-            cmd: "download-file",
-            url: elem.src,
-            settings: settings,
-            options: options,
-          };
+          if (elem.hasAttribute("src")) {
+            remainingTasks++;
+            var message = {
+              cmd: "download-file",
+              url: elem.src,
+              settings: settings,
+              options: options,
+            };
 
-          console.debug("download-file send", message);
-          chrome.runtime.sendMessage(message, function (response) {
-            console.debug("download-file response", response);
-            elem.src = response.url;
-            remainingTasks--;
-            captureCheckDone();
-          });
+            console.debug("download-file send", message);
+            chrome.runtime.sendMessage(message, function (response) {
+              console.debug("download-file response", response);
+              elem.src = response.url;
+              remainingTasks--;
+              captureCheckDone();
+            });
+          }
+          if (elem.hasAttribute("srcset")) {
+            remainingTasks++;
+            downloadSrcset(elem.getAttribute("srcset"), function (response) {
+              elem.setAttribute("srcset", response);
+              remainingTasks--;
+              captureCheckDone();
+            });
+          }
           break;
       }
     });
@@ -573,6 +601,42 @@ function captureDocument(doc, settings, options, callback) {
     var rewriter = arguments.callee.rewriter;
     rewriter.setAttribute("href", url);
     return rewriter.href;
+  };
+
+  var downloadSrcset = function (srcset, callback) {
+    var srcsetUrls = [], srcsetRewrittenCount = 0;
+
+    var onAllDownloaded = function () {
+      var srcsetNew = srcset.replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
+        return m1 + srcsetUrls.shift() + m3;
+      });
+      if (callback) {
+        callback(srcsetNew);
+      }
+    };
+
+    srcset.replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
+      srcsetUrls.push(m2);
+      return m;
+    });
+
+    srcsetUrls.forEach(function (elem, index, array) {
+      var message = {
+        cmd: "download-file",
+        url: elem,
+        settings: settings,
+        options: options,
+      };
+
+      console.debug("download-file send", message);
+      chrome.runtime.sendMessage(message, function (response) {
+        console.debug("download-file response", response);
+        array[index] = response.url;
+        if (++srcsetRewrittenCount === srcsetUrls.length) {
+          onAllDownloaded();
+        }
+      });
+    });
   };
 
   var canvasDataScript = function (data) {
