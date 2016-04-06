@@ -396,6 +396,41 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    // handle "background" attribute (HTML5 deprecated)
+    Array.prototype.slice.call(rootNode.querySelectorAll(
+      'body[background], table[background], tr[background], th[background], td[background]'
+    )).forEach(function (elem) {
+      var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("background"));
+      elem.setAttribute("background", rewriteUrl);
+
+      switch (options["capture.imageBackground"]) {
+        case "link":
+          // do nothing
+          return;
+        case "remove":
+          elem.removeAttribute("background");
+          return;
+        case "save":
+        default:
+          remainingTasks++;
+          var message = {
+            cmd: "download-file",
+            url: rewriteUrl,
+            settings: settings,
+            options: options,
+          };
+
+          console.debug("download-file send", message);
+          chrome.runtime.sendMessage(message, function (response) {
+            console.debug("download-file response", response);
+            elem.setAttribute("background", response.url);
+            remainingTasks--;
+            captureCheckDone();
+          });
+          break;
+      }
+    });
+
     Array.prototype.slice.call(rootNode.querySelectorAll('audio')).forEach(function (elem) {
       Array.prototype.slice.call(elem.querySelectorAll('source, track')).forEach(function (elem) {
         elem.setAttribute("src", elem.src);
