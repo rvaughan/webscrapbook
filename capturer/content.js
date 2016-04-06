@@ -290,9 +290,9 @@ function captureDocument(doc, settings, options, callback) {
         elem.setAttribute("src", elem.src);
       }
       if (elem.hasAttribute("srcset")) {
-        elem.setAttribute("srcset", 
-          elem.getAttribute("srcset").replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
-            return m1 + rewriteRelativeUrl(m2) + m3;
+        elem.setAttribute("srcset",
+          parseSrcset(elem.getAttribute("srcset"), function (url) {
+            return rewriteRelativeUrl(url);
           })
         );
       }
@@ -304,9 +304,9 @@ function captureDocument(doc, settings, options, callback) {
 
     Array.prototype.slice.call(rootNode.querySelectorAll('picture')).forEach(function (elem) {
       Array.prototype.slice.call(elem.querySelectorAll('source[srcset]')).forEach(function (elem) {
-        elem.setAttribute("srcset", 
-          elem.getAttribute("srcset").replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
-            return m1 + rewriteRelativeUrl(m2) + m3;
+        elem.setAttribute("srcset",
+          parseSrcset(elem.getAttribute("srcset"), function (url) {
+            return rewriteRelativeUrl(url);
           })
         );
       });
@@ -317,11 +317,7 @@ function captureDocument(doc, settings, options, callback) {
           return;
         case "blank":
           Array.prototype.slice.call(elem.querySelectorAll('source[srcset]')).forEach(function (elem) {
-            elem.setAttribute("srcset", 
-              elem.getAttribute("srcset").replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
-                return m1 + "about:blank" + m3;
-              })
-            );
+            elem.setAttribute("srcset", "about:blank");
           });
           return;
         case "comment":
@@ -354,11 +350,7 @@ function captureDocument(doc, settings, options, callback) {
             elem.setAttribute("src", "about:blank");
           }
           if (elem.hasAttribute("srcset")) {
-            elem.setAttribute("srcset", 
-              elem.getAttribute("srcset").replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
-                return m1 + "about:blank" + m3;
-              })
-            );
+            elem.setAttribute("srcset", "about:blank");
           }
           return;
         case "comment":
@@ -804,21 +796,27 @@ function captureDocument(doc, settings, options, callback) {
     return rewriter.href;
   };
 
+  var parseSrcset = function (srcset, replaceFunc) {
+    return srcset.replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
+      return m1 + replaceFunc(m2) + m3;
+    });
+  };
+
   var downloadSrcset = function (srcset, callback) {
     var srcsetUrls = [], srcsetRewrittenCount = 0;
 
     var onAllDownloaded = function () {
-      var srcsetNew = srcset.replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
-        return m1 + srcsetUrls.shift() + m3;
+      var srcsetNew = parseSrcset(srcset, function (url) {
+        return srcsetUrls.shift();
       });
       if (callback) {
         callback(srcsetNew);
       }
     };
 
-    srcset.replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
-      srcsetUrls.push(m2);
-      return m;
+    parseSrcset(srcset, function (url) {
+      srcsetUrls.push(url);
+      return "";
     });
 
     srcsetUrls.forEach(function (elem, index, array) {
