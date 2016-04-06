@@ -229,6 +229,48 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    Array.prototype.slice.call(rootNode.querySelectorAll('picture')).forEach(function (elem) {
+      Array.prototype.slice.call(elem.querySelectorAll('source[srcset]')).forEach(function (elem) {
+        elem.setAttribute("srcset", 
+          elem.getAttribute("srcset").replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
+            return m1 + rewriteRelativeUrl(m2) + m3;
+          })
+        );
+      });
+
+      switch (options["capture.img"]) {
+        case "link":
+          // do nothing
+          return;
+        case "blank":
+          Array.prototype.slice.call(elem.querySelectorAll('source[srcset]')).forEach(function (elem) {
+            elem.setAttribute("srcset", 
+              elem.getAttribute("srcset").replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
+                return m1 + "about:blank" + m3;
+              })
+            );
+          });
+          return;
+        case "comment":
+          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          return;
+        case "remove":
+          elem.parentNode.removeChild(elem);
+          return;
+        case "save":
+        default:
+          Array.prototype.slice.call(elem.querySelectorAll('source[srcset]')).forEach(function (elem) {
+            remainingTasks++;
+            downloadSrcset(elem.getAttribute("srcset"), function (response) {
+              elem.setAttribute("srcset", response);
+              remainingTasks--;
+              captureCheckDone();
+            });
+          });
+          break;
+      }
+    });
+
     Array.prototype.slice.call(rootNode.querySelectorAll('img[src], img[srcset]')).forEach(function (elem) {
       if (elem.hasAttribute("src")) {
         elem.setAttribute("src", elem.src);
