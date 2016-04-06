@@ -163,6 +163,25 @@ function captureDocument(doc, settings, options, callback) {
       elem.removeAttribute(origRefKey);
     });
 
+    // remove attributes that acts like a javascript
+    switch (options["capture.scriptAttr"]) {
+      case "save":
+        // do nothing
+        break;
+      case "remove":
+      default:
+        Array.prototype.slice.call(rootNode.querySelectorAll("body, body *")).forEach(function (elem) {
+          // general: remove on* attributes
+          Array.prototype.slice.call(elem.attributes).forEach(function (attr) {
+            if (attr.name.toLowerCase().indexOf("on") === 0) {
+              elem.removeAttribute(attr.name);
+            }
+          });
+          // other specific
+          elem.removeAttribute("contextmenu");
+        });
+    }
+
     Array.prototype.slice.call(rootNode.querySelectorAll("frame[src], iframe[src]")).forEach(function (frame) {
       var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
       frame.removeAttribute(origRefKey);
@@ -633,6 +652,18 @@ function captureDocument(doc, settings, options, callback) {
         case "blank":
         default:
           // do nothing
+          break;
+      }
+    });
+
+    Array.prototype.slice.call(rootNode.querySelectorAll('a[href^="javascript:"], area[href^="javascript:"]')).forEach(function (elem) {
+      switch (options["capture.scriptAnchor"]) {
+        case "save":
+          // do nothing
+          break;
+        case "remove":
+        default:
+          elem.removeAttribute("href");
           break;
       }
     });
