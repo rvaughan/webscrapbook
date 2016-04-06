@@ -186,6 +186,7 @@ function captureDocument(doc, settings, options, callback) {
       var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
       frame.removeAttribute(origRefKey);
       frame.setAttribute("src", frame.src);
+      frame.removeAttribute("srcdoc"); // prevent src being overwritten
 
       switch (options["capture.frame"]) {
         case "link":
