@@ -229,6 +229,10 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    Array.prototype.slice.call(rootNode.querySelectorAll('a[href], area[href], link[href]')).forEach(function (elem) {
+      elem.setAttribute("href", elem.href);
+    });
+
     Array.prototype.slice.call(rootNode.querySelectorAll('picture')).forEach(function (elem) {
       Array.prototype.slice.call(elem.querySelectorAll('source[srcset]')).forEach(function (elem) {
         elem.setAttribute("srcset", 
