@@ -229,7 +229,7 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
-    Array.prototype.slice.call(rootNode.querySelectorAll('img[src], img[srcset], input[type="img"][src], input[type="img"][srcset]')).forEach(function (elem) {
+    Array.prototype.slice.call(rootNode.querySelectorAll('img[src], img[srcset]')).forEach(function (elem) {
       if (elem.hasAttribute("src")) {
         elem.setAttribute("src", elem.src);
       }
@@ -290,6 +290,43 @@ function captureDocument(doc, settings, options, callback) {
               captureCheckDone();
             });
           }
+          break;
+      }
+    });
+
+    Array.prototype.slice.call(rootNode.querySelectorAll('input[type="image"][src]')).forEach(function (elem) {
+      elem.setAttribute("src", elem.src);
+
+      switch (options["capture.img"]) {
+        case "link":
+          // do nothing
+          return;
+        case "blank":
+          elem.setAttribute("src", "about:blank");
+          return;
+        case "comment":
+          elem.parentNode.replaceChild(doc.createComment(elem.outerHTML), elem);
+          return;
+        case "remove":
+          elem.parentNode.removeChild(elem);
+          return;
+        case "save":
+        default:
+          remainingTasks++;
+          var message = {
+            cmd: "download-file",
+            url: elem.src,
+            settings: settings,
+            options: options,
+          };
+
+          console.debug("download-file send", message);
+          chrome.runtime.sendMessage(message, function (response) {
+            console.debug("download-file response", response);
+            elem.src = response.url;
+            remainingTasks--;
+            captureCheckDone();
+          });
           break;
       }
     });
