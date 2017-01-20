@@ -271,7 +271,7 @@ scrapbook.escapeRegExp = function (str) {
 };
 
 scrapbook.escapeHtmlComment = function (str) {
-  return " " + str.replace(/--/g, "- - ") + " ";
+  return str.replace(/--/g, "-\u200B-");
 };
 
 scrapbook.stringToDataUri = function (str, mime) {
