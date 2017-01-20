@@ -899,13 +899,13 @@ window.addEventListener("load", function (event) {
       capture(message.settings, message.options, function (response) {
         sendResponse(response);
       });
-      return true; // mark this as having an async response and keep the channel open
+      return true; // async response
     } else if (message.cmd === "get-frame-content-cs") {
       if (message.frameInitId !== frameInitId) { return; }
       captureDocumentOrFile(document, message.settings, message.options, function (response) {
         sendResponse(response);
       });
-      return true; // mark this as having an async response and keep the channel open
+      return true; // async response
     }
   });
 });

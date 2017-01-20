@@ -140,7 +140,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
           console.debug("get-frame-content-cs response", tabId, response);
           sendResponse(response);
         });
-        return true; // mark this as having an async response and keep the channel open
+        return true; // async response
         break;
       }
     } else {
@@ -173,7 +173,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       capturer.downloadIds[downloadId] = true;
       sendResponse({ timeId: timeId, frameInitSrc: message.frameInitSrc, targetDir: targetDir, filename: filename });
     });
-    return true; // mark this as having an async response and keep the channel open
+    return true; // async response
   } else if (message.cmd === "download-file") {
     console.log("download-file", message);
     var timeId = message.settings.timeId;
@@ -232,7 +232,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     xhr.open("GET", sourceUrl, true);
     xhr.send();
 
-    return true; // mark this as having an async response and keep the channel open
+    return true; // async response
   }
 });
 
