@@ -15,10 +15,11 @@
   "minimum_chrome_version": "31",
 
   // for Firefox
+  // chrome.downloads is sufficiently supported since Firefox 48
   "applications": {
     "gecko": {
       "id": "scrapbookx@danny0838.addons.mozilla.org",
-      "strict_min_version": "45.0.0"
+      "strict_min_version": "48"
     }
   },
 
