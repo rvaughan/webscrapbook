@@ -23,7 +23,7 @@ function captureDocumentOrFile(doc, settings, options, callback) {
   console.debug("call:", arguments.callee.name);
   // if not HTML document, capture as file
   if (["text/html", "application/xhtml+xml"].indexOf(doc.contentType) === -1) {
-    if (!scrapbook.getOptions("capture.saveInlineAsHtml")) {
+    if (!scrapbook.getOption("capture.saveInlineAsHtml", false)) {
       captureFile(doc.location.href, settings, options, callback);
       return;
     }
@@ -899,8 +899,49 @@ function captureDocument(doc, settings, options, callback) {
   });
 }
 
-function captureFile(doc, settings, options, callback) {
+function captureFile(url, settings, options, callback) {
   console.debug("call:", arguments.callee.name);
+
+  var saveFile = function (url) {
+    var message = {
+      cmd: "download-file",
+      url: url,
+      settings: settings,
+      options: options,
+    };
+
+    console.debug("download-file send", message);
+    chrome.runtime.sendMessage(message, function (response) {
+      console.debug("download-file response", response);
+      saveIndex(response.url);
+    });
+  };
+
+  var saveIndex = function (url) {
+    var html = '<html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;URL=' + url + '"></head><body></body></html>';
+    var message = {
+      cmd: "save-document",
+      frameInitSrc: frameInitSrc,
+      frameInitId: frameInitId,
+      settings: settings,
+      options: options,
+      data: {
+        documentName: settings.documentName,
+        mime: "text/html",
+        content: html,
+      }
+    };
+
+    console.debug("save-document send", message);
+    chrome.runtime.sendMessage(message, function (response) {
+      console.debug("save-document response", response);
+      if (callback) {
+        callback(response);
+      }
+    });
+  };
+
+  saveFile(url);
 }
 
 window.addEventListener("load", function (event) {
