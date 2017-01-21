@@ -161,6 +161,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   } else if (message.cmd === "save-document") {
     var timeId = message.settings.timeId;
     var targetDir = timeId;
+    var willErase = !message.settings.frameIsMain;
     var filename = message.data.documentName + "." + ((message.data.mime === "text/html") ? "html" : "xhtml");
     filename = scrapbook.validateFilename(filename);
     filename = capturer.getUniqueFilename(timeId, filename, true)[0];
@@ -170,7 +171,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       conflictAction: "uniquify",
     };
     chrome.downloads.download(params, function (downloadId) {
-      capturer.downloadIds[downloadId] = true;
+      if (willErase) { capturer.downloadIds[downloadId] = true; }
       sendResponse({ timeId: timeId, frameInitSrc: message.frameInitSrc, targetDir: targetDir, filename: filename });
     });
     return true; // async response
@@ -237,7 +238,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 });
 
 chrome.downloads.onChanged.addListener(function (downloadDelta) {
-  // erase the download history of those downloaded by the capturer
+  // erase the download history of additional downloads (those recorded in capturer.downloadIds)
   if (downloadDelta.state && downloadDelta.state.current === "complete") {
     var id = downloadDelta.id;
     if (capturer.downloadIds[id]) {
