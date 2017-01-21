@@ -311,7 +311,11 @@ function captureDocument(doc, settings, options, callback) {
       }
 
       var captureFrameCallback = function (result) {
-        frame.src = result.filename;
+        if (result.filename) {
+          frame.src = result.filename;
+        } else {
+          frame.removeAttribute("src");
+        }
         console.debug("capture frame", result);
         remainingTasks--;
         captureCheckDone();
@@ -343,11 +347,14 @@ function captureDocument(doc, settings, options, callback) {
         console.debug("get-frame-content send", message);
         chrome.runtime.sendMessage(message, function (response) {
           console.debug("get-frame-content response", response);
-          if (!response.isError) {
+          if (response && !response.isError) {
             captureFrameCallback(response);
           } else {
-            var result = { timeId: timeId, frameInitSrc: frameInitSrc, filename: "data:," };
-            captureFrameCallback(result);
+            captureFrameCallback({
+              timeId: timeId,
+              frameInitSrc: frameInitSrc,
+              filename: message.frameInitSrc
+            });
           }
         });
       }
