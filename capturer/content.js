@@ -168,6 +168,26 @@ function captureDocument(doc, settings, options, callback) {
       }
     });
 
+    // force UTF-8
+    var hasmeta = false;
+    Array.prototype.slice.call(rootNode.querySelectorAll('meta')).forEach(function (meta) {
+      if (meta.hasAttribute("http-equiv") && meta.hasAttribute("content") &&
+        meta.getAttribute("http-equiv").toLowerCase() == "content-type" && 
+        meta.getAttribute("content").match(/^[^;]*;\s*charset=(.*)$/i) ) {
+        hasmeta = true;
+        meta.setAttribute("content", "text/html; charset=UTF-8");
+      } else if ( meta.hasAttribute("charset") ) {
+        hasmeta = true;
+        meta.setAttribute("charset", "UTF-8");
+      }
+    });
+    if (!hasmeta) {
+      var metaNode = doc.createElement("meta");
+      metaNode.setAttribute("charset", "UTF-8");
+      headNode.insertBefore(metaNode, headNode.firstChild);
+      headNode.insertBefore(doc.createTextNode("\n"), headNode.firstChild);
+    }
+
     // meta
     Array.prototype.slice.call(rootNode.querySelectorAll([
       'meta[property="og:image"][content]',
