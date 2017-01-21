@@ -154,7 +154,31 @@ function captureDocument(doc, settings, options, callback) {
       if (!headNode) {
         headNode = doc.createElement("head");
         rootNode.insertBefore(headNode, rootNode.firstChild);
-        rootNode.insertBefore(doc.createTextNode("\n"), headNode.nextSibling);
+      }
+    }
+
+    // add linefeeds to head and body to improve layout
+    var headNodeBefore = headNode.previousSibling;
+    if (!headNodeBefore || headNodeBefore.nodeType != 3) {
+      rootNode.insertBefore(doc.createTextNode("\n"), headNode);
+    }
+    var headNodeStart = headNode.firstChild;
+    if (!headNodeStart || headNodeStart.nodeType != 3) {
+      headNode.insertBefore(doc.createTextNode("\n"), headNodeStart);
+    }
+    var headNodeEnd = headNode.lastChild;
+    if (!headNodeEnd || headNodeEnd.nodeType != 3) {
+      headNode.appendChild(doc.createTextNode("\n"));
+    }
+    var headNodeAfter = headNode.nextSibling;
+    if (!headNodeAfter || headNodeAfter.nodeType != 3) {
+      rootNode.insertBefore(doc.createTextNode("\n"), headNodeAfter);
+    }
+    var bodyNode = rootNode.querySelector("body");
+    if (bodyNode) {
+      var bodyNodeAfter = bodyNode.nextSibling;
+      if (!bodyNodeAfter) {
+        rootNode.insertBefore(doc.createTextNode("\n"), bodyNodeAfter);
       }
     }
 
