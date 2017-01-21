@@ -80,7 +80,7 @@ function captureDocument(doc, settings, options, callback) {
 
     // construct the node list
     var selection = doc.getSelection();
-    if (selection.isCollapsed) { selection = null; }
+    if (selection && selection.isCollapsed) { selection = null; }
     if (scrapbook.getOption("capture.saveSelectionOnly") && selection) {
       var selNodeTree = []; // it's not enough to preserve order of sparsely selected table cells
       for (var iRange = 0, iRangeMax = selection.rangeCount; iRange < iRangeMax; ++iRange) {
