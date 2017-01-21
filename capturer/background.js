@@ -160,7 +160,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     sendResponse({ documentName: fixedDocumentName });
   } else if (message.cmd === "save-document") {
     var timeId = message.settings.timeId;
-    var targetDir = timeId;
+    var targetDir = scrapbook.options.dataFolder + "/" + timeId;
     var willErase = !message.settings.frameIsMain;
     var filename = message.data.documentName + "." + ((message.data.mime === "text/html") ? "html" : "xhtml");
     filename = scrapbook.validateFilename(filename);
@@ -178,7 +178,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   } else if (message.cmd === "download-file") {
     console.log("download-file", message);
     var timeId = message.settings.timeId;
-    var targetDir = timeId;
+    var targetDir = scrapbook.options.dataFolder + "/" + timeId;
     var sourceUrl = message.url;
     sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
     var filename;
