@@ -162,7 +162,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     var timeId = message.settings.timeId;
     var targetDir = scrapbook.options.dataFolder + "/" + timeId;
     var willErase = !message.settings.frameIsMain;
-    var filename = message.data.documentName + "." + ((message.data.mime === "text/html") ? "html" : "xhtml");
+    var filename = message.data.documentName + "." + ((message.data.mime === "application/xhtml+xml") ? "xhtml" : "html");
     filename = scrapbook.validateFilename(filename);
     filename = capturer.getUniqueFilename(timeId, filename, true)[0];
     var params = {
