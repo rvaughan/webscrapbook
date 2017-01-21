@@ -96,57 +96,25 @@ chrome.browserAction.onClicked.addListener(function (tab) {
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   console.debug(message.cmd + " receive", sender.tab.id, message);
 
-  if (message.cmd === "init-content-script") {
-    var tabId = sender.tab.id;
-    var frameInitId = message.frameInitId;
-    var frameInitSrc = message.frameInitSrc;
-    var frameIsMain = message.frameIsMain;
-
-    capturer.contentFrames[tabId] = capturer.contentFrames[tabId] || {};
-    capturer.contentFrames[tabId][frameInitSrc] = capturer.contentFrames[tabId][frameInitSrc] || {};
-    capturer.contentFrames[tabId][frameInitSrc][frameInitId] = true;
-    // console.debug(capturer.contentFrames);
-  } else if (message.cmd === "uninit-content-script") {
-    var tabId = sender.tab.id;
-    var frameInitId = message.frameInitId;
-    var frameInitSrc = message.frameInitSrc;
-    var frameIsMain = message.frameIsMain;
-
-    if (capturer.contentFrames[tabId]) {
-      if (frameIsMain) {
-        delete(capturer.contentFrames[tabId]);
-      } else {
-        delete(capturer.contentFrames[tabId][frameInitSrc][frameInitId]);
-      }
-    }
-    // console.debug(capturer.contentFrames);
-  } else if (message.cmd === "get-frame-content") {
+  if (message.cmd === "get-frame-content") {
     var tabId = sender.tab.id;
     var settings = message.settings;
     var options = message.options;
     var frameInitSrc = message.frameInitSrc;
-    if (capturer.contentFrames[tabId][frameInitSrc]) {
-      for (var frameInitId in capturer.contentFrames[tabId][frameInitSrc]) {
-        var message = {
-          cmd: "get-frame-content-cs",
-          frameInitSrc: frameInitSrc,
-          frameInitId: frameInitId,
-          settings: settings,
-          options: options,
-        };
 
-        console.debug("get-frame-content-cs send", tabId, message);
-        chrome.tabs.sendMessage(tabId, message, null, function (response) {
-          console.debug("get-frame-content-cs response", tabId, response);
-          sendResponse(response);
-        });
-        return true; // async response
-        break;
-      }
-    } else {
-      console.error("content script of `" + frameInitSrc + "' is not initialized yet.");
-      sendResponse({ isError: true });
-    }
+    var message = {
+      cmd: "get-frame-content-cs",
+      frameInitSrc: frameInitSrc,
+      settings: settings,
+      options: options,
+    };
+
+    console.debug("get-frame-content-cs send", tabId, message);
+    chrome.tabs.sendMessage(tabId, message, null, function (response) {
+      console.debug("get-frame-content-cs response", tabId, response);
+      sendResponse(response);
+    });
+    return true; // async response
   } else if (message.cmd === "register-document") {
     var timeId = message.settings.timeId;
     var documentName = message.settings.documentName;

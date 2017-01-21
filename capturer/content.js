@@ -10,40 +10,6 @@ var frameInitId = scrapbook.dateToId();
 var frameInitSrc = location.href;
 var frameIsMain = (window === window.top);
 
-function initFrame(callback) {
-  var message = {
-    cmd: "init-content-script",
-    frameInitId: frameInitId,
-    frameInitSrc: frameInitSrc,
-    frameIsMain: frameIsMain,
-  };
-
-  console.debug("init-content-script send", message);
-  chrome.runtime.sendMessage(message, function (response) {
-    console.debug("init-content-script response", response);
-    if (callback) {
-      callback();
-    }
-  });
-}
-
-function uninitFrame(callback) {
-  var message = {
-    cmd: "uninit-content-script",
-    frameInitId: frameInitId,
-    frameInitSrc: frameInitSrc,
-    frameIsMain: frameIsMain,
-  };
-
-  console.debug("uninit-content-script send", message);
-  chrome.runtime.sendMessage(message, function (response) {
-    console.debug("uninit-content-script response", response);
-    if (callback) {
-      callback();
-    }
-  });
-}
-
 function capture(settings, options, callback) {
   switch (settings.captureType) {
     case "tab":
@@ -910,10 +876,6 @@ function captureFile(doc, settings, options, callback) {
   console.debug("call:", arguments.callee.name);
 }
 
-window.addEventListener("DOMContentLoaded", function (event) {
-  initFrame();
-});
-
 window.addEventListener("load", function (event) {
   chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     console.debug(message.cmd + " receive", message, sender);
@@ -925,15 +887,14 @@ window.addEventListener("load", function (event) {
       });
       return true; // async response
     } else if (message.cmd === "get-frame-content-cs") {
-      if (message.frameInitId !== frameInitId) { return; }
+      // @TODO:
+      // if the real location of the frame changes, we cannot get the
+      // content since it no more match the src attr of the frame tag
+      if (message.frameInitSrc !== frameInitSrc) { return; }
       captureDocumentOrFile(document, message.settings, message.options, function (response) {
         sendResponse(response);
       });
       return true; // async response
     }
   });
-});
-
-window.addEventListener("unload", function (event) {
-  uninitFrame();
 });
