@@ -152,6 +152,26 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     var filename;
     var isDuplicate;
 
+    if (sourceUrl.indexOf("file:") == 0) {
+      filename = scrapbook.urlToFilename(sourceUrl);
+      filename = scrapbook.validateFilename(filename);
+      [filename, isDuplicate] = capturer.getUniqueFilename(timeId, filename, sourceUrl);
+      if (isDuplicate) {
+        sendResponse({ url: filename, isDuplicate: true });
+        return;
+      }
+      var params = {
+        url: sourceUrl,
+        filename: targetDir + "/" + filename,
+        conflictAction: "uniquify",
+      };
+      chrome.downloads.download(params, function (downloadId) {
+        capturer.downloadIds[downloadId] = true;
+        sendResponse({ url: filename });
+      });
+      return true; // async response
+    }
+    
     var xhr = new XMLHttpRequest();
     var xhr_shutdown = function () {
       xhr.onreadystatechange = xhr.onerror = xhr.ontimeout = null;
