@@ -85,7 +85,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
   chrome.tabs.sendMessage(tabId, message, null, function (response) {
     console.debug("capture-tab response", tabId, response);
     if (!response) {
-      alert(scrapbook.lang("ErrorContentScriptNotReady"));
+      console.error(scrapbook.lang("ErrorContentScriptNotReady"));
       return;
     }
     delete(capturer.usedDocumentNames[timeId]);
