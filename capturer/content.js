@@ -20,6 +20,7 @@ function capture(settings, options, callback) {
 
 function captureDocumentOrFile(doc, settings, options, callback) {
   console.debug("call:", arguments.callee.name);
+
   // if not HTML document, capture as file
   if (["text/html", "application/xhtml+xml"].indexOf(doc.contentType) === -1) {
     if (!scrapbook.getOption("capture.saveInlineAsHtml", false)) {

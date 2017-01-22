@@ -138,7 +138,10 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       filename: targetDir + "/" + filename,
       conflictAction: "uniquify",
     };
+
+    console.debug("download start", params);
     chrome.downloads.download(params, function (downloadId) {
+      console.debug("download response", downloadId);
       capturer.downloadUrls[downloadId] = message.frameUrl;
       if (willErase) { capturer.downloadEraseIds[downloadId] = true; }
       sendResponse({ timeId: timeId, frameUrl: message.frameUrl, targetDir: targetDir, filename: filename });
@@ -236,6 +239,8 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 });
 
 chrome.downloads.onChanged.addListener(function (downloadDelta) {
+  console.debug("downloads.onChanged", downloadDelta);
+
   if (downloadDelta.state && downloadDelta.state.current === "complete") {
     // erase the download history of additional downloads (those recorded in capturer.downloadEraseIds)
     var id = downloadDelta.id;
