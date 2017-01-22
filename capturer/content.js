@@ -6,7 +6,6 @@
  *******************************************************************/
 
 // record and use the initial stat, even if it is changed later
-var frameInitId = scrapbook.dateToId();
 var frameInitSrc = location.href;
 var frameIsMain = (window === window.top);
 
@@ -804,7 +803,6 @@ function captureDocument(doc, settings, options, callback) {
     var message = {
       cmd: "save-document",
       frameInitSrc: frameInitSrc,
-      frameInitId: frameInitId,
       settings: settings,
       options: options,
       data: {
@@ -922,7 +920,6 @@ function captureFile(url, settings, options, callback) {
     var message = {
       cmd: "save-document",
       frameInitSrc: frameInitSrc,
-      frameInitId: frameInitId,
       settings: settings,
       options: options,
       data: {
