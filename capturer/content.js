@@ -912,7 +912,17 @@ function captureFile(url, settings, options, callback) {
     console.debug("download-file send", message);
     chrome.runtime.sendMessage(message, function (response) {
       console.debug("download-file response", response);
-      saveIndex(response.url);
+      if (frameIsMain) {
+        // for the main frame, create a index.html that redirects to the file
+        saveIndex(response.url);
+      } else {
+        if (callback) {
+          callback({
+            frameUrl: url,
+            filename: response.url
+          });
+        }
+      }
     });
   };
 
