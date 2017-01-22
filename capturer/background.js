@@ -50,17 +50,17 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
   newFilename = scrapbook.validateFilename(newFilename);
   var [newFilenameBase, newFilenameExt] = scrapbook.filenameParts(newFilename);
   newFilenameBase = scrapbook.crop(scrapbook.crop(newFilenameBase, 240, true), 128);
-  newFilenameExt = newFilenameExt || "dat";
+  newFilenameExt = newFilenameExt ? "." + newFilenameExt : "";
   tokenSrc = (typeof src === "string") ? scrapbook.splitUrlByAnchor(src)[0] : src;
 
   var seq = 0;
-  newFilename = newFilenameBase + "." + newFilenameExt;
+  newFilename = newFilenameBase + newFilenameExt;
   var newFilenameCI = newFilename.toLowerCase();
   while (capturer.fileToUrl[timeId][newFilenameCI] !== undefined) {
     if (capturer.fileToUrl[timeId][newFilenameCI] === tokenSrc) {
       return [newFilename, true];
     }
-    newFilename = newFilenameBase + "-" + (++seq) + "." + newFilenameExt;
+    newFilename = newFilenameBase + "-" + (++seq) + newFilenameExt;
     newFilenameCI = newFilename.toLowerCase(); 
   }
   capturer.fileToUrl[timeId][newFilenameCI] = tokenSrc;
