@@ -247,6 +247,11 @@ chrome.downloads.onChanged.addListener(function (downloadDelta) {
     var id = downloadDelta.id;
     chrome.downloads.search({ id: id }, function (results) {
       console.warn(scrapbook.lang("ErrorFileDownloadError", [capturer.downloadUrls[id], results[0].error]));
+      if (capturer.downloadEraseIds[id]) {
+        delete(capturer.downloadUrls[id]);
+        delete(capturer.downloadEraseIds[id]);
+        chrome.downloads.erase({ id: id }, function (erasedIds) {});
+      }
     });
   }
 });
