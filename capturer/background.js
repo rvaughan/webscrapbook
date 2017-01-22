@@ -9,11 +9,6 @@
 var capturer = {};
 
 /**
- * { tabId: { frameInitSrc: { frameInitId: true } } } 
- */
-capturer.contentFrames = {};
-
-/**
  * { timeId: { documentName: count } } 
  */
 capturer.usedDocumentNames = {};
