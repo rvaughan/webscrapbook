@@ -208,7 +208,13 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         }
       }
     };
-    xhr.onerror = xhr.ontimeout = function () {
+    xhr.ontimeout = function () {
+      console.warn(scrapbook.lang("ErrorFileDownloadTimeout", sourceUrl));
+      sendResponse({ url: sourceUrl, isError: true });
+      xhr_shutdown();
+    };
+    xhr.onerror = function () {
+      console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, [xhr.status, xhr.statusText].join(" ")]));
       sendResponse({ url: sourceUrl, isError: true });
       xhr_shutdown();
     };
@@ -221,12 +227,17 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 });
 
 chrome.downloads.onChanged.addListener(function (downloadDelta) {
-  // erase the download history of additional downloads (those recorded in capturer.downloadEraseIds)
   if (downloadDelta.state && downloadDelta.state.current === "complete") {
+    // erase the download history of additional downloads (those recorded in capturer.downloadEraseIds)
     var id = downloadDelta.id;
     if (capturer.downloadEraseIds[id]) {
       delete(capturer.downloadEraseIds[id]);
       chrome.downloads.erase({ id: id }, function (erasedIds) {});
     }
+  } else if (downloadDelta.error) {
+    var id = downloadDelta.id;
+    chrome.downloads.search({ id: id }, function (results) {
+      console.warn(scrapbook.lang("ErrorFileDownloadError", [results[0].url, results[0].error]));
+    });
   }
 });

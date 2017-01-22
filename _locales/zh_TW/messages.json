@@ -6,6 +6,25 @@
   "ErrorContentScriptNotReady": {
     "message": "內容處理腳本未就緒，請重新整理本頁面再試一次。"
   },
+  "ErrorFileDownloadError": {
+    "message": "下載檔案錯誤 ($REASON$): $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "reason": {
+        "content": "$2"
+      }
+    }
+  },
+  "ErrorFileDownloadTimeout": {
+    "message": "下載檔案逾時: $URL$",
+    "placeholders": {
+      "url": {
+        "content" : "$1"
+      }
+    }
+  },
   "ExtensionDescription": {
     "description": "Description of the extension as it's visible to the outside world",
     "message": "擷取網頁內容，提供多種客製化設定。"

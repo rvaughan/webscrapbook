@@ -6,6 +6,25 @@
   "ErrorContentScriptNotReady": {
     "message": "The content script is not ready. Refresh this page and try again."
   },
+  "ErrorFileDownloadError": {
+    "message": "Error when downloading file ($REASON$): $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "reason": {
+        "content": "$2"
+      }
+    }
+  },
+  "ErrorFileDownloadTimeout": {
+    "message": "Timeout when downloading file: $URL$",
+    "placeholders": {
+      "url": {
+        "content" : "$1"
+      }
+    }
+  },
   "ExtensionDescription": {
     "description": "Description of the extension as it's visible to the outside world",
     "message": "Captures the web page with highly customizable configurations."
