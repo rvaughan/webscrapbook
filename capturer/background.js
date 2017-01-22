@@ -261,3 +261,5 @@ chrome.downloads.onChanged.addListener(function (downloadDelta) {
     });
   }
 });
+
+// console.debug("loading background.js");

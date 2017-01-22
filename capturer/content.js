@@ -952,25 +952,28 @@ function captureFile(url, settings, options, callback) {
   saveFile(url);
 }
 
-window.addEventListener("load", function (event) {
-  chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-    console.debug(message.cmd + " receive", message, sender);
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+  console.debug(message.cmd + " receive", message, sender);
 
-    if (message.cmd === "capture-tab") {
-      if (!frameIsMain) { return; }
-      capture(message.settings, message.options, function (response) {
-        sendResponse(response);
-      });
-      return true; // async response
-    } else if (message.cmd === "get-frame-content-cs") {
-      // @TODO:
-      // if the real location of the frame changes, we cannot get the
-      // content since it no more match the src attr of the frame tag
-      if (message.frameUrl !== frameUrl) { return; }
-      captureDocumentOrFile(document, message.settings, message.options, function (response) {
-        sendResponse(response);
-      });
-      return true; // async response
+  if (message.cmd === "capture-tab") {
+    if (!frameIsMain) { return; }
+    if (document.readyState === "loading") {
+      return false;
     }
-  });
+    capture(message.settings, message.options, function (response) {
+      sendResponse(response);
+    });
+    return true; // async response
+  } else if (message.cmd === "get-frame-content-cs") {
+    // @TODO:
+    // if the real location of the frame changes, we cannot get the
+    // content since it no more match the src attr of the frame tag
+    if (message.frameUrl !== frameUrl) { return; }
+    captureDocumentOrFile(document, message.settings, message.options, function (response) {
+      sendResponse(response);
+    });
+    return true; // async response
+  }
 });
+
+// console.debug("loading content.js", frameUrl);
