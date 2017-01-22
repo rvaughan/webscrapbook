@@ -19,6 +19,11 @@ capturer.usedDocumentNames = {};
 capturer.fileToUrl = {};
 
 /**
+ * { downloadId: url } 
+ */
+capturer.downloadUrls = {};
+
+/**
  * { downloadId: true } 
  */
 capturer.downloadEraseIds = {};
@@ -134,6 +139,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       conflictAction: "uniquify",
     };
     chrome.downloads.download(params, function (downloadId) {
+      capturer.downloadUrls[downloadId] = message.frameUrl;
       if (willErase) { capturer.downloadEraseIds[downloadId] = true; }
       sendResponse({ timeId: timeId, frameUrl: message.frameUrl, targetDir: targetDir, filename: filename });
     });
@@ -161,6 +167,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         conflictAction: "uniquify",
       };
       chrome.downloads.download(params, function (downloadId) {
+        capturer.downloadUrls[downloadId] = sourceUrl;
         capturer.downloadEraseIds[downloadId] = true;
         sendResponse({ url: filename });
       });
@@ -200,6 +207,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
             conflictAction: "uniquify",
           };
           chrome.downloads.download(params, function (downloadId) {
+            capturer.downloadUrls[downloadId] = sourceUrl;
             capturer.downloadEraseIds[downloadId] = true;
             sendResponse({ url: filename });
           });
@@ -231,13 +239,14 @@ chrome.downloads.onChanged.addListener(function (downloadDelta) {
     // erase the download history of additional downloads (those recorded in capturer.downloadEraseIds)
     var id = downloadDelta.id;
     if (capturer.downloadEraseIds[id]) {
+      delete(capturer.downloadUrls[id]);
       delete(capturer.downloadEraseIds[id]);
       chrome.downloads.erase({ id: id }, function (erasedIds) {});
     }
   } else if (downloadDelta.error) {
     var id = downloadDelta.id;
     chrome.downloads.search({ id: id }, function (results) {
-      console.warn(scrapbook.lang("ErrorFileDownloadError", [results[0].url, results[0].error]));
+      console.warn(scrapbook.lang("ErrorFileDownloadError", [capturer.downloadUrls[id], results[0].error]));
     });
   }
 });
