@@ -47,7 +47,7 @@
   },
   "ExtensionName": {
     "description": "Name of the extension as it's visible to the outside world",
-    "message": "ScrapBook X Web Capturer"
+    "message": "Web ScrapBook"
   },
   "OptionPageTitle": {
     "message": "Options"

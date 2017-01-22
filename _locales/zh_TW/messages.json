@@ -47,7 +47,7 @@
   },
   "ExtensionName": {
     "description": "Name of the extension as it's visible to the outside world",
-    "message": "ScrapBook X 網頁擷取器"
+    "message": "Web ScrapBook"
   },
   "OptionPageTitle": {
     "message": "選項設定"
