@@ -84,7 +84,11 @@ chrome.browserAction.onClicked.addListener(function (tab) {
   console.debug("capture-tab send", tabId, message);
   chrome.tabs.sendMessage(tabId, message, null, function (response) {
     console.debug("capture-tab response", tabId, response);
-    if (!response || response.error) {
+    if (!response) {
+      alert(scrapbook.lang("ErrorCapture", [scrapbook.lang("ErrorContentScriptNotReady")]));
+      return;
+    }
+    if (response.error) {
       console.error(scrapbook.lang("ErrorCapture", ["tab " + tabId]));
       return;
     }

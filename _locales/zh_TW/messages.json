@@ -11,6 +11,9 @@
       }
     }
   },
+  "ErrorContentScriptNotReady": {
+    "message": "內容處理腳本未就緒，請重新整理本頁面再試一次。"
+  },
   "ErrorDocumentNotReady": {
     "message": "頁面未載入: $URL$",
     "placeholders": {
