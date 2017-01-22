@@ -3,8 +3,21 @@
     "description": "Title for the browser action that's visible to the user of extension",
     "message": "Capture the web page with ScrapBook X"
   },
-  "ErrorContentScriptNotReady": {
-    "message": "The content script is not ready. Refresh this page and try again."
+  "ErrorCapture": {
+    "message": "Capture failed: $URL$",
+    "placeholders": {
+      "url": {
+        "content" : "$1"
+      }
+    }
+  },
+  "ErrorDocumentNotReady": {
+    "message": "Page not load: $URL$",
+    "placeholders": {
+      "url": {
+        "content" : "$1"
+      }
+    }
   },
   "ErrorFileDownloadError": {
     "message": "Error when downloading file ($REASON$): $URL$",

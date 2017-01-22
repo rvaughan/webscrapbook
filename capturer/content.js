@@ -21,11 +21,19 @@ function capture(settings, options, callback) {
 function captureDocumentOrFile(doc, settings, options, callback) {
   console.debug("call:", arguments.callee.name);
 
+  if (doc.readyState === "loading") {
+    console.error(scrapbook.lang("ErrorDocumentNotReady", [frameUrl]));
+    if (callback) {
+      callback({ error: "document not load" });
+    }
+    return false;
+  }
+
   // if not HTML document, capture as file
   if (["text/html", "application/xhtml+xml"].indexOf(doc.contentType) === -1) {
     if (!scrapbook.getOption("capture.saveInlineAsHtml", false)) {
       captureFile(doc.location.href, settings, options, callback);
-      return;
+      return false;
     }
   }
   captureDocument(doc, settings, options, callback);
@@ -33,6 +41,14 @@ function captureDocumentOrFile(doc, settings, options, callback) {
 
 function captureDocument(doc, settings, options, callback) {
   console.debug("call:", arguments.callee.name);
+
+  if (doc.readyState === "loading") {
+    console.error(scrapbook.lang("ErrorDocumentNotReady", [frameUrl]));
+    if (callback) {
+      callback({ error: "document not load" });
+    }
+    return false;
+  }
 
   var captureMain = function () {
     // give certain nodes an unique id for later refrence,
@@ -353,7 +369,13 @@ function captureDocument(doc, settings, options, callback) {
       if (frameDoc) {
         remainingTasks++;
         captureDocumentOrFile(frameDoc, frameSettings, options, function (result) {
-          captureFrameCallback(result);
+          if (result && !result.error) {
+            captureFrameCallback(result);
+          } else {
+            captureFrameCallback({
+              filename: frame.src
+            });
+          }
         });
       } else {
         remainingTasks++;
@@ -957,9 +979,6 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
   if (message.cmd === "capture-tab") {
     if (!frameIsMain) { return; }
-    if (document.readyState === "loading") {
-      return false;
-    }
     capture(message.settings, message.options, function (response) {
       sendResponse(response);
     });
