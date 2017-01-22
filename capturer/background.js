@@ -21,7 +21,7 @@ capturer.fileToUrl = {};
 /**
  * { downloadId: true } 
  */
-capturer.downloadIds = {};
+capturer.downloadEraseIds = {};
 
 /**
  * Prevent filename conflictAction. Appends a number if the given filename is used.
@@ -134,7 +134,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       conflictAction: "uniquify",
     };
     chrome.downloads.download(params, function (downloadId) {
-      if (willErase) { capturer.downloadIds[downloadId] = true; }
+      if (willErase) { capturer.downloadEraseIds[downloadId] = true; }
       sendResponse({ timeId: timeId, frameUrl: message.frameUrl, targetDir: targetDir, filename: filename });
     });
     return true; // async response
@@ -161,7 +161,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         conflictAction: "uniquify",
       };
       chrome.downloads.download(params, function (downloadId) {
-        capturer.downloadIds[downloadId] = true;
+        capturer.downloadEraseIds[downloadId] = true;
         sendResponse({ url: filename });
       });
       return true; // async response
@@ -200,7 +200,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
             conflictAction: "uniquify",
           };
           chrome.downloads.download(params, function (downloadId) {
-            capturer.downloadIds[downloadId] = true;
+            capturer.downloadEraseIds[downloadId] = true;
             sendResponse({ url: filename });
           });
         } else {
@@ -221,11 +221,11 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 });
 
 chrome.downloads.onChanged.addListener(function (downloadDelta) {
-  // erase the download history of additional downloads (those recorded in capturer.downloadIds)
+  // erase the download history of additional downloads (those recorded in capturer.downloadEraseIds)
   if (downloadDelta.state && downloadDelta.state.current === "complete") {
     var id = downloadDelta.id;
-    if (capturer.downloadIds[id]) {
-      delete(capturer.downloadIds[id]);
+    if (capturer.downloadEraseIds[id]) {
+      delete(capturer.downloadEraseIds[id]);
       chrome.downloads.erase({ id: id }, function (erasedIds) {});
     }
   }
