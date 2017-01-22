@@ -5,8 +5,8 @@
  * @require {object} scrapbook
  *******************************************************************/
 
-// record and use the initial stat, even if it is changed later
-var frameInitSrc = location.href;
+// record the initial stat, which changes when the frame reloads
+var frameUrl = location.href;
 var frameIsMain = (window === window.top);
 
 function capture(settings, options, callback) {
@@ -358,7 +358,7 @@ function captureDocument(doc, settings, options, callback) {
         remainingTasks++;
         var message = {
           cmd: "get-frame-content",
-          frameInitSrc: frame.src,
+          frameUrl: frame.src,
           settings: frameSettings,
           options: options,
         };
@@ -371,8 +371,8 @@ function captureDocument(doc, settings, options, callback) {
           } else {
             captureFrameCallback({
               timeId: timeId,
-              frameInitSrc: frameInitSrc,
-              filename: message.frameInitSrc
+              frameUrl: frameUrl,
+              filename: message.frameUrl
             });
           }
         });
@@ -802,7 +802,7 @@ function captureDocument(doc, settings, options, callback) {
     var content = scrapbook.doctypeToString(doc.doctype) + rootNode.outerHTML;
     var message = {
       cmd: "save-document",
-      frameInitSrc: frameInitSrc,
+      frameUrl: frameUrl,
       settings: settings,
       options: options,
       data: {
@@ -919,7 +919,7 @@ function captureFile(url, settings, options, callback) {
     var html = '<html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;URL=' + url + '"></head><body></body></html>';
     var message = {
       cmd: "save-document",
-      frameInitSrc: frameInitSrc,
+      frameUrl: frameUrl,
       settings: settings,
       options: options,
       data: {
@@ -955,7 +955,7 @@ window.addEventListener("load", function (event) {
       // @TODO:
       // if the real location of the frame changes, we cannot get the
       // content since it no more match the src attr of the frame tag
-      if (message.frameInitSrc !== frameInitSrc) { return; }
+      if (message.frameUrl !== frameUrl) { return; }
       captureDocumentOrFile(document, message.settings, message.options, function (response) {
         sendResponse(response);
       });

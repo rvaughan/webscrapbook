@@ -95,11 +95,11 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     var tabId = sender.tab.id;
     var settings = message.settings;
     var options = message.options;
-    var frameInitSrc = message.frameInitSrc;
+    var frameUrl = message.frameUrl;
 
     var message = {
       cmd: "get-frame-content-cs",
-      frameInitSrc: frameInitSrc,
+      frameUrl: frameUrl,
       settings: settings,
       options: options,
     };
@@ -135,7 +135,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     };
     chrome.downloads.download(params, function (downloadId) {
       if (willErase) { capturer.downloadIds[downloadId] = true; }
-      sendResponse({ timeId: timeId, frameInitSrc: message.frameInitSrc, targetDir: targetDir, filename: filename });
+      sendResponse({ timeId: timeId, frameUrl: message.frameUrl, targetDir: targetDir, filename: filename });
     });
     return true; // async response
   } else if (message.cmd === "download-file") {
