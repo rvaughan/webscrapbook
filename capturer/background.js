@@ -218,12 +218,13 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     };
     xhr.ontimeout = function () {
       console.warn(scrapbook.lang("ErrorFileDownloadTimeout", sourceUrl));
-      sendResponse({ url: sourceUrl, isError: true });
+      sendResponse({ url: sourceUrl, error: "timeout" });
       xhr_shutdown();
     };
     xhr.onerror = function () {
-      console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, [xhr.status, xhr.statusText].join(" ")]));
-      sendResponse({ url: sourceUrl, isError: true });
+      var err = [xhr.status, xhr.statusText].join(" ");
+      console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
+      sendResponse({ url: sourceUrl, error: err });
       xhr_shutdown();
     };
     xhr.responseType = "blob";

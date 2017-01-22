@@ -366,7 +366,7 @@ function captureDocument(doc, settings, options, callback) {
         console.debug("get-frame-content send", message);
         chrome.runtime.sendMessage(message, function (response) {
           console.debug("get-frame-content response", response);
-          if (response && !response.isError) {
+          if (response && !response.error) {
             captureFrameCallback(response);
           } else {
             captureFrameCallback({
