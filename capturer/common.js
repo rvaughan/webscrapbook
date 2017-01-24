@@ -7,6 +7,8 @@
 
 var capturerDocSaver = {};
 
+capturerDocSaver.isContentScript = false;
+
 capturerDocSaver.captureDocumentOrFile = function (doc, settings, options, callback) {
   console.debug("call: captureDocumentOrFile");
 
@@ -878,61 +880,77 @@ capturerDocSaver.captureFile = function (url, settings, options, callback) {
 };
 
 capturerDocSaver.registerDocument = function (params, callback) {
-  var message = {
-    cmd: "register-document",
-    settings: params.settings,
-    options: params.options,
-  };
+  if (capturerDocSaver.isContentScript) {
+    var message = {
+      cmd: "register-document",
+      settings: params.settings,
+      options: params.options,
+    };
 
-  console.debug("register-document send", message);
-  chrome.runtime.sendMessage(message, function (response) {
-    console.debug("register-document response", response);
-    callback(response);
-  });
+    console.debug("register-document send", message);
+    chrome.runtime.sendMessage(message, function (response) {
+      console.debug("register-document response", response);
+      callback(response);
+    });
+  } else {
+    capturer.registerDocument(params, callback);
+  }
 };
 
 capturerDocSaver.getFrameContent = function (params, callback) {
-  var message = {
-    cmd: "get-frame-content",
-    frameUrl: params.frameUrl,
-    settings: params.settings,
-    options: params.options
-  };
+  if (capturerDocSaver.isContentScript) {
+    var message = {
+      cmd: "get-frame-content",
+      frameUrl: params.frameUrl,
+      settings: params.settings,
+      options: params.options
+    };
 
-  console.debug("get-frame-content send", message);
-  chrome.runtime.sendMessage(message, function (response) {
-    console.debug("get-frame-content response", response);
-    callback(response);
-  });
+    console.debug("get-frame-content send", message);
+    chrome.runtime.sendMessage(message, function (response) {
+      console.debug("get-frame-content response", response);
+      callback(response);
+    });
+  } else {
+    capturer.getFrameContent(params, callback);
+  }
 };
 
 capturerDocSaver.downloadFile = function (params, callback) {
-  var message = {
-    cmd: "download-file",
-    url: params.url,
-    settings: params.settings,
-    options: params.options
-  };
+  if (capturerDocSaver.isContentScript) {
+    var message = {
+      cmd: "download-file",
+      url: params.url,
+      settings: params.settings,
+      options: params.options
+    };
 
-  console.debug("download-file send", message);
-  chrome.runtime.sendMessage(message, function (response) {
-    console.debug("download-file response", response);
-    callback(response);
-  });
+    console.debug("download-file send", message);
+    chrome.runtime.sendMessage(message, function (response) {
+      console.debug("download-file response", response);
+      callback(response);
+    });
+  } else {
+    capturer.downloadFile(params, callback);
+  }
 };
 
 capturerDocSaver.saveDocument = function (params, callback) {
-  var message = {
-    cmd: "save-document",
-    frameUrl: params.frameUrl,
-    settings: params.settings,
-    options: params.options,
-    data: params.data
-  };
+  if (capturerDocSaver.isContentScript) {
+    var message = {
+      cmd: "save-document",
+      frameUrl: params.frameUrl,
+      settings: params.settings,
+      options: params.options,
+      data: params.data
+    };
 
-  console.debug("save-document send", message);
-  chrome.runtime.sendMessage(message, function (response) {
-    console.debug("save-document response", response);
-    callback(response);
-  });
+    console.debug("save-document send", message);
+    chrome.runtime.sendMessage(message, function (response) {
+      console.debug("save-document response", response);
+      callback(response);
+    });
+  } else {
+    capturer.saveDocument(params, callback);
+  }
 };
