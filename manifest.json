@@ -30,7 +30,6 @@
     // "notifications",
     // "contextMenus",
     "storage",
-    // "unlimitedStorage",
     "<all_urls>"
   ],
 
