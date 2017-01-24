@@ -240,16 +240,11 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         default:
           if (elem.src) {
             remainingTasks++;
-            var message = {
-              cmd: "download-file",
+            capturerDocSaver.downloadFile({
               url: elem.src,
               settings: settings,
-              options: options,
-            };
-
-            console.debug("download-file send", message);
-            chrome.runtime.sendMessage(message, function (response) {
-              console.debug("download-file response", response);
+              options: options
+            }, function (response) {
               elem.src = response.url;
               remainingTasks--;
               captureCheckDone();
@@ -473,16 +468,11 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         default:
           if (elem.hasAttribute("src")) {
             remainingTasks++;
-            var message = {
-              cmd: "download-file",
+            capturerDocSaver.downloadFile({
               url: elem.src,
               settings: settings,
-              options: options,
-            };
-
-            console.debug("download-file send", message);
-            chrome.runtime.sendMessage(message, function (response) {
-              console.debug("download-file response", response);
+              options: options
+            }, function (response) {
               elem.src = response.url;
               remainingTasks--;
               captureCheckDone();
@@ -518,16 +508,11 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         case "save":
         default:
           remainingTasks++;
-          var message = {
-            cmd: "download-file",
+          capturerDocSaver.downloadFile({
             url: elem.src,
             settings: settings,
-            options: options,
-          };
-
-          console.debug("download-file send", message);
-          chrome.runtime.sendMessage(message, function (response) {
-            console.debug("download-file response", response);
+            options: options
+          }, function (response) {
             elem.src = response.url;
             remainingTasks--;
             captureCheckDone();
@@ -561,16 +546,11 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         default:
           Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
             remainingTasks++;
-            var message = {
-              cmd: "download-file",
+            capturerDocSaver.downloadFile({
               url: elem.src,
               settings: settings,
-              options: options,
-            };
-
-            console.debug("download-file send", message);
-            chrome.runtime.sendMessage(message, function (response) {
-              console.debug("download-file response", response);
+              options: options
+            }, function (response) {
               elem.src = response.url;
               remainingTasks--;
               captureCheckDone();
@@ -605,16 +585,11 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         default:
           Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
             remainingTasks++;
-            var message = {
-              cmd: "download-file",
+            capturerDocSaver.downloadFile({
               url: elem.src,
               settings: settings,
-              options: options,
-            };
-
-            console.debug("download-file send", message);
-            chrome.runtime.sendMessage(message, function (response) {
-              console.debug("download-file response", response);
+              options: options
+            }, function (response) {
               elem.src = response.url;
               remainingTasks--;
               captureCheckDone();
@@ -644,16 +619,11 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         case "save":
         default:
           remainingTasks++;
-          var message = {
-            cmd: "download-file",
+          capturerDocSaver.downloadFile({
             url: elem.src,
             settings: settings,
-            options: options,
-          };
-
-          console.debug("download-file send", message);
-          chrome.runtime.sendMessage(message, function (response) {
-            console.debug("download-file response", response);
+            options: options
+          }, function (response) {
             elem.src = response.url;
             remainingTasks--;
             captureCheckDone();
@@ -682,16 +652,11 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         case "save":
         default:
           remainingTasks++;
-          var message = {
-            cmd: "download-file",
+          capturerDocSaver.downloadFile({
             url: elem.data,
             settings: settings,
-            options: options,
-          };
-
-          console.debug("download-file send", message);
-          chrome.runtime.sendMessage(message, function (response) {
-            console.debug("download-file response", response);
+            options: options
+          }, function (response) {
             elem.data = response.url;
             remainingTasks--;
             captureCheckDone();
@@ -721,16 +686,11 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         case "save":
         default:
           remainingTasks++;
-          var message = {
-            cmd: "download-file",
+          capturerDocSaver.downloadFile({
             url: rewriteUrl,
             settings: settings,
             options: options,
-          };
-
-          console.debug("download-file send", message);
-          chrome.runtime.sendMessage(message, function (response) {
-            console.debug("download-file response", response);
+          }, function (response) {
             elem.setAttribute("archive", response.url);
             remainingTasks--;
             captureCheckDone();
@@ -781,16 +741,11 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         case "save":
         default:
           remainingTasks++;
-          var message = {
-            cmd: "download-file",
+          capturerDocSaver.downloadFile({
             url: rewriteUrl,
             settings: settings,
-            options: options,
-          };
-
-          console.debug("download-file send", message);
-          chrome.runtime.sendMessage(message, function (response) {
-            console.debug("download-file response", response);
+            options: options
+          }, function (response) {
             elem.setAttribute("background", response.url);
             remainingTasks--;
             captureCheckDone();
@@ -854,16 +809,11 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
     });
 
     srcsetUrls.forEach(function (elem, index, array) {
-      var message = {
-        cmd: "download-file",
+      capturerDocSaver.downloadFile({
         url: elem,
         settings: settings,
-        options: options,
-      };
-
-      console.debug("download-file send", message);
-      chrome.runtime.sendMessage(message, function (response) {
-        console.debug("download-file response", response);
+        options: options
+      }, function (response) {
         array[index] = response.url;
         if (++srcsetRewrittenCount === srcsetUrls.length) {
           onAllDownloaded();
@@ -907,16 +857,11 @@ capturerDocSaver.captureFile = function (url, settings, options, callback) {
   console.debug("call:", arguments.callee.name);
 
   var saveFile = function (url) {
-    var message = {
-      cmd: "download-file",
+    capturerDocSaver.downloadFile({
       url: url,
       settings: settings,
-      options: options,
-    };
-
-    console.debug("download-file send", message);
-    chrome.runtime.sendMessage(message, function (response) {
-      console.debug("download-file response", response);
+      options: options
+    }, function (response) {
       if (settings.frameIsMain) {
         // for the main frame, create a index.html that redirects to the file
         saveIndex(response.url);
@@ -953,4 +898,19 @@ capturerDocSaver.captureFile = function (url, settings, options, callback) {
   };
 
   saveFile(url);
+};
+
+capturerDocSaver.downloadFile = function (params, callback) {
+  var message = {
+    cmd: "download-file",
+    url: params.url,
+    settings: params.settings,
+    options: params.options
+  };
+
+  console.debug("download-file send", message);
+  chrome.runtime.sendMessage(message, function (response) {
+    console.debug("download-file response", response);
+    callback(response);
+  });
 };
