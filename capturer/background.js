@@ -71,19 +71,18 @@ chrome.browserAction.onClicked.addListener(function (tab) {
   var tabId = tab.id;
   var timeId = scrapbook.dateToId();
   var message = {
-    cmd: "capture-tab",
+    cmd: "capture-document",
     settings: {
       timeId: timeId,
-      captureType: "tab",
       frameIsMain: true,
       documentName: "index",
     },
     options: scrapbook.getOptions("capture"),
   };
 
-  console.debug("capture-tab send", tabId, message);
+  console.debug("capture-document (main) send", tabId, message);
   chrome.tabs.sendMessage(tabId, message, { frameId: 0 }, function (response) {
-    console.debug("capture-tab response", tabId, response);
+    console.debug("capture-document (main) response", tabId, response);
     if (!response) {
       alert(scrapbook.lang("ErrorCapture", [scrapbook.lang("ErrorContentScriptNotReady")]));
       return;
@@ -107,19 +106,22 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     var frameUrl = message.frameUrl;
 
     var message = {
-      cmd: "get-frame-content-cs",
+      cmd: "capture-document",
       frameUrl: frameUrl,
       settings: settings,
       options: options,
     };
 
+    // @TODO:
+    // if the real location of the frame changes, we cannot get the
+    // content since it no more match the src attr of the frame tag
     chrome.webNavigation.getAllFrames({ tabId: tabId }, function (framesInfo) {
       for (var i = 0, I = framesInfo.length; i < I; ++i) {
         var frameInfo = framesInfo[i];
         if (frameInfo.url == frameUrl && !frameInfo.errorOccurred) {
-          console.debug("get-frame-content-cs send", tabId, frameInfo.frameId, message);
+          console.debug("capture-document send", tabId, frameInfo.frameId, message);
           chrome.tabs.sendMessage(tabId, message, { frameId: frameInfo.frameId }, function (response) {
-            console.debug("get-frame-content-cs response", tabId, frameInfo.frameId, response);
+            console.debug("capture-document response", tabId, frameInfo.frameId, response);
             sendResponse(response);
           });
           return;

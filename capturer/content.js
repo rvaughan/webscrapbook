@@ -9,15 +9,6 @@
 var frameUrl = location.href;
 var frameIsMain = (window === window.top);
 
-function capture(settings, options, callback) {
-  switch (settings.captureType) {
-    case "tab":
-    default:
-      captureDocumentOrFile(document, settings, options, callback);
-      break;
-  }
-}
-
 function captureDocumentOrFile(doc, settings, options, callback) {
   console.debug("call:", arguments.callee.name);
 
@@ -977,17 +968,7 @@ function captureFile(url, settings, options, callback) {
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   console.debug(message.cmd + " receive", message, sender);
 
-  if (message.cmd === "capture-tab") {
-    if (!frameIsMain) { return; }
-    capture(message.settings, message.options, function (response) {
-      sendResponse(response);
-    });
-    return true; // async response
-  } else if (message.cmd === "get-frame-content-cs") {
-    // @TODO:
-    // if the real location of the frame changes, we cannot get the
-    // content since it no more match the src attr of the frame tag
-    if (message.frameUrl !== frameUrl) { return; }
+  if (message.cmd === "capture-document") {
     captureDocumentOrFile(document, message.settings, message.options, function (response) {
       sendResponse(response);
     });
