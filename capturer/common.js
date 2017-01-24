@@ -828,15 +828,10 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
   var rootNode;
   var headNode;
 
-  var message = {
-    cmd: "register-document",
+  capturerDocSaver.registerDocument({
     settings: settings,
-    options: options,
-  };
-
-  console.debug("register-document send", message);
-  chrome.runtime.sendMessage(message, function (response) {
-    console.debug("register-document response", response);
+    options: options
+  }, function (response) {
     documentName = response.documentName;
     captureMain();
   });
@@ -880,6 +875,20 @@ capturerDocSaver.captureFile = function (url, settings, options, callback) {
   };
 
   saveFile(url);
+};
+
+capturerDocSaver.registerDocument = function (params, callback) {
+  var message = {
+    cmd: "register-document",
+    settings: params.settings,
+    options: params.options,
+  };
+
+  console.debug("register-document send", message);
+  chrome.runtime.sendMessage(message, function (response) {
+    console.debug("register-document response", response);
+    callback(response);
+  });
 };
 
 capturerDocSaver.getFrameContent = function (params, callback) {
