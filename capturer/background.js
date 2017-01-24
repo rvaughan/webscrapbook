@@ -109,6 +109,30 @@ capturer.getFrameContent = function (options, callback) {
   return true; // async response
 };
 
+capturer.saveDocument = function (options, callback) {
+  var timeId = options.settings.timeId;
+  var targetDir = scrapbook.options.dataFolder + "/" + timeId;
+  var willErase = !options.settings.frameIsMain;
+  var filename = options.data.documentName + "." + ((options.data.mime === "application/xhtml+xml") ? "xhtml" : "html");
+  filename = scrapbook.validateFilename(filename);
+  filename = capturer.getUniqueFilename(timeId, filename, true)[0];
+
+  var params = {
+    url: URL.createObjectURL(new Blob([options.data.content], { type: options.data.mime })),
+    filename: targetDir + "/" + filename,
+    conflictAction: "uniquify",
+  };
+
+  console.debug("download start", params);
+  chrome.downloads.download(params, function (downloadId) {
+    console.debug("download response", downloadId);
+    capturer.downloadUrls[downloadId] = options.frameUrl;
+    if (willErase) { capturer.downloadEraseIds[downloadId] = true; }
+    callback({ timeId: timeId, frameUrl: options.frameUrl, targetDir: targetDir, filename: filename });
+  });
+  return true; // async response
+};
+
 chrome.browserAction.onClicked.addListener(function (tab) {
   var tabId = tab.id;
   var timeId = scrapbook.dateToId();
@@ -158,26 +182,14 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       sendResponse(response);
     });
   } else if (message.cmd === "save-document") {
-    var timeId = message.settings.timeId;
-    var targetDir = scrapbook.options.dataFolder + "/" + timeId;
-    var willErase = !message.settings.frameIsMain;
-    var filename = message.data.documentName + "." + ((message.data.mime === "application/xhtml+xml") ? "xhtml" : "html");
-    filename = scrapbook.validateFilename(filename);
-    filename = capturer.getUniqueFilename(timeId, filename, true)[0];
-    var params = {
-      url: URL.createObjectURL(new Blob([message.data.content], { type: message.data.mime })),
-      filename: targetDir + "/" + filename,
-      conflictAction: "uniquify",
-    };
-
-    console.debug("download start", params);
-    chrome.downloads.download(params, function (downloadId) {
-      console.debug("download response", downloadId);
-      capturer.downloadUrls[downloadId] = message.frameUrl;
-      if (willErase) { capturer.downloadEraseIds[downloadId] = true; }
-      sendResponse({ timeId: timeId, frameUrl: message.frameUrl, targetDir: targetDir, filename: filename });
+    return capturer.saveDocument({
+      frameUrl: message.frameUrl,
+      settings: message.settings,
+      options: message.options,
+      data: message.data
+    }, function (response) {
+      sendResponse(response);
     });
-    return true; // async response
   } else if (message.cmd === "download-file") {
     console.log("download-file", message);
     var timeId = message.settings.timeId;
