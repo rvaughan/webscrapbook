@@ -133,6 +133,96 @@ capturer.saveDocument = function (options, callback) {
   return true; // async response
 };
 
+capturer.downloadFile = function (options, callback) {
+  console.log("download-file", options);
+  var timeId = options.settings.timeId;
+  var targetDir = scrapbook.options.dataFolder + "/" + timeId;
+  var sourceUrl = options.url;
+  sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
+  var filename;
+  var isDuplicate;
+
+  if (sourceUrl.indexOf("file:") == 0) {
+    filename = scrapbook.urlToFilename(sourceUrl);
+    filename = scrapbook.validateFilename(filename);
+    [filename, isDuplicate] = capturer.getUniqueFilename(timeId, filename, sourceUrl);
+    if (isDuplicate) {
+      callback({ url: filename, isDuplicate: true });
+      return;
+    }
+    var params = {
+      url: sourceUrl,
+      filename: targetDir + "/" + filename,
+      conflictAction: "uniquify",
+    };
+    chrome.downloads.download(params, function (downloadId) {
+      capturer.downloadUrls[downloadId] = sourceUrl;
+      capturer.downloadEraseIds[downloadId] = true;
+      callback({ url: filename });
+    });
+    return true; // async response
+  }
+  
+  var xhr = new XMLHttpRequest();
+  var xhr_shutdown = function () {
+    xhr.onreadystatechange = xhr.onerror = xhr.ontimeout = null;
+  };
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === 2) {
+      // if header Content-Disposition is defined, use it
+      try {
+        var headerContentDisposition = xhr.getResponseHeader("Content-Disposition");
+        var contentDisposition = scrapbook.parseHeaderContentDisposition(headerContentDisposition);
+        filename = contentDisposition.parameters.filename;
+      } catch (ex) {}
+
+      // determine the filename
+      // @TODO: 
+      //   if header Content-Disposition is not defined but Content-Type is defined, 
+      //   make file extension compatible with it.
+      filename = filename || scrapbook.urlToFilename(sourceUrl);
+      filename = scrapbook.validateFilename(filename);
+      [filename, isDuplicate] = capturer.getUniqueFilename(timeId, filename, sourceUrl);
+      if (isDuplicate) {
+        callback({ url: filename, isDuplicate: true });
+        xhr_shutdown();
+      }
+    } else if (xhr.readyState === 4) {
+      if ((xhr.status == 200 || xhr.status == 0) && xhr.response) {
+        // download 
+        var params = {
+          url: URL.createObjectURL(xhr.response),
+          filename: targetDir + "/" + filename,
+          conflictAction: "uniquify",
+        };
+        chrome.downloads.download(params, function (downloadId) {
+          capturer.downloadUrls[downloadId] = sourceUrl;
+          capturer.downloadEraseIds[downloadId] = true;
+          callback({ url: filename });
+        });
+      } else {
+        xhr.onerror();
+      }
+    }
+  };
+  xhr.ontimeout = function () {
+    console.warn(scrapbook.lang("ErrorFileDownloadTimeout", sourceUrl));
+    callback({ url: sourceUrl, error: "timeout" });
+    xhr_shutdown();
+  };
+  xhr.onerror = function () {
+    var err = [xhr.status, xhr.statusText].join(" ");
+    console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
+    callback({ url: sourceUrl, error: err });
+    xhr_shutdown();
+  };
+  xhr.responseType = "blob";
+  xhr.open("GET", sourceUrl, true);
+  xhr.send();
+
+  return true; // async response
+};
+
 chrome.browserAction.onClicked.addListener(function (tab) {
   var tabId = tab.id;
   var timeId = scrapbook.dateToId();
@@ -191,93 +281,13 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       sendResponse(response);
     });
   } else if (message.cmd === "download-file") {
-    console.log("download-file", message);
-    var timeId = message.settings.timeId;
-    var targetDir = scrapbook.options.dataFolder + "/" + timeId;
-    var sourceUrl = message.url;
-    sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
-    var filename;
-    var isDuplicate;
-
-    if (sourceUrl.indexOf("file:") == 0) {
-      filename = scrapbook.urlToFilename(sourceUrl);
-      filename = scrapbook.validateFilename(filename);
-      [filename, isDuplicate] = capturer.getUniqueFilename(timeId, filename, sourceUrl);
-      if (isDuplicate) {
-        sendResponse({ url: filename, isDuplicate: true });
-        return;
-      }
-      var params = {
-        url: sourceUrl,
-        filename: targetDir + "/" + filename,
-        conflictAction: "uniquify",
-      };
-      chrome.downloads.download(params, function (downloadId) {
-        capturer.downloadUrls[downloadId] = sourceUrl;
-        capturer.downloadEraseIds[downloadId] = true;
-        sendResponse({ url: filename });
-      });
-      return true; // async response
-    }
-    
-    var xhr = new XMLHttpRequest();
-    var xhr_shutdown = function () {
-      xhr.onreadystatechange = xhr.onerror = xhr.ontimeout = null;
-    };
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState === 2) {
-        // if header Content-Disposition is defined, use it
-        try {
-          var headerContentDisposition = xhr.getResponseHeader("Content-Disposition");
-          var contentDisposition = scrapbook.parseHeaderContentDisposition(headerContentDisposition);
-          filename = contentDisposition.parameters.filename;
-        } catch (ex) {}
-
-        // determine the filename
-        // @TODO: 
-        //   if header Content-Disposition is not defined but Content-Type is defined, 
-        //   make file extension compatible with it.
-        filename = filename || scrapbook.urlToFilename(sourceUrl);
-        filename = scrapbook.validateFilename(filename);
-        [filename, isDuplicate] = capturer.getUniqueFilename(timeId, filename, sourceUrl);
-        if (isDuplicate) {
-          sendResponse({ url: filename, isDuplicate: true });
-          xhr_shutdown();
-        }
-      } else if (xhr.readyState === 4) {
-        if ((xhr.status == 200 || xhr.status == 0) && xhr.response) {
-          // download 
-          var params = {
-            url: URL.createObjectURL(xhr.response),
-            filename: targetDir + "/" + filename,
-            conflictAction: "uniquify",
-          };
-          chrome.downloads.download(params, function (downloadId) {
-            capturer.downloadUrls[downloadId] = sourceUrl;
-            capturer.downloadEraseIds[downloadId] = true;
-            sendResponse({ url: filename });
-          });
-        } else {
-          xhr.onerror();
-        }
-      }
-    };
-    xhr.ontimeout = function () {
-      console.warn(scrapbook.lang("ErrorFileDownloadTimeout", sourceUrl));
-      sendResponse({ url: sourceUrl, error: "timeout" });
-      xhr_shutdown();
-    };
-    xhr.onerror = function () {
-      var err = [xhr.status, xhr.statusText].join(" ");
-      console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
-      sendResponse({ url: sourceUrl, error: err });
-      xhr_shutdown();
-    };
-    xhr.responseType = "blob";
-    xhr.open("GET", sourceUrl, true);
-    xhr.send();
-
-    return true; // async response
+    return capturer.downloadFile({
+      url: message.url,
+      settings: message.settings,
+      options: message.options
+    }, function (response) {
+      sendResponse(response);
+    });
   }
 });
 
