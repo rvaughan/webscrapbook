@@ -67,6 +67,36 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
   return [newFilename, false];
 };
 
+capturer.getFrameContent = function (options, callback) {
+  var tabId = options.tabId;
+  var message = {
+    cmd: "capture-document",
+    frameUrl: options.frameUrl,
+    settings: options.settings,
+    options: options.options
+  };
+
+  // @TODO:
+  // if the real location of the frame changes, we cannot get the
+  // content since it no more match the src attr of the frame tag
+  chrome.webNavigation.getAllFrames({ tabId: tabId }, function (framesInfo) {
+    for (var i = 0, I = framesInfo.length; i < I; ++i) {
+      var frameInfo = framesInfo[i];
+      if (frameInfo.url == options.frameUrl && !frameInfo.errorOccurred) {
+        console.debug("capture-document send", tabId, frameInfo.frameId, message);
+        chrome.tabs.sendMessage(tabId, message, { frameId: frameInfo.frameId }, function (response) {
+          console.debug("capture-document response", tabId, frameInfo.frameId, response);
+          callback(response);
+        });
+        return;
+      }
+    }
+    callback(undefined);
+  });
+
+  return true; // async response
+};
+
 chrome.browserAction.onClicked.addListener(function (tab) {
   var tabId = tab.id;
   var timeId = scrapbook.dateToId();
@@ -100,37 +130,14 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   console.debug(message.cmd + " receive", sender.tab.id, message);
 
   if (message.cmd === "get-frame-content") {
-    var tabId = sender.tab.id;
-    var settings = message.settings;
-    var options = message.options;
-    var frameUrl = message.frameUrl;
-
-    var message = {
-      cmd: "capture-document",
-      frameUrl: frameUrl,
-      settings: settings,
-      options: options,
-    };
-
-    // @TODO:
-    // if the real location of the frame changes, we cannot get the
-    // content since it no more match the src attr of the frame tag
-    chrome.webNavigation.getAllFrames({ tabId: tabId }, function (framesInfo) {
-      for (var i = 0, I = framesInfo.length; i < I; ++i) {
-        var frameInfo = framesInfo[i];
-        if (frameInfo.url == frameUrl && !frameInfo.errorOccurred) {
-          console.debug("capture-document send", tabId, frameInfo.frameId, message);
-          chrome.tabs.sendMessage(tabId, message, { frameId: frameInfo.frameId }, function (response) {
-            console.debug("capture-document response", tabId, frameInfo.frameId, response);
-            sendResponse(response);
-          });
-          return;
-        }
-      }
-      sendResponse(undefined);
+    return capturer.getFrameContent({
+      tabId: sender.tab.id,
+      frameUrl: message.frameUrl,
+      settings: message.settings,
+      options: message.options
+    }, function (response) {
+      sendResponse(response);
     });
-
-    return true; // async response
   } else if (message.cmd === "register-document") {
     var timeId = message.settings.timeId;
     var documentName = message.settings.documentName;
