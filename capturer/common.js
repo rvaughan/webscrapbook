@@ -361,15 +361,11 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         });
       } else {
         remainingTasks++;
-        var message = {
-          cmd: "get-frame-content",
+        capturerDocSaver.getFrameContent({
           frameUrl: frame.src,
           settings: frameSettings,
-          options: options,
-        };
-
-        console.debug("get-frame-content send", message);
-        chrome.runtime.sendMessage(message, function (response) {
+          options: options
+        }, function (response) {
           console.debug("get-frame-content response", response);
           if (response && !response.error) {
             captureFrameCallback(response);
@@ -377,7 +373,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
             captureFrameCallback({
               timeId: timeId,
               frameUrl: doc.location.href,
-              filename: message.frameUrl
+              filename: frame.src
             });
           }
         });
@@ -898,6 +894,21 @@ capturerDocSaver.captureFile = function (url, settings, options, callback) {
   };
 
   saveFile(url);
+};
+
+capturerDocSaver.getFrameContent = function (params, callback) {
+  var message = {
+    cmd: "get-frame-content",
+    frameUrl: params.frameUrl,
+    settings: params.settings,
+    options: params.options
+  };
+
+  console.debug("get-frame-content send", message);
+  chrome.runtime.sendMessage(message, function (response) {
+    console.debug("get-frame-content response", response);
+    callback(response);
+  });
 };
 
 capturerDocSaver.downloadFile = function (params, callback) {
