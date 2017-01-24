@@ -113,11 +113,21 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       options: options,
     };
 
-    console.debug("get-frame-content-cs send", tabId, message);
-    chrome.tabs.sendMessage(tabId, message, null, function (response) {
-      console.debug("get-frame-content-cs response", tabId, response);
-      sendResponse(response);
+    chrome.webNavigation.getAllFrames({ tabId: tabId }, function (framesInfo) {
+      for (var i = 0, I = framesInfo.length; i < I; ++i) {
+        var frameInfo = framesInfo[i];
+        if (frameInfo.url == frameUrl && !frameInfo.errorOccurred) {
+          console.debug("get-frame-content-cs send", tabId, frameInfo.frameId, message);
+          chrome.tabs.sendMessage(tabId, message, { frameId: frameInfo.frameId }, function (response) {
+            console.debug("get-frame-content-cs response", tabId, frameInfo.frameId, response);
+            sendResponse(response);
+          });
+          return;
+        }
+      }
+      sendResponse(undefined);
     });
+
     return true; // async response
   } else if (message.cmd === "register-document") {
     var timeId = message.settings.timeId;
