@@ -67,9 +67,9 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
   return [newFilename, false];
 };
 
-capturer.registerDocument = function (options, callback) {
-  var timeId = options.settings.timeId;
-  var documentName = options.settings.documentName;
+capturer.registerDocument = function (params, callback) {
+  var timeId = params.settings.timeId;
+  var documentName = params.settings.documentName;
   if (!capturer.usedDocumentNames[timeId]) { capturer.usedDocumentNames[timeId] = {}; }
   if (!capturer.usedDocumentNames[timeId][documentName]) { capturer.usedDocumentNames[timeId][documentName] = 0; }
   var fixedDocumentName = (capturer.usedDocumentNames[timeId][documentName] > 0) ?
@@ -79,13 +79,13 @@ capturer.registerDocument = function (options, callback) {
   callback({ documentName: fixedDocumentName });
 };
 
-capturer.getFrameContent = function (options, callback) {
-  var tabId = options.tabId;
+capturer.getFrameContent = function (params, callback) {
+  var tabId = params.tabId;
   var message = {
     cmd: "capture-document",
-    frameUrl: options.frameUrl,
-    settings: options.settings,
-    options: options.options
+    frameUrl: params.frameUrl,
+    settings: params.settings,
+    options: params.options
   };
 
   // @TODO:
@@ -94,7 +94,7 @@ capturer.getFrameContent = function (options, callback) {
   chrome.webNavigation.getAllFrames({ tabId: tabId }, function (framesInfo) {
     for (var i = 0, I = framesInfo.length; i < I; ++i) {
       var frameInfo = framesInfo[i];
-      if (frameInfo.url == options.frameUrl && !frameInfo.errorOccurred) {
+      if (frameInfo.url == params.frameUrl && !frameInfo.errorOccurred) {
         console.debug("capture-document send", tabId, frameInfo.frameId, message);
         chrome.tabs.sendMessage(tabId, message, { frameId: frameInfo.frameId }, function (response) {
           console.debug("capture-document response", tabId, frameInfo.frameId, response);
@@ -109,16 +109,16 @@ capturer.getFrameContent = function (options, callback) {
   return true; // async response
 };
 
-capturer.saveDocument = function (options, callback) {
-  var timeId = options.settings.timeId;
+capturer.saveDocument = function (params, callback) {
+  var timeId = params.settings.timeId;
   var targetDir = scrapbook.options.dataFolder + "/" + timeId;
-  var willErase = !options.settings.frameIsMain;
-  var filename = options.data.documentName + "." + ((options.data.mime === "application/xhtml+xml") ? "xhtml" : "html");
+  var willErase = !params.settings.frameIsMain;
+  var filename = params.data.documentName + "." + ((params.data.mime === "application/xhtml+xml") ? "xhtml" : "html");
   filename = scrapbook.validateFilename(filename);
   filename = capturer.getUniqueFilename(timeId, filename, true)[0];
 
   var params = {
-    url: URL.createObjectURL(new Blob([options.data.content], { type: options.data.mime })),
+    url: URL.createObjectURL(new Blob([params.data.content], { type: params.data.mime })),
     filename: targetDir + "/" + filename,
     conflictAction: "uniquify",
   };
@@ -126,18 +126,18 @@ capturer.saveDocument = function (options, callback) {
   console.debug("download start", params);
   chrome.downloads.download(params, function (downloadId) {
     console.debug("download response", downloadId);
-    capturer.downloadUrls[downloadId] = options.frameUrl;
+    capturer.downloadUrls[downloadId] = params.frameUrl;
     if (willErase) { capturer.downloadEraseIds[downloadId] = true; }
-    callback({ timeId: timeId, frameUrl: options.frameUrl, targetDir: targetDir, filename: filename });
+    callback({ timeId: timeId, frameUrl: params.frameUrl, targetDir: targetDir, filename: filename });
   });
   return true; // async response
 };
 
-capturer.downloadFile = function (options, callback) {
-  console.log("download-file", options);
-  var timeId = options.settings.timeId;
+capturer.downloadFile = function (params, callback) {
+  console.log("download-file", params);
+  var timeId = params.settings.timeId;
   var targetDir = scrapbook.options.dataFolder + "/" + timeId;
-  var sourceUrl = options.url;
+  var sourceUrl = params.url;
   sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
   var filename;
   var isDuplicate;
