@@ -7,7 +7,6 @@
 
 // record the initial stat, which changes when the frame reloads
 var frameUrl = location.href;
-var frameIsMain = (window === window.top);
 
 function captureDocumentOrFile(doc, settings, options, callback) {
   console.debug("call:", arguments.callee.name);
@@ -925,7 +924,7 @@ function captureFile(url, settings, options, callback) {
     console.debug("download-file send", message);
     chrome.runtime.sendMessage(message, function (response) {
       console.debug("download-file response", response);
-      if (frameIsMain) {
+      if (settings.frameIsMain) {
         // for the main frame, create a index.html that redirects to the file
         saveIndex(response.url);
       } else {
