@@ -31,8 +31,7 @@
     // "contextMenus",
     "storage",
     // "unlimitedStorage",
-    "http://*/*",
-    "https://*/*"
+    "<all_urls>"
   ],
 
   "background" : {
