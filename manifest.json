@@ -39,6 +39,7 @@
     "scripts": [
       "core/common.js",
       "core/optionsAuto.js",
+      "capturer/common.js",
       "capturer/background.js"
     ]
   },
@@ -66,6 +67,7 @@
       ],
       "js" : [
         "core/common.js",
+        "capturer/common.js",
         "capturer/content.js"
       ],
       "all_frames" : true
