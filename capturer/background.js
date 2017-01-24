@@ -67,6 +67,18 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
   return [newFilename, false];
 };
 
+capturer.registerDocument = function (options, callback) {
+  var timeId = options.settings.timeId;
+  var documentName = options.settings.documentName;
+  if (!capturer.usedDocumentNames[timeId]) { capturer.usedDocumentNames[timeId] = {}; }
+  if (!capturer.usedDocumentNames[timeId][documentName]) { capturer.usedDocumentNames[timeId][documentName] = 0; }
+  var fixedDocumentName = (capturer.usedDocumentNames[timeId][documentName] > 0) ?
+    (documentName + "_" + capturer.usedDocumentNames[timeId][documentName]) :
+    documentName;
+  capturer.usedDocumentNames[timeId][documentName]++;
+  callback({ documentName: fixedDocumentName });
+};
+
 capturer.getFrameContent = function (options, callback) {
   var tabId = options.tabId;
   var message = {
@@ -139,16 +151,12 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       sendResponse(response);
     });
   } else if (message.cmd === "register-document") {
-    var timeId = message.settings.timeId;
-    var documentName = message.settings.documentName;
-    var fixedDocumentName = documentName;
-    capturer.usedDocumentNames[timeId] = capturer.usedDocumentNames[timeId] || {};
-    capturer.usedDocumentNames[timeId][documentName] = capturer.usedDocumentNames[timeId][documentName] || 0;
-    if (capturer.usedDocumentNames[timeId][documentName] > 0) {
-      fixedDocumentName = fixedDocumentName + "_" + capturer.usedDocumentNames[timeId][documentName];
-    }
-    capturer.usedDocumentNames[timeId][documentName]++;
-    sendResponse({ documentName: fixedDocumentName });
+    return capturer.registerDocument({
+      settings: message.settings,
+      options: message.options
+    }, function (response) {
+      sendResponse(response);
+    });
   } else if (message.cmd === "save-document") {
     var timeId = message.settings.timeId;
     var targetDir = scrapbook.options.dataFolder + "/" + timeId;
