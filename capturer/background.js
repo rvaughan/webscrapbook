@@ -82,7 +82,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
   };
 
   console.debug("capture-tab send", tabId, message);
-  chrome.tabs.sendMessage(tabId, message, null, function (response) {
+  chrome.tabs.sendMessage(tabId, message, { frameId: 0 }, function (response) {
     console.debug("capture-tab response", tabId, response);
     if (!response) {
       alert(scrapbook.lang("ErrorCapture", [scrapbook.lang("ErrorContentScriptNotReady")]));
