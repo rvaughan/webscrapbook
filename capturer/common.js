@@ -761,8 +761,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
 
   var captureDone = function () {
     var content = scrapbook.doctypeToString(doc.doctype) + rootNode.outerHTML;
-    var message = {
-      cmd: "save-document",
+    capturerDocSaver.saveDocument({
       frameUrl: doc.location.href,
       settings: settings,
       options: options,
@@ -771,13 +770,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         mime: mime,
         content: content,
       }
-    };
-
-    console.debug("save-document send", message);
-    chrome.runtime.sendMessage(message, function (response) {
-      console.debug("save-document response", response);
-      callback(response);
-    });
+    }, callback);
   };
 
   var rewriteRelativeUrl = function (url) {
@@ -874,23 +867,16 @@ capturerDocSaver.captureFile = function (url, settings, options, callback) {
 
   var saveIndex = function (url) {
     var html = '<html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;URL=' + url + '"></head><body></body></html>';
-    var message = {
-      cmd: "save-document",
+    capturerDocSaver.saveDocument({
       frameUrl: document.location.href,
       settings: settings,
       options: options,
       data: {
         documentName: settings.documentName,
         mime: "text/html",
-        content: html,
+        content: html
       }
-    };
-
-    console.debug("save-document send", message);
-    chrome.runtime.sendMessage(message, function (response) {
-      console.debug("save-document response", response);
-      callback(response);
-    });
+    }, callback);
   };
 
   saveFile(url);
@@ -922,6 +908,22 @@ capturerDocSaver.downloadFile = function (params, callback) {
   console.debug("download-file send", message);
   chrome.runtime.sendMessage(message, function (response) {
     console.debug("download-file response", response);
+    callback(response);
+  });
+};
+
+capturerDocSaver.saveDocument = function (params, callback) {
+  var message = {
+    cmd: "save-document",
+    frameUrl: params.frameUrl,
+    settings: params.settings,
+    options: params.options,
+    data: params.data
+  };
+
+  console.debug("save-document send", message);
+  chrome.runtime.sendMessage(message, function (response) {
+    console.debug("save-document response", response);
     callback(response);
   });
 };
