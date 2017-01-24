@@ -21,7 +21,7 @@ function captureDocumentOrFile(doc, settings, options, callback) {
 
   // if not HTML document, capture as file
   if (["text/html", "application/xhtml+xml"].indexOf(doc.contentType) === -1) {
-    if (!scrapbook.getOption("capture.saveInlineAsHtml", false)) {
+    if (!options["capture.saveInlineAsHtml"]) {
       captureFile(doc.location.href, settings, options, callback);
       return false;
     }
