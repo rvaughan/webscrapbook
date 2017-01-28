@@ -67,6 +67,8 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
 };
 
 capturer.captureFile = function (params, callback) {
+  console.debug("call: captureFile", params);
+
   capturer.downloadFile({
     url: params.url,
     settings: params.settings,
@@ -109,6 +111,8 @@ capturer.registerDocument = function (params, callback) {
 };
 
 capturer.getFrameContent = function (params, callback) {
+  console.debug("call: getFrameContent", params);
+
   var cmd = "capturer.captureDocumentOrFile";
   var tabId = params.tabId;
   var message = {
