@@ -3,10 +3,9 @@
  * The background script for capture functionality
  *
  * @require {object} scrapbook
- * @public {object} capturer
  *******************************************************************/
 
-var capturer = {};
+capturer.isContentScript = false;
 
 /**
  * { timeId: { documentName: count } } 
@@ -80,9 +79,10 @@ capturer.registerDocument = function (params, callback) {
 };
 
 capturer.getFrameContent = function (params, callback) {
+  var cmd = "capturer.captureDocumentOrFile";
   var tabId = params.tabId;
   var message = {
-    cmd: "capture-document",
+    cmd: cmd,
     frameUrl: params.frameUrl,
     settings: params.settings,
     options: params.options
@@ -95,9 +95,9 @@ capturer.getFrameContent = function (params, callback) {
     for (var i = 0, I = framesInfo.length; i < I; ++i) {
       var frameInfo = framesInfo[i];
       if (frameInfo.url == params.frameUrl && !frameInfo.errorOccurred) {
-        console.debug("capture-document send", tabId, frameInfo.frameId, message);
+        console.debug(cmd + " send", tabId, frameInfo.frameId, message);
         chrome.tabs.sendMessage(tabId, message, { frameId: frameInfo.frameId }, function (response) {
-          console.debug("capture-document response", tabId, frameInfo.frameId, response);
+          console.debug(cmd + " response", tabId, frameInfo.frameId, response);
           callback(response);
         });
         return;
@@ -134,7 +134,7 @@ capturer.saveDocument = function (params, callback) {
 };
 
 capturer.downloadFile = function (params, callback) {
-  console.log("download-file", params);
+  console.log("downloadFile", params);
   var timeId = params.settings.timeId;
   var targetDir = scrapbook.options.dataFolder + "/" + timeId;
   var sourceUrl = params.url;
@@ -223,11 +223,17 @@ capturer.downloadFile = function (params, callback) {
   return true; // async response
 };
 
+
+/**
+ * Events handling
+ */
+
 chrome.browserAction.onClicked.addListener(function (tab) {
-  var tabId = tab.id;
+  var cmd = "capturer.captureDocumentOrFile";
   var timeId = scrapbook.dateToId();
+  var tabId = tab.id;
   var message = {
-    cmd: "capture-document",
+    cmd: cmd,
     settings: {
       timeId: timeId,
       frameIsMain: true,
@@ -236,9 +242,9 @@ chrome.browserAction.onClicked.addListener(function (tab) {
     options: scrapbook.getOptions("capture"),
   };
 
-  console.debug("capture-document (main) send", tabId, message);
+  console.debug(cmd + " (main) send", tabId, message);
   chrome.tabs.sendMessage(tabId, message, { frameId: 0 }, function (response) {
-    console.debug("capture-document (main) response", tabId, response);
+    console.debug(cmd + " (main) response", tabId, response);
     if (!response) {
       alert(scrapbook.lang("ErrorCapture", [scrapbook.lang("ErrorContentScriptNotReady")]));
       return;
@@ -253,41 +259,16 @@ chrome.browserAction.onClicked.addListener(function (tab) {
 });
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  console.debug(message.cmd + " receive", sender.tab.id, message);
+  console.debug(message.cmd + " receive", sender.tab.id, message.args);
 
-  if (message.cmd === "get-frame-content") {
-    return capturer.getFrameContent({
-      tabId: sender.tab.id,
-      frameUrl: message.frameUrl,
-      settings: message.settings,
-      options: message.options
-    }, function (response) {
-      sendResponse(response);
-    });
-  } else if (message.cmd === "register-document") {
-    return capturer.registerDocument({
-      settings: message.settings,
-      options: message.options
-    }, function (response) {
-      sendResponse(response);
-    });
-  } else if (message.cmd === "save-document") {
-    return capturer.saveDocument({
-      frameUrl: message.frameUrl,
-      settings: message.settings,
-      options: message.options,
-      data: message.data
-    }, function (response) {
-      sendResponse(response);
-    });
-  } else if (message.cmd === "download-file") {
-    return capturer.downloadFile({
-      url: message.url,
-      settings: message.settings,
-      options: message.options
-    }, function (response) {
-      sendResponse(response);
-    });
+  if (message.cmd.slice(0, 9) == "capturer.") {
+    var method = message.cmd.slice(9);
+    if (capturer[method]) {
+      message.args.tabId = sender.tab.id;
+      return capturer[method](message.args, function (response) {
+        sendResponse(response);
+      });
+    }
   }
 });
 

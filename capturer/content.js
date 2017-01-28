@@ -5,13 +5,11 @@
  * @require {object} scrapbook
  *******************************************************************/
 
-capturerDocSaver.isContentScript = true;
-
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   console.debug(message.cmd + " receive", message, sender);
 
-  if (message.cmd === "capture-document") {
-    capturerDocSaver.captureDocumentOrFile(document, message.settings, message.options, function (response) {
+  if (message.cmd === "capturer.captureDocumentOrFile") {
+    capturer.captureDocumentOrFile(document, message.settings, message.options, function (response) {
       sendResponse(response);
     });
     return true; // async response

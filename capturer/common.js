@@ -3,13 +3,35 @@
  * The common script for capture functionality
  *
  * @require {object} scrapbook
+ * @public {object} capturer
  *******************************************************************/
 
-var capturerDocSaver = {};
+var capturer = {};
 
-capturerDocSaver.isContentScript = false;
+capturer.isContentScript = true;
 
-capturerDocSaver.captureDocumentOrFile = function (doc, settings, options, callback) {
+/**
+ * Invoke the method from the background script and invoke the callback afterwards
+ */
+capturer.invoke = function (method, args, callback) {
+  if (capturer.isContentScript) {
+    var cmd = "capturer." + method;
+    var message = {
+      cmd: cmd,
+      args: args
+    };
+
+    console.debug(cmd + " send", args);
+    chrome.runtime.sendMessage(message, function (response) {
+      console.debug(cmd + " response", response);
+      callback(response);
+    });
+  } else {
+    capturer[method](args, callback);
+  }
+};
+
+capturer.captureDocumentOrFile = function (doc, settings, options, callback) {
   console.debug("call: captureDocumentOrFile");
 
   if (doc.readyState === "loading") {
@@ -21,16 +43,16 @@ capturerDocSaver.captureDocumentOrFile = function (doc, settings, options, callb
   // if not HTML document, capture as file
   if (["text/html", "application/xhtml+xml"].indexOf(doc.contentType) === -1) {
     if (!options["capture.saveInlineAsHtml"]) {
-      capturerDocSaver.captureFile(doc.location.href, settings, options, callback);
+      capturer.captureFile(doc.location.href, settings, options, callback);
       return false;
     }
   }
 
   // otherwise, capture as document
-  capturerDocSaver.captureDocument(doc, settings, options, callback);
+  capturer.captureDocument(doc, settings, options, callback);
 };
 
-capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
+capturer.captureDocument = function (doc, settings, options, callback) {
   console.debug("call: captureDocument");
 
   if (doc.readyState === "loading") {
@@ -242,7 +264,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         default:
           if (elem.src) {
             remainingTasks++;
-            capturerDocSaver.downloadFile({
+            capturer.invoke("downloadFile", {
               url: elem.src,
               settings: settings,
               options: options
@@ -352,7 +374,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
       }
       if (frameDoc) {
         remainingTasks++;
-        capturerDocSaver.captureDocumentOrFile(frameDoc, frameSettings, options, function (result) {
+        capturer.captureDocumentOrFile(frameDoc, frameSettings, options, function (result) {
           if (result && !result.error) {
             captureFrameCallback(result);
           } else {
@@ -363,12 +385,11 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         });
       } else {
         remainingTasks++;
-        capturerDocSaver.getFrameContent({
+        capturer.invoke("getFrameContent", {
           frameUrl: frame.src,
           settings: frameSettings,
           options: options
         }, function (response) {
-          console.debug("get-frame-content response", response);
           if (response && !response.error) {
             captureFrameCallback(response);
           } else {
@@ -466,7 +487,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         default:
           if (elem.hasAttribute("src")) {
             remainingTasks++;
-            capturerDocSaver.downloadFile({
+            capturer.invoke("downloadFile", {
               url: elem.src,
               settings: settings,
               options: options
@@ -506,7 +527,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         case "save":
         default:
           remainingTasks++;
-          capturerDocSaver.downloadFile({
+          capturer.invoke("downloadFile", {
             url: elem.src,
             settings: settings,
             options: options
@@ -544,7 +565,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         default:
           Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
             remainingTasks++;
-            capturerDocSaver.downloadFile({
+            capturer.invoke("downloadFile", {
               url: elem.src,
               settings: settings,
               options: options
@@ -583,7 +604,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         default:
           Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
             remainingTasks++;
-            capturerDocSaver.downloadFile({
+            capturer.invoke("downloadFile", {
               url: elem.src,
               settings: settings,
               options: options
@@ -617,7 +638,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         case "save":
         default:
           remainingTasks++;
-          capturerDocSaver.downloadFile({
+          capturer.invoke("downloadFile", {
             url: elem.src,
             settings: settings,
             options: options
@@ -650,7 +671,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         case "save":
         default:
           remainingTasks++;
-          capturerDocSaver.downloadFile({
+          capturer.invoke("downloadFile", {
             url: elem.data,
             settings: settings,
             options: options
@@ -684,7 +705,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         case "save":
         default:
           remainingTasks++;
-          capturerDocSaver.downloadFile({
+          capturer.invoke("downloadFile", {
             url: rewriteUrl,
             settings: settings,
             options: options,
@@ -739,7 +760,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
         case "save":
         default:
           remainingTasks++;
-          capturerDocSaver.downloadFile({
+          capturer.invoke("downloadFile", {
             url: rewriteUrl,
             settings: settings,
             options: options
@@ -763,7 +784,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
 
   var captureDone = function () {
     var content = scrapbook.doctypeToString(doc.doctype) + rootNode.outerHTML;
-    capturerDocSaver.saveDocument({
+    capturer.invoke("saveDocument", {
       frameUrl: doc.location.href,
       settings: settings,
       options: options,
@@ -800,7 +821,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
     });
 
     srcsetUrls.forEach(function (elem, index, array) {
-      capturerDocSaver.downloadFile({
+      capturer.invoke("downloadFile", {
         url: elem,
         settings: settings,
         options: options
@@ -830,7 +851,7 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
   var rootNode;
   var headNode;
 
-  capturerDocSaver.registerDocument({
+  capturer.invoke("registerDocument", {
     settings: settings,
     options: options
   }, function (response) {
@@ -839,11 +860,11 @@ capturerDocSaver.captureDocument = function (doc, settings, options, callback) {
   });
 };
 
-capturerDocSaver.captureFile = function (url, settings, options, callback) {
+capturer.captureFile = function (url, settings, options, callback) {
   console.debug("call:", arguments.callee.name);
 
   var saveFile = function (url) {
-    capturerDocSaver.downloadFile({
+    capturer.invoke("downloadFile", {
       url: url,
       settings: settings,
       options: options
@@ -864,7 +885,7 @@ capturerDocSaver.captureFile = function (url, settings, options, callback) {
 
   var saveIndex = function (url) {
     var html = '<html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;URL=' + url + '"></head><body></body></html>';
-    capturerDocSaver.saveDocument({
+    capturer.invoke("saveDocument", {
       frameUrl: document.location.href,
       settings: settings,
       options: options,
@@ -877,80 +898,4 @@ capturerDocSaver.captureFile = function (url, settings, options, callback) {
   };
 
   saveFile(url);
-};
-
-capturerDocSaver.registerDocument = function (params, callback) {
-  if (capturerDocSaver.isContentScript) {
-    var message = {
-      cmd: "register-document",
-      settings: params.settings,
-      options: params.options,
-    };
-
-    console.debug("register-document send", message);
-    chrome.runtime.sendMessage(message, function (response) {
-      console.debug("register-document response", response);
-      callback(response);
-    });
-  } else {
-    capturer.registerDocument(params, callback);
-  }
-};
-
-capturerDocSaver.getFrameContent = function (params, callback) {
-  if (capturerDocSaver.isContentScript) {
-    var message = {
-      cmd: "get-frame-content",
-      frameUrl: params.frameUrl,
-      settings: params.settings,
-      options: params.options
-    };
-
-    console.debug("get-frame-content send", message);
-    chrome.runtime.sendMessage(message, function (response) {
-      console.debug("get-frame-content response", response);
-      callback(response);
-    });
-  } else {
-    capturer.getFrameContent(params, callback);
-  }
-};
-
-capturerDocSaver.downloadFile = function (params, callback) {
-  if (capturerDocSaver.isContentScript) {
-    var message = {
-      cmd: "download-file",
-      url: params.url,
-      settings: params.settings,
-      options: params.options
-    };
-
-    console.debug("download-file send", message);
-    chrome.runtime.sendMessage(message, function (response) {
-      console.debug("download-file response", response);
-      callback(response);
-    });
-  } else {
-    capturer.downloadFile(params, callback);
-  }
-};
-
-capturerDocSaver.saveDocument = function (params, callback) {
-  if (capturerDocSaver.isContentScript) {
-    var message = {
-      cmd: "save-document",
-      frameUrl: params.frameUrl,
-      settings: params.settings,
-      options: params.options,
-      data: params.data
-    };
-
-    console.debug("save-document send", message);
-    chrome.runtime.sendMessage(message, function (response) {
-      console.debug("save-document response", response);
-      callback(response);
-    });
-  } else {
-    capturer.saveDocument(params, callback);
-  }
 };
