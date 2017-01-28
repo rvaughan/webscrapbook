@@ -111,6 +111,7 @@ capturer.getFrameContent = function (params, callback) {
 
 capturer.saveDocument = function (params, callback) {
   var timeId = params.settings.timeId;
+  var frameUrl = params.frameUrl;
   var targetDir = scrapbook.options.dataFolder + "/" + timeId;
   var willErase = !params.settings.frameIsMain;
   var filename = params.data.documentName + "." + ((params.data.mime === "application/xhtml+xml") ? "xhtml" : "html");
@@ -126,9 +127,9 @@ capturer.saveDocument = function (params, callback) {
   console.debug("download start", params);
   chrome.downloads.download(params, function (downloadId) {
     console.debug("download response", downloadId);
-    capturer.downloadUrls[downloadId] = params.frameUrl;
+    capturer.downloadUrls[downloadId] = frameUrl;
     if (willErase) { capturer.downloadEraseIds[downloadId] = true; }
-    callback({ timeId: timeId, frameUrl: params.frameUrl, targetDir: targetDir, filename: filename });
+    callback({ timeId: timeId, frameUrl: frameUrl, targetDir: targetDir, filename: filename });
   });
   return true; // async response
 };
