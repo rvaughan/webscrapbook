@@ -275,23 +275,23 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 chrome.downloads.onChanged.addListener(function (downloadDelta) {
   console.debug("downloads.onChanged", downloadDelta);
 
-  if (downloadDelta.state && downloadDelta.state.current === "complete") {
-    // erase the download history of additional downloads (those recorded in capturer.downloadEraseIds)
-    var id = downloadDelta.id;
+  var erase = function (id) {
     if (capturer.downloadEraseIds[id]) {
       delete(capturer.downloadUrls[id]);
       delete(capturer.downloadEraseIds[id]);
       chrome.downloads.erase({ id: id }, function (erasedIds) {});
     }
+  };
+
+  if (downloadDelta.state && downloadDelta.state.current === "complete") {
+    // erase the download history of additional downloads (those recorded in capturer.downloadEraseIds)
+    var id = downloadDelta.id;
+    erase(id);
   } else if (downloadDelta.error) {
     var id = downloadDelta.id;
     chrome.downloads.search({ id: id }, function (results) {
       console.warn(scrapbook.lang("ErrorFileDownloadError", [capturer.downloadUrls[id], results[0].error]));
-      if (capturer.downloadEraseIds[id]) {
-        delete(capturer.downloadUrls[id]);
-        delete(capturer.downloadEraseIds[id]);
-        chrome.downloads.erase({ id: id }, function (erasedIds) {});
-      }
+      erase(id);
     });
   }
 });
