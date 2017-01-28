@@ -66,6 +66,36 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
   return [newFilename, false];
 };
 
+capturer.captureFile = function (params, callback) {
+  capturer.downloadFile({
+    url: params.url,
+    settings: params.settings,
+    options: params.options
+  }, function (response) {
+    if (params.settings.frameIsMain) {
+      // for the main frame, create a index.html that redirects to the file
+      var html = '<html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;URL=' + response.url + '"></head><body></body></html>';
+      capturer.saveDocument({
+        frameUrl: params.url,
+        settings: params.settings,
+        options: params.options,
+        data: {
+          documentName: params.settings.documentName,
+          mime: "text/html",
+          content: html
+        }
+      }, callback);
+    } else {
+      callback({
+        frameUrl: params.url,
+        filename: response.url
+      });
+    }
+  });
+
+  return true; // async response
+};
+
 capturer.registerDocument = function (params, callback) {
   var timeId = params.settings.timeId;
   var documentName = params.settings.documentName;

@@ -43,8 +43,12 @@ capturer.captureDocumentOrFile = function (doc, settings, options, callback) {
   // if not HTML document, capture as file
   if (["text/html", "application/xhtml+xml"].indexOf(doc.contentType) === -1) {
     if (!options["capture.saveInlineAsHtml"]) {
-      capturer.captureFile(doc.location.href, settings, options, callback);
-      return false;
+      capturer.invoke("captureFile", {
+        url: doc.location.href,
+        settings: settings,
+        options: options
+      }, callback);
+      return true;
     }
   }
 
@@ -858,44 +862,4 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     documentName = response.documentName;
     captureMain();
   });
-};
-
-capturer.captureFile = function (url, settings, options, callback) {
-  console.debug("call:", arguments.callee.name);
-
-  var saveFile = function (url) {
-    capturer.invoke("downloadFile", {
-      url: url,
-      settings: settings,
-      options: options
-    }, function (response) {
-      if (settings.frameIsMain) {
-        // for the main frame, create a index.html that redirects to the file
-        saveIndex(response.url);
-      } else {
-        if (callback) {
-          callback({
-            frameUrl: url,
-            filename: response.url
-          });
-        }
-      }
-    });
-  };
-
-  var saveIndex = function (url) {
-    var html = '<html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;URL=' + url + '"></head><body></body></html>';
-    capturer.invoke("saveDocument", {
-      frameUrl: document.location.href,
-      settings: settings,
-      options: options,
-      data: {
-        documentName: settings.documentName,
-        mime: "text/html",
-        content: html
-      }
-    }, callback);
-  };
-
-  saveFile(url);
 };
