@@ -35,7 +35,7 @@ capturer.captureDocumentOrFile = function (doc, settings, options, callback) {
   console.debug("call: captureDocumentOrFile");
 
   if (doc.readyState === "loading") {
-    console.error(scrapbook.lang("ErrorDocumentNotReady", [doc.location.href]));
+    console.error(scrapbook.lang("ErrorDocumentNotReady", [doc.URL]));
     callback({ error: "document not load" });
     return false;
   }
@@ -44,7 +44,7 @@ capturer.captureDocumentOrFile = function (doc, settings, options, callback) {
   if (["text/html", "application/xhtml+xml"].indexOf(doc.contentType) === -1) {
     if (!options["capture.saveInlineAsHtml"]) {
       capturer.invoke("captureFile", {
-        url: doc.location.href,
+        url: doc.URL,
         settings: settings,
         options: options
       }, callback);
@@ -60,7 +60,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
   console.debug("call: captureDocument");
 
   if (doc.readyState === "loading") {
-    console.error(scrapbook.lang("ErrorDocumentNotReady", [doc.location.href]));
+    console.error(scrapbook.lang("ErrorDocumentNotReady", [doc.URL]));
     callback({ error: "document not load" });
     return false;
   }
@@ -399,7 +399,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           } else {
             captureFrameCallback({
               timeId: timeId,
-              frameUrl: doc.location.href,
+              frameUrl: doc.URL,
               filename: frame.src
             });
           }
@@ -789,7 +789,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
   var captureDone = function () {
     var content = scrapbook.doctypeToString(doc.doctype) + rootNode.outerHTML;
     capturer.invoke("saveDocument", {
-      frameUrl: doc.location.href,
+      frameUrl: doc.URL,
       settings: settings,
       options: options,
       data: {

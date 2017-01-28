@@ -51,5 +51,13 @@
   },
   "OptionPageTitle": {
     "message": "選項設定"
+  },
+  "WarnFrameCrossOrigin": {
+    "message": "因同源政策限制而無法載入位於 $URL$ 的文件，將向伺服器重新取得。",
+    "placeholders": {
+      "url": {
+        "content" : "$1"
+      }
+    }
   }
 }

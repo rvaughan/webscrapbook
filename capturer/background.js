@@ -66,6 +66,63 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
   return [newFilename, false];
 };
 
+capturer.captureUrl = function (params, callback) {
+  console.debug("call: captureUrl", params);
+
+  var sourceUrl = params.url;
+  var settings = params.settings;
+  var options = params.options;
+
+  var filename;
+  
+  var xhr = new XMLHttpRequest();
+  var xhr_shutdown = function () {
+    xhr.onreadystatechange = xhr.onerror = xhr.ontimeout = null;
+    xhr.abort();
+  };
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === 2) {
+      // if header Content-Disposition is defined, use it
+      try {
+        var headerContentDisposition = xhr.getResponseHeader("Content-Disposition");
+        var contentDisposition = scrapbook.parseHeaderContentDisposition(headerContentDisposition);
+        filename = contentDisposition.parameters.filename;
+      } catch (ex) {}
+    } else if (xhr.readyState === 4) {
+      if (xhr.status == 200 || xhr.status == 0) {
+        var doc = xhr.response;
+        if (doc) {
+          capturer.captureDocumentOrFile(doc, settings, options, callback);
+        } else {
+          capturer.captureFile({
+            url: params.url,
+            settings: params.settings,
+            options: params.options
+          }, callback);
+        }
+      } else {
+        xhr.onerror();
+      }
+    }
+  };
+  xhr.ontimeout = function () {
+    console.warn(scrapbook.lang("ErrorFileDownloadTimeout", sourceUrl));
+    callback({ url: sourceUrl, error: "timeout" });
+    xhr_shutdown();
+  };
+  xhr.onerror = function () {
+    var err = [xhr.status, xhr.statusText].join(" ");
+    console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
+    callback({ url: sourceUrl, error: err });
+    xhr_shutdown();
+  };
+  xhr.responseType = "document";
+  xhr.open("GET", sourceUrl, true);
+  xhr.send();
+
+  return true; // async response
+};
+
 capturer.captureFile = function (params, callback) {
   console.debug("call: captureFile", params);
 
@@ -115,30 +172,42 @@ capturer.getFrameContent = function (params, callback) {
 
   var cmd = "capturer.captureDocumentOrFile";
   var tabId = params.tabId;
-  var message = {
-    cmd: cmd,
-    frameUrl: params.frameUrl,
+
+  if (tabId) {
+    // invoked from a document in a tab
+
+    var message = {
+      cmd: cmd,
+      frameUrl: params.frameUrl,
+      settings: params.settings,
+      options: params.options
+    };
+
+    // @TODO:
+    // if the real location of the frame changes, we cannot get the
+    // content since it no more match the src attr of the frame tag
+    chrome.webNavigation.getAllFrames({ tabId: tabId }, function (framesInfo) {
+      for (var i = 0, I = framesInfo.length; i < I; ++i) {
+        var frameInfo = framesInfo[i];
+        if (frameInfo.url == params.frameUrl && !frameInfo.errorOccurred) {
+          console.debug(cmd + " send", tabId, frameInfo.frameId, message);
+          chrome.tabs.sendMessage(tabId, message, { frameId: frameInfo.frameId }, function (response) {
+            console.debug(cmd + " response", tabId, frameInfo.frameId, response);
+            callback(response);
+          });
+          return;
+        }
+      }
+    });
+
+    console.warn(scrapbook.lang("WarnFrameCrossOrigin", params.frameUrl));
+  }
+
+  capturer.captureUrl({
+    url: params.frameUrl,
     settings: params.settings,
     options: params.options
-  };
-
-  // @TODO:
-  // if the real location of the frame changes, we cannot get the
-  // content since it no more match the src attr of the frame tag
-  chrome.webNavigation.getAllFrames({ tabId: tabId }, function (framesInfo) {
-    for (var i = 0, I = framesInfo.length; i < I; ++i) {
-      var frameInfo = framesInfo[i];
-      if (frameInfo.url == params.frameUrl && !frameInfo.errorOccurred) {
-        console.debug(cmd + " send", tabId, frameInfo.frameId, message);
-        chrome.tabs.sendMessage(tabId, message, { frameId: frameInfo.frameId }, function (response) {
-          console.debug(cmd + " response", tabId, frameInfo.frameId, response);
-          callback(response);
-        });
-        return;
-      }
-    }
-    callback(undefined);
-  });
+  }, callback);
 
   return true; // async response
 };
