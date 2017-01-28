@@ -197,6 +197,7 @@ capturer.downloadFile = function (params, callback) {
   var xhr = new XMLHttpRequest();
   var xhr_shutdown = function () {
     xhr.onreadystatechange = xhr.onerror = xhr.ontimeout = null;
+    xhr.abort();
   };
   xhr.onreadystatechange = function () {
     if (xhr.readyState === 2) {
