@@ -30,7 +30,6 @@
     // "notifications",
     // "contextMenus",
     "storage",
-    "webNavigation",
     "<all_urls>"
   ],
 

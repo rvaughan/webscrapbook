@@ -389,11 +389,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         });
       } else {
         remainingTasks++;
-        capturer.invoke("getFrameContent", {
-          frameUrl: frame.src,
-          settings: frameSettings,
-          options: options
-        }, function (response) {
+        getFrameContent(frameSrc, timeId, frameSettings, options, function (response) {
           if (response && !response.error) {
             captureFrameCallback(response);
           } else {

@@ -51,13 +51,5 @@
   },
   "OptionPageTitle": {
     "message": "Options"
-  },
-  "WarnFrameCrossOrigin": {
-    "message": "Unable to load the current document at $URL$. It will be got from a new web request.",
-    "placeholders": {
-      "url": {
-        "content" : "$1"
-      }
-    }
   }
 }

@@ -167,51 +167,6 @@ capturer.registerDocument = function (params, callback) {
   callback({ documentName: fixedDocumentName });
 };
 
-capturer.getFrameContent = function (params, callback) {
-  console.debug("call: getFrameContent", params);
-
-  var cmd = "capturer.captureDocumentOrFile";
-  var tabId = params.tabId;
-
-  if (tabId) {
-    // invoked from a document in a tab
-
-    var message = {
-      cmd: cmd,
-      frameUrl: params.frameUrl,
-      settings: params.settings,
-      options: params.options
-    };
-
-    // @TODO:
-    // if the real location of the frame changes, we cannot get the
-    // content since it no more match the src attr of the frame tag
-    chrome.webNavigation.getAllFrames({ tabId: tabId }, function (framesInfo) {
-      for (var i = 0, I = framesInfo.length; i < I; ++i) {
-        var frameInfo = framesInfo[i];
-        if (frameInfo.url == params.frameUrl && !frameInfo.errorOccurred) {
-          console.debug(cmd + " send", tabId, frameInfo.frameId, message);
-          chrome.tabs.sendMessage(tabId, message, { frameId: frameInfo.frameId }, function (response) {
-            console.debug(cmd + " response", tabId, frameInfo.frameId, response);
-            callback(response);
-          });
-          return;
-        }
-      }
-    });
-
-    console.warn(scrapbook.lang("WarnFrameCrossOrigin", params.frameUrl));
-  }
-
-  capturer.captureUrl({
-    url: params.frameUrl,
-    settings: params.settings,
-    options: params.options
-  }, callback);
-
-  return true; // async response
-};
-
 capturer.saveDocument = function (params, callback) {
   var timeId = params.settings.timeId;
   var frameUrl = params.frameUrl;
