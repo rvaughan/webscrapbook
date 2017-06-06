@@ -324,6 +324,9 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         case "save":
           // do nothing
           break;
+        case "blank":
+          elem.setAttribute("href", "javascript:");
+          break;
         case "remove":
         default:
           elem.removeAttribute("href");

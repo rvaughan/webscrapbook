@@ -34,7 +34,7 @@ scrapbook.options = {
   "capture.script": ["save", "link", "comment", "blank", "remove", 2],
   "capture.noscript": ["save", "comment", "remove", 0],
   "capture.scriptAttr": ["save", "remove", 1],
-  "capture.scriptAnchor": ["save", "remove", 1],
+  "capture.scriptAnchor": ["save", "blank", "remove", 1],
   "capture.base": ["save", "empty", 0],
 };
 
