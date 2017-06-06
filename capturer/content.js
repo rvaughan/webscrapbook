@@ -7,6 +7,10 @@
 
 function getFrameContent(frameElement, timeId, settings, options, callback) {
   var channel = new MessageChannel();
+  var timeout = setTimeout(function () {
+    callback(undefined);
+    delete channel;
+  }, 1000);
   frameElement.contentWindow.postMessage({
     extension: chrome.runtime.id,
     cmd: "capturer.captureDocumentOrFile",
@@ -21,6 +25,7 @@ function getFrameContent(frameElement, timeId, settings, options, callback) {
     console.debug("channel receive", event);
     
     if (message.cmd === "capturer.captureDocumentOrFile.start") {
+      clearTimeout(timeout);
     } else if (message.cmd === "capturer.captureDocumentOrFile.complete") {
       callback(message.response);
       delete channel;
