@@ -21,9 +21,9 @@ capturer.invoke = function (method, args, callback) {
       args: args
     };
 
-    console.debug(cmd + " send", args);
+    isDebug && console.debug(cmd + " send", args);
     chrome.runtime.sendMessage(message, function (response) {
-      console.debug(cmd + " response", response);
+      isDebug && console.debug(cmd + " response", response);
       callback(response);
     });
   } else {
@@ -32,7 +32,7 @@ capturer.invoke = function (method, args, callback) {
 };
 
 capturer.captureDocumentOrFile = function (doc, settings, options, callback) {
-  console.debug("call: captureDocumentOrFile");
+  isDebug && console.debug("call: captureDocumentOrFile");
 
   if (doc.readyState !== "complete") {
     console.error(scrapbook.lang("ErrorDocumentNotReady", [doc.URL]));
@@ -57,7 +57,7 @@ capturer.captureDocumentOrFile = function (doc, settings, options, callback) {
 };
 
 capturer.captureDocument = function (doc, settings, options, callback) {
-  console.debug("call: captureDocument");
+  isDebug && console.debug("call: captureDocument");
 
   if (doc.readyState !== "complete") {
     console.error(scrapbook.lang("ErrorDocumentNotReady", [doc.URL]));
@@ -362,7 +362,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         } else {
           frame.removeAttribute("src");
         }
-        console.debug("capture frame", result);
+        isDebug && console.debug("capture frame", result);
         remainingTasks--;
         captureCheckDone();
       };

@@ -67,7 +67,7 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
 };
 
 capturer.captureUrl = function (params, callback) {
-  console.debug("call: captureUrl", params);
+  isDebug && console.debug("call: captureUrl", params);
 
   var sourceUrl = params.url;
   var settings = params.settings;
@@ -124,7 +124,7 @@ capturer.captureUrl = function (params, callback) {
 };
 
 capturer.captureFile = function (params, callback) {
-  console.debug("call: captureFile", params);
+  isDebug && console.debug("call: captureFile", params);
 
   capturer.downloadFile({
     url: params.url,
@@ -182,9 +182,9 @@ capturer.saveDocument = function (params, callback) {
     conflictAction: "uniquify",
   };
 
-  console.debug("download start", params);
+  isDebug && console.debug("download start", params);
   chrome.downloads.download(params, function (downloadId) {
-    console.debug("download response", downloadId);
+    isDebug && console.debug("download response", downloadId);
     capturer.downloadUrls[downloadId] = frameUrl;
     if (willErase) { capturer.downloadEraseIds[downloadId] = true; }
     callback({ timeId: timeId, frameUrl: frameUrl, targetDir: targetDir, filename: filename });
@@ -193,7 +193,7 @@ capturer.saveDocument = function (params, callback) {
 };
 
 capturer.downloadFile = function (params, callback) {
-  console.log("downloadFile", params);
+  isDebug && console.debug("downloadFile", params);
   var timeId = params.settings.timeId;
   var targetDir = scrapbook.options.dataFolder + "/" + timeId;
   var sourceUrl = params.url;
@@ -302,9 +302,9 @@ chrome.browserAction.onClicked.addListener(function (tab) {
     options: scrapbook.getOptions("capture"),
   };
 
-  console.debug(cmd + " (main) send", tabId, message);
+  isDebug && console.debug(cmd + " (main) send", tabId, message);
   chrome.tabs.sendMessage(tabId, message, { frameId: 0 }, function (response) {
-    console.debug(cmd + " (main) response", tabId, response);
+    isDebug && console.debug(cmd + " (main) response", tabId, response);
     if (!response) {
       alert(scrapbook.lang("ErrorCapture", [scrapbook.lang("ErrorContentScriptNotReady")]));
       return;
@@ -319,7 +319,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
 });
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  console.debug(message.cmd + " receive", sender.tab.id, message.args);
+  isDebug && console.debug(message.cmd + " receive", sender.tab.id, message.args);
 
   if (message.cmd.slice(0, 9) == "capturer.") {
     var method = message.cmd.slice(9);
@@ -333,7 +333,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 });
 
 chrome.downloads.onChanged.addListener(function (downloadDelta) {
-  console.debug("downloads.onChanged", downloadDelta);
+  isDebug && console.debug("downloads.onChanged", downloadDelta);
 
   var erase = function (id) {
     if (capturer.downloadEraseIds[id]) {
@@ -356,4 +356,4 @@ chrome.downloads.onChanged.addListener(function (downloadDelta) {
   }
 });
 
-// console.debug("loading background.js");
+// isDebug && console.debug("loading background.js");

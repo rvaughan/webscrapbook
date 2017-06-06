@@ -22,7 +22,7 @@ function getFrameContent(frameElement, timeId, settings, options, callback) {
     var message = event.data;
     if (message.extension !== chrome.runtime.id) { return; }
     if (message.timeId !== timeId) { return; }
-    console.debug("channel receive", event);
+    isDebug && console.debug("channel receive", event);
     
     if (message.cmd === "capturer.captureDocumentOrFile.start") {
       clearTimeout(timeout);
@@ -36,7 +36,7 @@ function getFrameContent(frameElement, timeId, settings, options, callback) {
 window.addEventListener("message", function (event) {
   var message = event.data;
   if (message.extension !== chrome.runtime.id) { return; }
-  console.debug("content window receive", event);
+  isDebug && console.debug("content window receive", event);
 
   if (message.cmd === "capturer.captureDocumentOrFile") {
     event.ports[0].postMessage({
@@ -56,7 +56,7 @@ window.addEventListener("message", function (event) {
 }, false);
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  console.debug(message.cmd + " receive", message, sender);
+  isDebug && console.debug(message.cmd + " receive", message, sender);
 
   if (message.cmd === "capturer.captureDocumentOrFile") {
     capturer.captureDocumentOrFile(document, message.settings, message.options, function (response) {
@@ -66,4 +66,4 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   }
 });
 
-// console.debug("loading content.js", frameUrl);
+// isDebug && console.debug("loading content.js", frameUrl);
