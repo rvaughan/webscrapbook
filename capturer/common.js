@@ -34,7 +34,7 @@ capturer.invoke = function (method, args, callback) {
 capturer.captureDocumentOrFile = function (doc, settings, options, callback) {
   console.debug("call: captureDocumentOrFile");
 
-  if (doc.readyState === "loading") {
+  if (doc.readyState !== "complete") {
     console.error(scrapbook.lang("ErrorDocumentNotReady", [doc.URL]));
     callback({ error: "document not load" });
     return false;
@@ -59,7 +59,7 @@ capturer.captureDocumentOrFile = function (doc, settings, options, callback) {
 capturer.captureDocument = function (doc, settings, options, callback) {
   console.debug("call: captureDocument");
 
-  if (doc.readyState === "loading") {
+  if (doc.readyState !== "complete") {
     console.error(scrapbook.lang("ErrorDocumentNotReady", [doc.URL]));
     callback({ error: "document not load" });
     return false;
