@@ -7,7 +7,7 @@
   "default_locale": "zh_TW",
 
   "icons": {
-    "32": "core/scrapbook_32.png"
+    "128": "core/scrapbook_128.png"
   },
 
   // for Chrome
@@ -51,7 +51,7 @@
 
   "browser_action": {
     "default_icon": {
-      "32": "core/scrapbook_32.png"
+      "128": "core/scrapbook_128.png"
     },
     "default_title": "__MSG_BrowserActionTitle__"
   },
