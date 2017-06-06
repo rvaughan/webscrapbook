@@ -55,25 +55,37 @@ window.addEventListener("DOMContentLoaded", function (event) {
     label.textContent = id + ": ";
     p.appendChild(label);
 
-    switch (typeof value) {
-      case "boolean":
+    switch(Object.prototype.toString.call(value)) {
+      case "[object Boolean]":
         var input = document.createElement("input");
         input.id = OPTION_PREFIX + id;
-        input.type = "checkbox";
+        input.setAttribute("type", "checkbox");
         input.setAttribute("checked", value ? "true" : "false");
         p.appendChild(input);
         break;
-      case "number":
+      case "[object Number]":
         var input = document.createElement("input");
         input.id = OPTION_PREFIX + id;
-        input.type = "number";
+        input.setAttribute("type", "number");
         input.setAttribute("value", value);
         p.appendChild(input);
         break;
-      default:
+      case "[object Array]":
+        var input = document.createElement("select");
+        input.id = OPTION_PREFIX + id;
+        input.setAttribute("type", "select");
+        p.appendChild(input);
+        for (var i=0, I=value.length; i<I-1; ++i) {
+          var item = value[i];
+          var option = document.createElement("option");
+          option.value = option.textContent = item;
+          input.appendChild(option);
+        }
+        break;
+      default:  // string
         var input = document.createElement("input");
         input.id = OPTION_PREFIX + id;
-        input.type = "text";
+        input.setAttribute("type", "text");
         input.setAttribute("value", value);
         p.appendChild(input);
         break;

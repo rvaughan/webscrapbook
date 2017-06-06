@@ -20,22 +20,22 @@ scrapbook.options = {
   "capture.saveAsUtf8": true,
   "capture.saveAsciiFilename": false,
   "capture.saveInlineAsHtml": false,
-  "capture.image": "save", // "save", "link", "blank", "comment", "remove"
-  "capture.imageBackground": "save", // "save", "link", "remove"
-  "capture.audio": "save", // "save", "link", "blank", "comment", "remove"
-  "capture.video": "save", // "save", "link", "blank", "comment", "remove"
-  "capture.embed": "save", // "save", "link", "blank", "comment", "remove"
-  "capture.object": "save", // "save", "link", "blank", "comment", "remove"
-  "capture.applet": "save", // "save", "link", "blank", "comment", "remove"
-  "capture.canvas": "save", // "save", "blank", "comment", "remove"
-  "capture.frame": "save", // "save", "link", "blank", "comment", "remove"
-  "capture.font": "save", // "save", "link", "blank", "comment", "remove"
-  "capture.style": "save", // "save", "link", "blank", "comment", "remove"
-  "capture.script": "comment", // "save", "link", "blank", "comment", "remove"
-  "capture.noscript": "save", // "save", "comment", "remove"
-  "capture.scriptAttr": "remove", // "save", "remove"
-  "capture.scriptAnchor": "remove", // "save", "remove"
-  "capture.base": "save", // "save", "empty"
+  "capture.image": ["save", "link", "blank", "comment", "remove", 0],
+  "capture.imageBackground": ["save", "link", "remove", 0],
+  "capture.audio": ["save", "link", "blank", "comment", "remove", 0],
+  "capture.video": ["save", "link", "blank", "comment", "remove", 0],
+  "capture.embed": ["save", "link", "blank", "comment", "remove", 0],
+  "capture.object": ["save", "link", "blank", "comment", "remove", 0],
+  "capture.applet": ["save", "link", "blank", "comment", "remove", 0],
+  "capture.canvas": ["save", "blank", "comment", "remove", 0],
+  "capture.frame": ["save", "link", "blank", "comment", "remove", 0],
+  "capture.font": ["save", "link", "blank", "comment", "remove", 0],
+  "capture.style": ["save", "link", "blank", "comment", "remove", 0],
+  "capture.script": ["save", "link", "blank", "comment", "remove", 3],
+  "capture.noscript": ["save", "comment", "remove", 0],
+  "capture.scriptAttr": ["save", "remove", 1],
+  "capture.scriptAnchor": ["save", "remove", 1],
+  "capture.base": ["save", "empty", 0],
 };
 
 scrapbook.isOptionsSynced = false;
@@ -71,7 +71,12 @@ scrapbook.setOption = function (key, value, callback) {
 scrapbook.loadOptions = function (callback) {
   chrome.storage.sync.get(scrapbook.options, function (items) {
     for (var i in items) {
-      scrapbook.options[i] = items[i];
+      var item = items[i];
+      if (Object.prototype.toString.call(item) === "[object Array]") {
+        scrapbook.options[i] = item[item.pop()];
+      } else {
+        scrapbook.options[i] = item;
+      }
     }
     if (callback) {
       scrapbook.isOptionsSynced = true;

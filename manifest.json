@@ -45,6 +45,7 @@
 
   "options_ui": { // Chrome 42+
     "chrome_style": true,
+    //"open_in_tab": true,
     "page": "core/options.html"
   },
   "options_page": "core/options.html", // for backward compatibility
