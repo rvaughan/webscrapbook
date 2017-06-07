@@ -18,7 +18,7 @@ capturer.usedDocumentNames = {};
 capturer.fileToUrl = {};
 
 /**
- * { downloadId: { timeId: {String}, src: {String}, autoErase: {Boolean} }
+ * { downloadId: { timeId: {String}, src: {String}, autoErase: {Boolean}, onComplete: {Function}, onError: {Function} }
  */
 capturer.downloadInfo = {};
 
@@ -59,6 +59,10 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
   }
   capturer.fileToUrl[timeId][newFilenameCI] = tokenSrc;
   return [newFilename, false];
+};
+
+capturer.getErrorUrl = function (sourceUrl) {
+  return "urn:scrapbook-download-error:" + sourceUrl;
 };
 
 capturer.captureUrl = function (params, callback) {
@@ -102,13 +106,13 @@ capturer.captureUrl = function (params, callback) {
   };
   xhr.ontimeout = function () {
     console.warn(scrapbook.lang("ErrorFileDownloadTimeout", sourceUrl));
-    callback({ url: sourceUrl, error: "timeout" });
+    callback({ url: capturer.getErrorUrl(sourceUrl), error: "timeout" });
     xhr_shutdown();
   };
   xhr.onerror = function () {
     var err = [xhr.status, xhr.statusText].join(" ");
     console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
-    callback({ url: sourceUrl, error: err });
+    callback({ url: capturer.getErrorUrl(sourceUrl), error: err });
     xhr_shutdown();
   };
   xhr.responseType = "document";
@@ -183,9 +187,14 @@ capturer.saveDocument = function (params, callback) {
     capturer.downloadInfo[downloadId] = {
       timeId: timeId,
       src: frameUrl,
-      autoErase: autoErase
+      autoErase: autoErase,
+      onComplete: function () {
+        callback({ timeId: timeId, frameUrl: frameUrl, targetDir: targetDir, filename: filename });
+      },
+      onError: function () {
+        callback({ url: capturer.getErrorUrl(frameUrl) });
+      }
     };
-    callback({ timeId: timeId, frameUrl: frameUrl, targetDir: targetDir, filename: filename });
   });
   return true; // async response
 };
@@ -212,14 +221,23 @@ capturer.downloadFile = function (params, callback) {
       filename: targetDir + "/" + filename,
       conflictAction: "uniquify",
     };
-    chrome.downloads.download(params, function (downloadId) {
-      capturer.downloadInfo[downloadId] = {
-        timeId: timeId,
-        src: sourceUrl,
-        autoErase: true
-      };
-      callback({ url: filename });
-    });
+    try {
+      chrome.downloads.download(params, function (downloadId) {
+        capturer.downloadInfo[downloadId] = {
+          timeId: timeId,
+          src: sourceUrl,
+          autoErase: true,
+          onComplete: function () {
+            callback({ url: filename });
+          },
+          onError: function () {
+            callback({ url: capturer.getErrorUrl(sourceUrl) });
+          }
+        };
+      });
+    } catch (ex) {
+      callback({ url: capturer.getErrorUrl(sourceUrl) });
+    }
     return true; // async response
   }
   
@@ -256,14 +274,23 @@ capturer.downloadFile = function (params, callback) {
           filename: targetDir + "/" + filename,
           conflictAction: "uniquify",
         };
-        chrome.downloads.download(params, function (downloadId) {
-          capturer.downloadInfo[downloadId] = {
-            timeId: timeId,
-            src: sourceUrl,
-            autoErase: true
-          };
-          callback({ url: filename });
-        });
+        try {
+          chrome.downloads.download(params, function (downloadId) {
+            capturer.downloadInfo[downloadId] = {
+              timeId: timeId,
+              src: sourceUrl,
+              autoErase: true,
+              onComplete: function () {
+                callback({ url: filename });
+              },
+              onError: function () {
+                callback({ url: capturer.getErrorUrl(sourceUrl) });
+              }
+            };
+          });
+        } catch (ex) {
+          callback({ url: capturer.getErrorUrl(sourceUrl) });
+        }
       } else {
         xhr.onerror();
       }
@@ -271,13 +298,13 @@ capturer.downloadFile = function (params, callback) {
   };
   xhr.ontimeout = function () {
     console.warn(scrapbook.lang("ErrorFileDownloadTimeout", sourceUrl));
-    callback({ url: sourceUrl, error: "timeout" });
+    callback({ url: capturer.getErrorUrl(sourceUrl), error: "timeout" });
     xhr_shutdown();
   };
   xhr.onerror = function () {
     var err = [xhr.status, xhr.statusText].join(" ");
     console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
-    callback({ url: sourceUrl, error: err });
+    callback({ url: capturer.getErrorUrl(sourceUrl), error: err });
     xhr_shutdown();
   };
   xhr.responseType = "blob";
@@ -349,11 +376,13 @@ chrome.downloads.onChanged.addListener(function (downloadDelta) {
   if (downloadDelta.state && downloadDelta.state.current === "complete") {
     // erase the download history of additional downloads (those recorded in capturer.downloadEraseIds)
     var downloadId = downloadDelta.id;
+    capturer.downloadInfo[downloadId].onComplete();
     erase(downloadId);
   } else if (downloadDelta.error) {
     var downloadId = downloadDelta.id;
     chrome.downloads.search({ id: downloadId }, function (results) {
       console.warn(scrapbook.lang("ErrorFileDownloadError", [capturer.downloadInfo[downloadId].src, results[0].error]));
+      capturer.downloadInfo[downloadId].onError();
       erase(downloadId);
     });
   }
