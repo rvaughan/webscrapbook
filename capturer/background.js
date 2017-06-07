@@ -18,14 +18,9 @@ capturer.usedDocumentNames = {};
 capturer.fileToUrl = {};
 
 /**
- * { downloadId: url } 
+ * { downloadId: { timeId: {String}, src: {String}, autoErase: {Boolean} }
  */
-capturer.downloadUrls = {};
-
-/**
- * { downloadId: true } 
- */
-capturer.downloadEraseIds = {};
+capturer.downloadInfo = {};
 
 /**
  * Prevent filename conflictAction. Appends a number if the given filename is used.
@@ -171,7 +166,7 @@ capturer.saveDocument = function (params, callback) {
   var timeId = params.settings.timeId;
   var frameUrl = params.frameUrl;
   var targetDir = scrapbook.options.dataFolder + "/" + timeId;
-  var willErase = !params.settings.frameIsMain;
+  var autoErase = !params.settings.frameIsMain;
   var filename = params.data.documentName + "." + ((params.data.mime === "application/xhtml+xml") ? "xhtml" : "html");
   filename = scrapbook.validateFilename(filename);
   filename = capturer.getUniqueFilename(timeId, filename, true)[0];
@@ -185,8 +180,11 @@ capturer.saveDocument = function (params, callback) {
   isDebug && console.debug("download start", params);
   chrome.downloads.download(params, function (downloadId) {
     isDebug && console.debug("download response", downloadId);
-    capturer.downloadUrls[downloadId] = frameUrl;
-    if (willErase) { capturer.downloadEraseIds[downloadId] = true; }
+    capturer.downloadInfo[downloadId] = {
+      timeId: timeId,
+      src: frameUrl,
+      autoErase: autoErase
+    };
     callback({ timeId: timeId, frameUrl: frameUrl, targetDir: targetDir, filename: filename });
   });
   return true; // async response
@@ -215,8 +213,11 @@ capturer.downloadFile = function (params, callback) {
       conflictAction: "uniquify",
     };
     chrome.downloads.download(params, function (downloadId) {
-      capturer.downloadUrls[downloadId] = sourceUrl;
-      capturer.downloadEraseIds[downloadId] = true;
+      capturer.downloadInfo[downloadId] = {
+        timeId: timeId,
+        src: sourceUrl,
+        autoErase: true
+      };
       callback({ url: filename });
     });
     return true; // async response
@@ -256,8 +257,11 @@ capturer.downloadFile = function (params, callback) {
           conflictAction: "uniquify",
         };
         chrome.downloads.download(params, function (downloadId) {
-          capturer.downloadUrls[downloadId] = sourceUrl;
-          capturer.downloadEraseIds[downloadId] = true;
+          capturer.downloadInfo[downloadId] = {
+            timeId: timeId,
+            src: sourceUrl,
+            autoErase: true
+          };
           callback({ url: filename });
         });
       } else {
@@ -335,23 +339,22 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 chrome.downloads.onChanged.addListener(function (downloadDelta) {
   isDebug && console.debug("downloads.onChanged", downloadDelta);
 
-  var erase = function (id) {
-    if (capturer.downloadEraseIds[id]) {
-      delete(capturer.downloadUrls[id]);
-      delete(capturer.downloadEraseIds[id]);
-      chrome.downloads.erase({ id: id }, function (erasedIds) {});
+  var erase = function (downloadId) {
+    if (capturer.downloadInfo[downloadId].autoErase) {
+      chrome.downloads.erase({ id: downloadId }, function (erasedIds) {});
     }
+    delete capturer.downloadInfo[downloadId];
   };
 
   if (downloadDelta.state && downloadDelta.state.current === "complete") {
     // erase the download history of additional downloads (those recorded in capturer.downloadEraseIds)
-    var id = downloadDelta.id;
-    erase(id);
+    var downloadId = downloadDelta.id;
+    erase(downloadId);
   } else if (downloadDelta.error) {
-    var id = downloadDelta.id;
-    chrome.downloads.search({ id: id }, function (results) {
-      console.warn(scrapbook.lang("ErrorFileDownloadError", [capturer.downloadUrls[id], results[0].error]));
-      erase(id);
+    var downloadId = downloadDelta.id;
+    chrome.downloads.search({ id: downloadId }, function (results) {
+      console.warn(scrapbook.lang("ErrorFileDownloadError", [capturer.downloadInfo[downloadId].src, results[0].error]));
+      erase(downloadId);
     });
   }
 });
