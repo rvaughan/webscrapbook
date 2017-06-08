@@ -12,7 +12,8 @@
 
   // for Chrome
   // chrome.downloads is since Chrome 31
-  "minimum_chrome_version": "31",
+  // Destructuring assignment is since Chrome 49
+  "minimum_chrome_version": "49",
 
   // for Firefox
   // chrome.downloads is sufficiently supported since Firefox 48
