@@ -62,7 +62,7 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
 };
 
 capturer.getErrorUrl = function (sourceUrl) {
-  return "urn:scrapbook-download-error:" + sourceUrl;
+  return "urn:scrapbook:download:error:" + sourceUrl;
 };
 
 capturer.captureUrl = function (params, callback) {
