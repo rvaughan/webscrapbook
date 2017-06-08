@@ -28,9 +28,7 @@ capturer.downloadInfo = {};
  * @param {string} timeId
  * @param {string} filename - The unfixed filename.
  * @param {string|true} src - The source URL of the filename source. Use true means always create a new filename.
- * @return {Array}
- *   - {string} 0 - newFilename
- *   - {boolean} 1 - isDuplicate
+ * @return {{newFilename: string, isDuplicate: boolean}}
  */
 capturer.getUniqueFilename = function (timeId, filename, src) {
   capturer.fileToUrl[timeId] = capturer.fileToUrl[timeId] || {
@@ -52,13 +50,13 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
   var newFilenameCI = newFilename.toLowerCase();
   while (capturer.fileToUrl[timeId][newFilenameCI] !== undefined) {
     if (capturer.fileToUrl[timeId][newFilenameCI] === tokenSrc) {
-      return [newFilename, true];
+      return { newFilename: newFilename, isDuplicate: true };
     }
     newFilename = newFilenameBase + "-" + (++seq) + newFilenameExt;
     newFilenameCI = newFilename.toLowerCase(); 
   }
   capturer.fileToUrl[timeId][newFilenameCI] = tokenSrc;
-  return [newFilename, false];
+  return { newFilename: newFilename, isDuplicate: false };
 };
 
 capturer.getErrorUrl = function (sourceUrl) {
@@ -173,7 +171,7 @@ capturer.saveDocument = function (params, callback) {
   var autoErase = !params.settings.frameIsMain;
   var filename = params.data.documentName + "." + ((params.data.mime === "application/xhtml+xml") ? "xhtml" : "html");
   filename = scrapbook.validateFilename(filename);
-  filename = capturer.getUniqueFilename(timeId, filename, true)[0];
+  filename = capturer.getUniqueFilename(timeId, filename, true).newFilename;
 
   var params = {
     url: URL.createObjectURL(new Blob([params.data.content], { type: params.data.mime })),
@@ -211,7 +209,7 @@ capturer.downloadFile = function (params, callback) {
   if (sourceUrl.indexOf("file:") == 0) {
     filename = scrapbook.urlToFilename(sourceUrl);
     filename = scrapbook.validateFilename(filename);
-    [filename, isDuplicate] = capturer.getUniqueFilename(timeId, filename, sourceUrl);
+    ({newFilename: filename, isDuplicate} = capturer.getUniqueFilename(timeId, filename, sourceUrl));
     if (isDuplicate) {
       callback({ url: filename, isDuplicate: true });
       return;
@@ -261,7 +259,7 @@ capturer.downloadFile = function (params, callback) {
       //   make file extension compatible with it.
       filename = filename || scrapbook.urlToFilename(sourceUrl);
       filename = scrapbook.validateFilename(filename);
-      [filename, isDuplicate] = capturer.getUniqueFilename(timeId, filename, sourceUrl);
+      ({newFilename: filename, isDuplicate} = capturer.getUniqueFilename(timeId, filename, sourceUrl));
       if (isDuplicate) {
         callback({ url: filename, isDuplicate: true });
         xhr_shutdown();
