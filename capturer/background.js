@@ -40,7 +40,7 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
 
   var newFilename = filename || "untitled";
   newFilename = scrapbook.validateFilename(newFilename);
-  var [newFilenameBase, newFilenameExt] = scrapbook.filenameParts(newFilename);
+  var { base: newFilenameBase, extension: newFilenameExt } = scrapbook.filenameParts(newFilename);
   newFilenameBase = scrapbook.crop(scrapbook.crop(newFilenameBase, 240, true), 128);
   newFilenameExt = newFilenameExt ? "." + newFilenameExt : "";
   tokenSrc = (typeof src === "string") ? scrapbook.splitUrlByAnchor(src)[0] : src;

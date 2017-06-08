@@ -174,16 +174,16 @@ scrapbook.splitUrlByAnchor = function(url) {
 },
 
 /**
- * @return {Array} an array with filename and file extension.
- *   - {string} 0 - filename
- *   - {string} 1 - extension, that does not contain leading "."
+ * @return {Object} an array with filename and file extension.
+ *   - {string} base
+ *   - {string} extension - does not contain the leading "."
  */
 scrapbook.filenameParts = function (filename) {
   var pos = filename.lastIndexOf(".");
   if (pos != -1) {
-    return [filename.substring(0, pos), filename.substring(pos + 1, filename.length)];
+    return { base: filename.substring(0, pos), extension: filename.substring(pos + 1, filename.length) };
   }
-  return [filename, ""];
+  return { base: filename, extension: "" };
 };
 
 /**
