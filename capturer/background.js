@@ -2,35 +2,35 @@
  *
  * The background script for capture functionality
  *
- * @require {object} scrapbook
+ * @require {Object} scrapbook
  *******************************************************************/
 
 capturer.isContentScript = false;
 
 /**
- * { timeId: { documentName: count } } 
+ * @type {Object.<string~timeId, Object.<string~documentName, number~count>>}
  */
-capturer.usedDocumentNames = {};
+capturer.usedDocumentNames = [];
 
 /**
- * { timeId: { filename: src } } 
+ * @type {Object.<string~timeId, Object.<string~filename, string~src>>}
  */
 capturer.fileToUrl = {};
-
+ 
 /**
- * { downloadId: { timeId: {String}, src: {String}, autoErase: {Boolean}, onComplete: {Function}, onError: {Function} }
+ * @type {Object.<string~downloadId, {timeId: string, src: string, autoErase: boolean, onComplete: function, onError: function}>}
  */
 capturer.downloadInfo = {};
 
 /**
  * Prevent filename conflictAction. Appends a number if the given filename is used.
  *
- * @param {String} timeId
- * @param {String} filename
- * The unfixed filename.
- * @param {String|true} src
- * The source URL of the filename source. Use true means always create a new filename.
- * @return {Array} [{String} newFilename, {bool} isDuplicate]
+ * @param {string} timeId
+ * @param {string} filename - The unfixed filename.
+ * @param {string|true} src - The source URL of the filename source. Use true means always create a new filename.
+ * @return {Array}
+ *   - {string} 0 - newFilename
+ *   - {boolean} 1 - isDuplicate
  */
 capturer.getUniqueFilename = function (timeId, filename, src) {
   capturer.fileToUrl[timeId] = capturer.fileToUrl[timeId] || {

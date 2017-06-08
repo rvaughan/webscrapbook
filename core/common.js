@@ -3,7 +3,7 @@
  * Shared functions for most scripts, including background scripts and
  * content scripts.
  *
- * @public {object} scrapbook
+ * @public {Object} scrapbook
  *******************************************************************/
 
 var scrapbook = {};
@@ -132,8 +132,8 @@ scrapbook.escapeFilename = function (filename) {
  *
  * see also: escapeFileName
  *
- * @param string filename
- * @param bool   forceAscii  also escapes all non-ASCII chars
+ * @param {string} filename
+ * @param {boolean} forceAscii - also escapes all non-ASCII chars
  */
 scrapbook.validateFilename = function (filename, forceAscii) {
   filename = filename
@@ -174,8 +174,9 @@ scrapbook.splitUrlByAnchor = function(url) {
 },
 
 /**
- * @return {Array} [filename, extension]
- * The returned extension does not contain leading "."
+ * @return {Array} an array with filename and file extension.
+ *   - {string} 0 - filename
+ *   - {string} 1 - extension, that does not contain leading "."
  */
 scrapbook.filenameParts = function (filename) {
   var pos = filename.lastIndexOf(".");
@@ -188,7 +189,8 @@ scrapbook.filenameParts = function (filename) {
 /**
  * Returns the ScrapBook ID from a given Date object
  *
- * @param {Date} date Given day, or now if undefined
+ * @param  {Date|undefined} date - Given day, or now if undefined
+ * @return {string} the ScrapBook ID
  */
 scrapbook.dateToId = function(date) {
   var dd = date || new Date();
@@ -201,6 +203,9 @@ scrapbook.dateToId = function(date) {
     this.intToFixedStr(dd.getUTCMilliseconds(), 3);
 };
 
+/**
+ * @param {Date} id - Given ScrapBook ID
+ */
 scrapbook.idToDate = function(id) {
   var dd;
   if (id.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{3})$/)) {
@@ -217,7 +222,8 @@ scrapbook.idToDate = function(id) {
  * Returns the ScrapBook ID from a given Date object
  *
  * @deprecated Used by older ScrapBook 1.x, may get inaccurate if used across different timezone
- * @param {Date} date Given day, or now if undefined
+ * @param {Date|undefined} date - Given day, or now if undefined
+ * @return {string} the ScrapBook ID
  */
 scrapbook.dateToIdOld = function(date) {
   var dd = date || new Date();
@@ -231,7 +237,7 @@ scrapbook.dateToIdOld = function(date) {
 
 /**
  * @deprecated Used by older ScrapBook 1.x, may get inaccurate if used across different timezone
- * @param {Date} id Given id
+ * @param {Date} id - Given ScrapBook ID
  */
 scrapbook.idToDateOld = function(id) {
   var dd;
@@ -252,9 +258,9 @@ scrapbook.idToDateOld = function(id) {
 /**
  * Crops the given string
  *
- * @param bool byUtf8    true to crop texts according to each byte under UTF-8 encoding
- *                       false to crop according to each UTF-16 char
- * @param bool ellipsis  string for ellipsis
+ * @param {boolean} byUtf8   - true to crop texts according to each byte under UTF-8 encoding
+ *                             false to crop according to each UTF-16 char
+ * @param {boolean} ellipsis - string for ellipsis
  */
 scrapbook.crop = function (str, maxLength, byUtf8, ellipsis) {
   if (typeof ellipsis  === "undefined") { ellipsis = "..."; }
@@ -316,23 +322,25 @@ scrapbook.intToFixedStr = function (number, width, padder) {
 /**
  * Parse Content-Type string from the HTTP Header
  *
- * @return {Array} [{String} contentType, {String} charset]
+ * @return {{contentType: string, charset: string}}
  */
 scrapbook.parseHeaderContentType = function (string) {
   var match = string.match(/^\s*(.*?)(?:\s*;\s*charset\s*=\s*(.*?))$/i);
-  return [match[1], match[2]];
+  return { contentType: match[1], charset: match[2] };
 };
+
+/**
+ * @typedef {Object} ContentDispositionParameter
+ * @property {string} [filename] - the filename
+ */
 
 /**
  * Parse Content-Disposition string from the HTTP Header
  *
  * ref: https://github.com/jshttp/content-disposition/blob/master/index.js
  *
- * @param  string  string   The string to parse, not including "Content-Disposition: "
- * @return object  {}
- *         string    .type        "inline" or "attachment"
- *         object    .parameters
- *         string      .filename  The filename to be used on saving
+ * @param {string} string - The string to parse, not including "Content-Disposition: "
+ * @return {{type: ('inline'|'attachment'), parameters: {ContentDispositionParameter}}}
  */
 scrapbook.parseHeaderContentDisposition = function (string) {
   var dispositionTypeRegExp = /^([!#$%&'\*\+\-\.0-9A-Z\^_`a-z\|~]+) *(?:$|;)/;
@@ -461,7 +469,14 @@ scrapbook.doctypeToString = function (doctype) {
 };
 
 /**
- * @param {Function} replaceFunc = function (url) { return ...; }
+ * @callback SrcsetReplaceFunc
+ * @param {string} url
+ * @return {string} newUrl
+ */
+
+/**
+ * @param {string} srcset
+ * @param {SrcsetReplaceFunc} replaceFunc - the function that replaces each URL into a new URL
  */
 scrapbook.parseSrcset = function (srcset, replaceFunc) {
   return srcset.replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {

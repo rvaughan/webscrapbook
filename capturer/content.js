@@ -2,7 +2,7 @@
  *
  * The content script for capture functionality
  *
- * @require {object} scrapbook
+ * @require {Object} scrapbook
  *******************************************************************/
 
 function getFrameContent(frameElement, timeId, settings, options, callback) {

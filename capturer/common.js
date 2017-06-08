@@ -2,8 +2,8 @@
  *
  * The common script for capture functionality
  *
- * @require {object} scrapbook
- * @public {object} capturer
+ * @require {Object} scrapbook
+ * @public {Object} capturer
  *******************************************************************/
 
 var capturer = {};
