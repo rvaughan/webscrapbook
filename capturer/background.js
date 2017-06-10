@@ -200,6 +200,7 @@ capturer.downloadFile = function (params, callback) {
   var targetDir = params.options["dataFolder"] + "/" + timeId;
   var sourceUrl = params.url;
   sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
+  var rewriteMethod = params.rewriteMethod;
   var filename = scrapbook.urlToFilename(sourceUrl);
   var isDuplicate;
   var headers = {};
@@ -224,6 +225,7 @@ capturer.downloadFile = function (params, callback) {
           src: sourceUrl,
           autoErase: true,
           onComplete: function () {
+            // @TODO: do we need to escape the URL to be safe to included in CSS or so?
             callback({ url: filename });
           },
           onError: function () {
@@ -273,7 +275,14 @@ capturer.downloadFile = function (params, callback) {
     } else if (xhr.readyState === 4) {
       if ((xhr.status == 200 || xhr.status == 0) && xhr.response) {
         params.headers = headers;
-        xhr_complete(xhr.response);
+        params.xhr = xhr;
+        if (rewriteMethod && capturer[rewriteMethod]) {
+          capturer[rewriteMethod](params, function (response) {
+            xhr_complete(response);
+          });
+        } else {
+          xhr_complete(xhr.response);
+        }
       } else {
         xhr.onerror();
       }

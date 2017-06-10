@@ -70,10 +70,11 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     // since cloned nodes may not have some information
     // e.g. cloned iframes has no content, cloned canvas has no image
     var origRefKey = "data-sb-" + timeId + "-id";
-    var origRefNodes = Array.prototype.slice.call(doc.querySelectorAll("frame, iframe, canvas"));
+    var origRefNodes = Array.prototype.slice.call(doc.querySelectorAll("frame, iframe, canvas, link, style"));
     origRefNodes.forEach(function (elem, index) {
       elem.setAttribute(origRefKey, index);
     }, this);
+    var clonedNodes = {};
 
     // construct the node list
     var selection = doc.getSelection();
@@ -179,6 +180,105 @@ capturer.captureDocument = function (doc, settings, options, callback) {
       }
     }
 
+    // build the map of cloned style elements
+    Array.prototype.forEach.call(rootNode.querySelectorAll("link, style"), function (elem) {
+      var idx = elem.getAttribute(origRefKey);
+      clonedNodes[idx] = elem;
+      elem.removeAttribute(origRefKey);
+    }, this);
+
+    // process internal (style) and external (link) CSS
+    Array.prototype.forEach.call(doc.styleSheets, function (css) {
+      var elemOrig = css.ownerNode;
+      var elem = clonedNodes[elemOrig.getAttribute(origRefKey)];
+
+      // this css elem is out of the capture range
+      if (!elem) return;
+
+      switch (elem.nodeName.toLowerCase()) {
+        // styles: style element
+        case "style":
+          switch (options["capture.style"]) {
+            case "blank":
+              captureRewriteTextContent(elem, null);
+              break;
+            case "remove":
+              captureRemoveNode(elem);
+              return;
+            case "save":
+            case "link":
+            default:
+              switch (options["capture.rewriteCss"]) {
+                case "url":
+                  remainingTasks++;
+                  var downloader = new capturer.ComplexUrlDownloader(settings, options);
+                  var rewriteCss = capturer.ProcessCssFileText(elem.textContent, doc.URL, downloader, options);
+                  downloader.startDownloads(function () {
+                    elem.textContent = downloader.finalRewrite(rewriteCss);
+                    remainingTasks--;
+                    captureCheckDone();
+                  });
+                  break;
+                case "none":
+                default:
+                  // do nothing
+                  break;
+              }
+              break;
+          }
+          break;
+
+        // styles: link element
+        case "link":
+          if (!elem.hasAttribute("href")) { break; }
+          elem.setAttribute("href", elem.href);
+
+          switch (options["capture.style"]) {
+            case "link":
+              // do nothing
+              break;
+            case "blank":
+              captureRewriteAttr(elem, "href", "about:blank");
+              break;
+            case "remove":
+              captureRemoveNode(elem);
+              return;
+            case "save":
+            default:
+              switch (options["capture.rewriteCss"]) {
+                case "url":
+                  remainingTasks++;
+                  capturer.invoke("downloadFile", {
+                    url: elem.href,
+                    rewriteMethod: "processCssFile",
+                    settings: settings,
+                    options: options
+                  }, function (response) {
+                    captureRewriteUri(elem, "href", response.url);
+                    remainingTasks--;
+                    captureCheckDone();
+                  });
+                  break;
+                case "none":
+                default:
+                  remainingTasks++;
+                  capturer.invoke("downloadFile", {
+                    url: elem.href,
+                    settings: settings,
+                    options: options
+                  }, function (response) {
+                    captureRewriteUri(elem, "href", response.url);
+                    remainingTasks--;
+                    captureCheckDone();
+                  });
+                  break;
+              }
+              break;
+          }
+          break;
+      }
+    }, this);
+
     // remove the temporary map key
     origRefNodes.forEach(function (elem) {
       elem.removeAttribute(origRefKey);
@@ -238,14 +338,44 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           }
           break;
 
-        // @TODO:
         case "link":
           if (!elem.hasAttribute("href")) { break; }
-          elem.setAttribute("href", elem.href);
-          break;
 
-        // @TODO:
-        case "style":
+          // elem.rel == "" if "rel" attribute not defined
+          var rels = elem.rel.toLowerCase().split(/[ \t\r\n\v\f]+/);
+          if (rels.indexOf("stylesheet") >= 0) {
+            // stylesheets are already processed now
+            break;
+          }
+
+          elem.setAttribute("href", elem.href);
+          if (rels.indexOf("icon") >= 0) {
+            // images: icon
+            switch (options["capture.image"]) {
+              case "link":
+                // do nothing
+                break;
+              case "blank":
+                captureRewriteUri(elem, "href", "about:blank");
+                break;
+              case "remove":
+                captureRemoveNode(elem);
+                return;
+              case "save":
+              default:
+                remainingTasks++;
+                capturer.invoke("downloadFile", {
+                  url: elem.href,
+                  settings: settings,
+                  options: options
+                }, function (response) {
+                  captureRewriteUri(elem, "href", response.url);
+                  remainingTasks--;
+                  captureCheckDone();
+                });
+                break;
+            }
+          }
           break;
 
         // scripts: script
@@ -770,6 +900,37 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           break;
       }
 
+      // styles: style attribute
+      if (elem.hasAttribute("style")) {
+        switch (options["capture.styleInline"]) {
+          case "blank":
+            captureRewriteAttr(elem, "style", "");
+            break;
+          case "remove":
+            captureRewriteAttr(elem, "style", null);
+            return;
+          case "save":
+          default:
+            switch (options["capture.rewriteCss"]) {
+              case "url":
+                remainingTasks++;
+                var downloader = new capturer.ComplexUrlDownloader(settings, options);
+                var rewriteCss = capturer.ProcessCssFileText(elem.getAttribute("style"), doc.URL, downloader, options);
+                downloader.startDownloads(function () {
+                  elem.setAttribute("style", downloader.finalRewrite(rewriteCss));
+                  remainingTasks--;
+                  captureCheckDone();
+                });
+                break;
+              case "none":
+              default:
+                // do nothing
+                break;
+            }
+            break;
+        }
+      }
+
       // scripts: script-like attributes (on* attributes)
       switch (options["capture.scriptAttr"]) {
         case "save":
@@ -919,6 +1080,146 @@ capturer.resolveRelativeUrl = function (baseUrl, relativeUrl) {
   return rewriters[baseUrl].href;
 };
 
+/**
+ * Process a downloaded CSS file and rewrite it
+ *
+ * @TODO: support charset detection
+ * Browser normally determine the charset of a CSS file via:
+ * 1. HTTP header content-type
+ * 2. Unicode BOM in the CSS file
+ * 3. @charset rule in the CSS file
+ * 4. assume it's UTF-8
+ * We follow 1-3 but not 4: if no supported charset found, handle it as a byte string.
+ */
+capturer.processCssFile = function(params, callback) {
+  var data = params.xhr.response;
+  var charset = params.headers.charset;
+  var refUrl = params.xhr.responseURL;
+  
+  var reader = new FileReader();
+  reader.addEventListener("loadend", function() {
+    var text = reader.result;
+
+    var downloader = new capturer.ComplexUrlDownloader(params.settings, params.options);
+    var rewriteCss = capturer.ProcessCssFileText(text, refUrl, downloader, params.options);
+    downloader.startDownloads(function () {
+      text = downloader.finalRewrite(rewriteCss);
+      var blob = new Blob([text], { type: "text/css" });
+      callback(blob);
+    });
+  });
+  reader.readAsText(data, charset);
+};
+
+/**
+ * process the CSS text of whole <style> or a CSS file
+ *
+ * @TODO: current code is rather heuristic and ugly,
+ *        consider implementing a real CSS parser to prevent potential errors
+ *        for certain complicated CSS
+ */
+capturer.ProcessCssFileText = function (cssText, refUrl, downloader, options) {
+  var pCm = "(?:/\\*[\\s\\S]*?\\*/)"; // comment
+  var pSp = "(?:[ \\t\\r\\n\\v\\f]*)"; // space equivalents
+  var pCmSp = "(?:" + "(?:" + pCm + "|" + pSp + ")" + "*" + ")"; // comment or space
+  var pChar = "(?:\\\\.|[^\\\\])"; // a char, or a escaped char sequence
+  var pStr = "(?:" + pChar + "*?" + ")"; // string
+  var pSStr = "(?:" + pCmSp + pStr + pCmSp + ")"; // spaced string
+  var pDQStr = "(?:" + '"' + pStr + '"' + ")"; // double quoted string
+  var pSQStr = "(?:" + "'" + pStr + "'" + ")"; // single quoted string
+  var pES = "(?:" + "(?:" + [pCm, pDQStr, pSQStr, pChar].join("|") + ")*?" + ")"; // embeded string
+  var pUrl = "(?:" + "url\\(" + pSp + "(?:" + [pDQStr, pSQStr, pSStr].join("|") + ")" + pSp + "\\)" + ")"; // URL
+  var pUrl2 = "(" + "url\\(" + pSp + ")(" + [pDQStr, pSQStr, pSStr].join("|") + ")(" + pSp + "\\)" + ")"; // URL; catch 3
+  var pRImport = "(" + "@import" + pCmSp + ")(" + [pUrl, pDQStr, pSQStr].join("|") + ")(" + pCmSp + ";" + ")"; // rule import; catch 3
+  var pRFontFace = "(" + "@font-face" + pCmSp + "{" + pES + "}" + ")"; // rule font-face; catch 1
+  
+  var parseUrlFunc = function (text, callback) {
+    return text.replace(new RegExp(pUrl2, "gi"), function (m, u1, u2, u3) {
+      if (u2.startsWith('"') && u2.endsWith('"')) {
+        var ret = callback(u2.slice(1, -1));
+      } else if (u2.startsWith("'") && u2.endsWith("'")) {
+        var ret = callback(u2.slice(1, -1));
+      } else {
+        var ret = callback(u2.trim());
+      }
+      return u1 + '"' + ret + '"' + u3;
+    });
+  };
+
+  var importParseUrlFunc = function (url) {
+    var dataUrl = scrapbook.unescapeCss(url);
+    dataUrl = capturer.resolveRelativeUrl(refUrl, dataUrl);
+    switch (options["capture.style"]) {
+      case "link":
+        // do nothing
+        break;
+      case "blank":
+      case "remove":
+        dataUrl = "about:blank";
+        return;
+      case "save":
+      default:
+        dataUrl = downloader.getUrlHash(dataUrl, "processCssFile");
+        break;
+    }
+    return dataUrl;
+  };
+
+  var cssText = cssText.replace(
+    new RegExp([pCm, pRImport, pRFontFace, "("+pUrl+")"].join("|"), "gi"),
+    function (m, im1, im2, im3, ff, u) {
+      if (im2) {
+        if (im2.startsWith('"') && im2.endsWith('"')) {
+          var ret = 'url("' + importParseUrlFunc(im2.slice(1, -1)) + '")';
+        } else if (im2.startsWith("'") && im2.endsWith("'")) {
+          var ret = 'url("' + importParseUrlFunc(im2.slice(1, -1)) + '")';
+        } else {
+          var ret = parseUrlFunc(im2, importParseUrlFunc);
+        }
+        return im1 + ret + im3;
+      } else if (ff) {
+        return parseUrlFunc(m, function (url) {
+          var dataUrl = scrapbook.unescapeCss(url);
+          dataUrl = capturer.resolveRelativeUrl(refUrl, dataUrl);
+          switch (options["capture.font"]) {
+            case "link":
+              // do nothing
+              break;
+            case "blank":
+            case "remove":
+              dataUrl = "about:blank";
+              break;
+            case "save":
+            default:
+              dataUrl = downloader.getUrlHash(dataUrl);
+              break;
+          }
+          return dataUrl;
+        });
+      } else if (u) {
+        return parseUrlFunc(m, function (url) {
+          var dataUrl = scrapbook.unescapeCss(url);
+          dataUrl = capturer.resolveRelativeUrl(refUrl, dataUrl);
+          switch (options["capture.imageBackground"]) {
+            case "link":
+              // do nothing
+              break;
+            case "remove":
+              dataUrl = "about:blank";
+              break;
+            case "save":
+            default:
+              dataUrl = downloader.getUrlHash(dataUrl);
+              break;
+          }
+          return dataUrl;
+        });
+      }
+      return m;
+    });
+  return cssText;
+};
+
 
 /********************************************************************
  * A class that manages a text containing multiple URLs to be
@@ -929,9 +1230,13 @@ capturer.resolveRelativeUrl = function (baseUrl, relativeUrl) {
 capturer.ComplexUrlDownloader = function (settings, options) {
   var urlHash = [], urlRewrittenCount = 0;
 
-  this.getUrlHash = function (url) {
+  this.getUrlHash = function (url, rewriteMethod) {
     var key = scrapbook.getUuid();
-    urlHash[key] = url;
+    urlHash[key] = {
+      url: url,
+      newUrl: null,
+      rewriteMethod: rewriteMethod
+    };
     return "urn:scrapbook:url:" + key;
   };
 
@@ -940,11 +1245,12 @@ capturer.ComplexUrlDownloader = function (settings, options) {
     if (len > 0) {
       keys.forEach(function (key) {
         capturer.invoke("downloadFile", {
-          url: urlHash[key],
+          url: urlHash[key].url,
+          rewriteMethod: urlHash[key].rewriteMethod,
           settings: settings,
           options: options
         }, function (response) {
-          urlHash[key] = response.url;
+          urlHash[key].newUrl = response.url;
           if (++urlRewrittenCount === len) {
             callback();
           }
@@ -957,7 +1263,7 @@ capturer.ComplexUrlDownloader = function (settings, options) {
 
   this.finalRewrite = function (text) {
     return text.replace(/urn:scrapbook:url:([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})/g, function (match, key) {
-      var url = urlHash[key];
+      var url = urlHash[key].newUrl;
       // This could happen when a web page really contains a content text in our format.
       // We return the original text for keys not defineded in the map to prevent a bad replace
       // since it's nearly impossible for them to hit on the hash keys we are using.

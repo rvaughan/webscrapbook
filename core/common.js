@@ -20,6 +20,7 @@ scrapbook.options = {
   "capture.saveAsUtf8": true,
   "capture.saveAsciiFilename": false,
   "capture.saveInlineAsHtml": false,
+  "capture.saveDataUri": false,
   "capture.image": ["save", "link", "blank", "remove", 0],
   "capture.imageBackground": ["save", "link", "remove", 0],
   "capture.audio": ["save", "link", "blank", "remove", 0],
@@ -31,6 +32,8 @@ scrapbook.options = {
   "capture.frame": ["save", "link", "blank", "remove", 0],
   "capture.font": ["save", "link", "blank", "remove", 0],
   "capture.style": ["save", "link", "blank", "remove", 0],
+  "capture.styleInline": ["save", "blank", "remove", 0],
+  "capture.rewriteCss": ["none", "url", 1],
   "capture.script": ["save", "link", "blank", "remove", 2],
   "capture.scriptAnchor": ["save", "blank", "remove", 1],
   "capture.scriptAttr": ["save", "remove", 1],
@@ -296,6 +299,23 @@ scrapbook.escapeRegExp = function (str) {
 
 scrapbook.escapeHtmlComment = function (str) {
   return str.replace(/-([\u200B]*)-/g, "-\u200B$1-");
+};
+
+scrapbook.unescapeCss = function(str) {
+  var that = arguments.callee;
+  if (!that.replaceRegex) {
+    that.replaceRegex = /\\([0-9A-Fa-f]{1,6}) ?|\\(.)/g;
+    that.getCodes = function (n) {
+      if (n < 0x10000) return [n];
+      n -= 0x10000;
+      return [0xD800+(n>>10), 0xDC00+(n&0x3FF)];
+    };
+    that.replaceFunc = function (m, u, c) {
+      if (c) return c;
+      if (u) return String.fromCharCode.apply(null, that.getCodes(parseInt(u, 16)));
+    };
+  }
+  return str.replace(that.replaceRegex, that.replaceFunc);
 };
 
 scrapbook.stringToDataUri = function (str, mime) {
