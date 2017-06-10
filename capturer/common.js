@@ -261,9 +261,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             case "blank":
               if (elem.hasAttribute("src")) {
                 captureRewriteUri(elem, "src", "about:blank");
-              } else {
-                captureRewriteTextContent(elem, null);
               }
+              captureRewriteTextContent(elem, null);
               break;
             case "remove":
               captureRemoveNode(elem);
