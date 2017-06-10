@@ -277,7 +277,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   settings: settings,
                   options: options
                 }, function (response) {
-                  elem.src = response.url;
+                  captureRewriteUri(elem, "src", response.url);
                   remainingTasks--;
                   captureCheckDone();
                 });
@@ -327,7 +327,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   settings: settings,
                   options: options
                 }, function (response) {
-                  elem.setAttribute("background", response.url);
+                  captureRewriteUri(elem, "background", response.url);
                   remainingTasks--;
                   captureCheckDone();
                 });
@@ -361,7 +361,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
 
           var captureFrameCallback = function (result) {
             if (result.filename) {
-              frame.src = result.filename;
+              captureRewriteUri(frame, "src", result.filename);
             } else {
               captureRewriteAttr(frame, "src", null);
             }
@@ -467,7 +467,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   settings: settings,
                   options: options
                 }, function (response) {
-                  elem.src = response.url;
+                  captureRewriteUri(elem, "src", response.url);
                   remainingTasks--;
                   captureCheckDone();
                 });
@@ -475,7 +475,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               if (elem.hasAttribute("srcset")) {
                 remainingTasks++;
                 downloadSrcset(elem.getAttribute("srcset"), function (response) {
-                  elem.setAttribute("srcset", response);
+                  captureRewriteUri(elem, "srcset", response);
                   remainingTasks--;
                   captureCheckDone();
                 });
@@ -511,7 +511,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
                 remainingTasks++;
                 downloadSrcset(elem.getAttribute("srcset"), function (response) {
-                  elem.setAttribute("srcset", response);
+                  captureRewriteUri(elem, "srcset", response);
                   remainingTasks--;
                   captureCheckDone();
                 });
@@ -547,7 +547,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   settings: settings,
                   options: options
                 }, function (response) {
-                  elem.src = response.url;
+                  captureRewriteUri(elem, "src", response.url);
                   remainingTasks--;
                   captureCheckDone();
                 });
@@ -583,7 +583,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   settings: settings,
                   options: options
                 }, function (response) {
-                  elem.src = response.url;
+                  captureRewriteUri(elem, "src", response.url);
                   remainingTasks--;
                   captureCheckDone();
                 });
@@ -619,7 +619,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   settings: settings,
                   options: options
                 }, function (response) {
-                  elem.src = response.url;
+                  captureRewriteUri(elem, "src", response.url);
                   remainingTasks--;
                   captureCheckDone();
                 });
@@ -655,7 +655,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   settings: settings,
                   options: options
                 }, function (response) {
-                  elem.data = response.url;
+                  captureRewriteUri(elem, "data", response.url);
                   remainingTasks--;
                   captureCheckDone();
                 });
@@ -692,7 +692,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   settings: settings,
                   options: options,
                 }, function (response) {
-                  elem.setAttribute("archive", response.url);
+                  captureRewriteUri(elem, "archive", response.url);
                   remainingTasks--;
                   captureCheckDone();
                 });
@@ -753,7 +753,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                     settings: settings,
                     options: options
                   }, function (response) {
-                    elem.src = response.url;
+                    captureRewriteUri(elem, "src", response.url);
                     remainingTasks--;
                     captureCheckDone();
                   });
