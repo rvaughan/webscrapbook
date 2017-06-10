@@ -197,7 +197,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
 
           switch (options["capture.base"]) {
             case "blank":
-              captureRemoveAttr(elem, "href");
+              captureRewriteAttr(elem, "href", null);
               break;
             case "remove":
               captureRemoveNode(elem);
@@ -317,7 +317,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 // do nothing
                 break;
               case "remove":
-                captureRemoveAttr(elem, "background");
+                captureRewriteAttr(elem, "background", null);
                 break;
               case "save":
               default:
@@ -342,7 +342,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
           frame.removeAttribute(origRefKey);
           frame.setAttribute("src", frame.src);
-          captureRemoveAttr(frame, "srcdoc"); // prevent src being overwritten
+          captureRewriteAttr(frame, "srcdoc", null); // prevent src being overwritten
 
           switch (options["capture.frame"]) {
             case "link":
@@ -363,7 +363,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             if (result.filename) {
               frame.src = result.filename;
             } else {
-              captureRemoveAttr(frame, "src");
+              captureRewriteAttr(frame, "src", null);
             }
             isDebug && console.debug("capture frame", result);
             remainingTasks--;
@@ -420,11 +420,11 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 // do nothing
                 break;
               case "blank":
-                elem.setAttribute("href", "javascript:");
+                captureRewriteAttr(elem, "href", "javascript:");
                 break;
               case "remove":
               default:
-                captureRemoveAttr(elem, "href");
+                captureRewriteAttr(elem, "href", null);
                 break;
             }
           }
@@ -452,7 +452,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 elem.setAttribute("src", captureGetSkippedUrl(elem.src));
               }
               if (elem.hasAttribute("srcset")) {
-                captureRemoveAttr(elem, "srcset");
+                captureRewriteAttr(elem, "srcset", null);
               }
               break;
             case "remove":
@@ -500,7 +500,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
-                captureRemoveAttr(elem, "srcset");
+                captureRewriteAttr(elem, "srcset", null);
               });
               break;
             case "remove":
@@ -773,7 +773,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         default:
           Array.prototype.forEach.call(elem.attributes, function (attr) {
             if (attr.name.toLowerCase().startsWith("on")) {
-              captureRemoveAttr(elem, attr.name);
+              captureRewriteAttr(elem, attr.name, null);
             }
           });
       }
@@ -782,7 +782,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
       // We have to remove integrity check because we could modify the content
       // and they might not work correctly in the offline environment.
       if ( options["capture.removeIntegrity"] ) {
-        captureRemoveAttr(elem, "integrity");
+        captureRewriteAttr(elem, "integrity", null);
       }
     });
 
@@ -877,13 +877,17 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     }
   };
 
-  // remove the specified attr, record it if option set
-  var captureRemoveAttr = function (elem, attr) {
+  // rewrite (or remove if value is null/undefined) the specified attr, record it if option set
+  var captureRewriteAttr = function (elem, attr, value) {
     if (!elem.hasAttribute(attr)) return;
     if (options["capture.recordRemovedAttr"]) {
       elem.setAttribute("data-sb-orig-" + attr, elem.getAttribute(attr));
     }
-    elem.removeAttribute(attr);
+    if (value === null && value === undefined) {
+      elem.removeAttribute(attr);
+    } else {
+      elem.setAttribute(attr, value);
+    }
   };
 
   // remove the textContent, record it if option set
