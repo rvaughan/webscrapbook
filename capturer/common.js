@@ -473,7 +473,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               }
               if (elem.hasAttribute("srcset")) {
                 remainingTasks++;
-                downloadSrcset(elem.getAttribute("srcset"), function (response) {
+                downloadComplexUrl(elem.getAttribute("srcset"), scrapbook.parseSrcset, function (response) {
                   captureRewriteUri(elem, "srcset", response);
                   remainingTasks--;
                   captureCheckDone();
@@ -509,7 +509,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             default:
               Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
                 remainingTasks++;
-                downloadSrcset(elem.getAttribute("srcset"), function (response) {
+                downloadComplexUrl(elem.getAttribute("srcset"), scrapbook.parseSrcset, function (response) {
                   captureRewriteUri(elem, "srcset", response);
                   remainingTasks--;
                   captureCheckDone();
@@ -831,29 +831,46 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     return rewriters[baseUrl].href;
   };
 
-  var downloadSrcset = function (srcset, callback) {
-    var srcsetUrls = [], srcsetRewrittenCount = 0;
+  /**
+   * process a text containing multiples which are to be downloaded and
+   * be rewritten, then fire the callback
+   *
+   * @param {string} text
+   * @param {function} rewriter - the rewriter callback, which takes a text
+   *                              and fires a callback that rewrites each single URL
+   * @param {function} callback - the callback function to be fired when all downloads
+   *                              are completed, that takes the final rewritten text
+   */
+  var downloadComplexUrl = function (text, rewriter, callback) {
+    var urlHash = [], urlHashCount = 0, urlRewrittenCount = 0;
 
     var onAllDownloaded = function () {
-      var srcsetNew = scrapbook.parseSrcset(srcset, function (url) {
-        return srcsetUrls.shift();
+      var newText = text.replace(/urn:scrapbook:url:([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})/g, function (match, key) {
+        var url = urlHash[key];
+        // This could happen when a web page really contains a content text in our format.
+        // We return the original text for keys not defineded in the map to prevent a bad replace
+        // since it's nearly impossible for them to hit on the hash keys we are using.
+        if (!url) return match;
+        return url;
       });
-      callback(srcsetNew);
+      callback(newText);
     };
 
-    scrapbook.parseSrcset(srcset, function (url) {
-      srcsetUrls.push(url);
-      return "";
+    text = rewriter(text, function (url) {
+      var key = scrapbook.getUuid();
+      urlHash[key] = url;
+      ++urlHashCount;
+      return "urn:scrapbook:url:" + key;
     });
 
-    srcsetUrls.forEach(function (elem, index, array) {
+    Object.keys(urlHash).forEach(function (key) {
       capturer.invoke("downloadFile", {
-        url: elem,
+        url: urlHash[key],
         settings: settings,
         options: options
       }, function (response) {
-        array[index] = response.url;
-        if (++srcsetRewrittenCount === srcsetUrls.length) {
+        urlHash[key] = response.url;
+        if (++urlRewrittenCount === urlHashCount) {
           onAllDownloaded();
         }
       });
