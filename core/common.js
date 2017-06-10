@@ -336,7 +336,7 @@ scrapbook.intToFixedStr = function (number, width, padder) {
  * @return {{contentType: string, charset: string}}
  */
 scrapbook.parseHeaderContentType = function (string) {
-  var match = string.match(/^\s*(.*?)(?:\s*;\s*charset\s*=\s*(.*?))$/i);
+  var match = string.match(/^\s*(.*?)(?:\s*;\s*charset\s*=\s*(.*?))?$/i);
   return { contentType: match[1], charset: match[2] };
 };
 
