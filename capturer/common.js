@@ -794,22 +794,18 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           break;
       }
 
-      // scripts: script-like attributes
-      // manage attributes that act like a javascript
+      // scripts: script-like attributes (on* attributes)
       switch (options["capture.scriptAttr"]) {
         case "save":
           // do nothing
           break;
         case "remove":
         default:
-          // general: remove on* attributes
           Array.prototype.forEach.call(elem.attributes, function (attr) {
             if (attr.name.toLowerCase().startsWith("on")) {
               elem.removeAttribute(attr.name);
             }
           });
-          // other specific
-          elem.removeAttribute("contextmenu");
       }
     });
 
