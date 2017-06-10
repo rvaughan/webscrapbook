@@ -184,597 +184,642 @@ capturer.captureDocument = function (doc, settings, options, callback) {
       elem.removeAttribute(origRefKey);
     });
 
-    // base
-    Array.prototype.slice.call(rootNode.querySelectorAll('base[href]')).forEach(function (elem) {
-      elem.setAttribute("href", elem.href);
+    // inspect nodes
+    var hasMeta = false;
+    Array.prototype.forEach.call(rootNode.querySelectorAll("*"), function (elem) {
+      // skip elements that are already removed from the DOM tree
+      if (!elem.parentNode) { return; }
 
-      switch (options["capture.base"]) {
-        case "empty":
-          elem.removeAttribute("href");
-          return;
-        case "save":
-        default:
-          // do nothing
-          break;
-      }
-    });
+      switch (elem.nodeName.toLowerCase()) {
+        case "base":
+          if (!elem.hasAttribute("href")) { break; }
+          elem.setAttribute("href", elem.href);
 
-    // force UTF-8
-    var hasmeta = false;
-    Array.prototype.slice.call(rootNode.querySelectorAll('meta')).forEach(function (meta) {
-      if (meta.hasAttribute("http-equiv") && meta.hasAttribute("content") &&
-        meta.getAttribute("http-equiv").toLowerCase() == "content-type" && 
-        meta.getAttribute("content").match(/^[^;]*;\s*charset=(.*)$/i) ) {
-        hasmeta = true;
-        meta.setAttribute("content", "text/html; charset=UTF-8");
-      } else if ( meta.hasAttribute("charset") ) {
-        hasmeta = true;
-        meta.setAttribute("charset", "UTF-8");
-      }
-    });
-    if (!hasmeta) {
-      var metaNode = doc.createElement("meta");
-      metaNode.setAttribute("charset", "UTF-8");
-      headNode.insertBefore(metaNode, headNode.firstChild);
-      headNode.insertBefore(doc.createTextNode("\n"), headNode.firstChild);
-    }
-
-    // meta
-    Array.prototype.slice.call(rootNode.querySelectorAll([
-      'meta[property="og:image"][content]',
-      'meta[property="og:image:url"][content]',
-      'meta[property="og:image:secure_url"][content]',
-      'meta[property="og:audio"][content]',
-      'meta[property="og:audio:url"][content]',
-      'meta[property="og:audio:secure_url"][content]',
-      'meta[property="og:video"][content]',
-      'meta[property="og:video:url"][content]',
-      'meta[property="og:video:secure_url"][content]',
-      'meta[property="og:url"][content]',
-    ].join(', '))).forEach(function (elem) {
-      var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("content"));
-      elem.setAttribute("content", rewriteUrl);
-    });
-
-    // link and anchor
-    Array.prototype.slice.call(rootNode.querySelectorAll('link[href], a[href], area[href]')).forEach(function (elem) {
-      elem.setAttribute("href", elem.href);
-    });
-
-    // scripts
-    Array.prototype.slice.call(rootNode.querySelectorAll('script')).forEach(function (elem) {
-      if (elem.src) {
-        elem.setAttribute("src", elem.src);
-      }
-
-      switch (options["capture.script"]) {
-        case "link":
-          // do nothing
-          return;
-        case "blank":
-          if (elem.src) {
-            elem.setAttribute("src", "about:blank");
-          } else {
-            elem.textContent = "";
+          switch (options["capture.base"]) {
+            case "empty":
+              elem.removeAttribute("href");
+              return;
+            case "save":
+            default:
+              // do nothing
+              break;
           }
-          return;
-        case "comment":
-          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-          return;
-        case "remove":
-          elem.parentNode.removeChild(elem);
-          return;
-        case "save":
-        default:
-          if (elem.src) {
+          break;
+
+        case "meta":
+          // force UTF-8
+          if (elem.hasAttribute("http-equiv") && elem.hasAttribute("content") &&
+              elem.getAttribute("http-equiv").toLowerCase() == "content-type" && 
+              elem.getAttribute("content").match(/^[^;]*;\s*charset=(.*)$/i) ) {
+            hasMeta = true;
+            elem.setAttribute("content", "text/html; charset=UTF-8");
+          } else if ( elem.hasAttribute("charset") ) {
+            hasMeta = true;
+            elem.setAttribute("charset", "UTF-8");
+          } else if (elem.hasAttribute("property") && elem.hasAttribute("content")) {
+            switch (elem.getAttribute("property").toLowerCase()) {
+              case "og:image":
+              case "og:image:url":
+              case "og:image:secure_url":
+              case "og:audio":
+              case "og:audio:url":
+              case "og:audio:secure_url":
+              case "og:video":
+              case "og:video:url":
+              case "og:video:secure_url":
+              case "og:url":
+                var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("content"));
+                elem.setAttribute("content", rewriteUrl);
+                break;
+            }
+          }
+          break;
+
+        // @TODO:
+        case "link":
+          if (!elem.hasAttribute("href")) { break; }
+          elem.setAttribute("href", elem.href);
+          break;
+
+        // @TODO:
+        case "style":
+          break;
+
+        // scripts: script
+        case "script":
+          if (elem.hasAttribute("src")) {
+            elem.setAttribute("src", elem.src);
+          }
+
+          switch (options["capture.script"]) {
+            case "link":
+              // do nothing
+              return;
+            case "blank":
+              if (elem.hasAttribute("src")) {
+                elem.setAttribute("src", "about:blank");
+              } else {
+                elem.textContent = "";
+              }
+              return;
+            case "comment":
+              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+              return;
+            case "remove":
+              elem.parentNode.removeChild(elem);
+              return;
+            case "save":
+            default:
+              if (elem.hasAttribute("src")) {
+                remainingTasks++;
+                capturer.invoke("downloadFile", {
+                  url: elem.src,
+                  settings: settings,
+                  options: options
+                }, function (response) {
+                  elem.src = response.url;
+                  remainingTasks--;
+                  captureCheckDone();
+                });
+              }
+              break;
+          }
+          break;
+
+        // scripts: noscript
+        case "noscript":
+          switch (options["capture.noscript"]) {
+            case "comment":
+              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+              return;
+            case "remove":
+              elem.parentNode.removeChild(elem);
+              return;
+            case "save":
+            default:
+              // do nothing
+              break;
+          }
+          break;
+
+        case "body":
+        case "table":
+        case "tr":
+        case "th":
+        case "td":
+          // deprecated: background attribute (deprecated since HTML5)
+          if (elem.hasAttribute("background")) {
+            var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("background"));
+            elem.setAttribute("background", rewriteUrl);
+
+            switch (options["capture.imageBackground"]) {
+              case "link":
+                // do nothing
+                return;
+              case "remove":
+                elem.removeAttribute("background");
+                return;
+              case "save":
+              default:
+                remainingTasks++;
+                capturer.invoke("downloadFile", {
+                  url: rewriteUrl,
+                  settings: settings,
+                  options: options
+                }, function (response) {
+                  elem.setAttribute("background", response.url);
+                  remainingTasks--;
+                  captureCheckDone();
+                });
+                break;
+            }
+          }
+          break;
+
+        case "frame":
+        case "iframe":
+          var frame = elem;
+          var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
+          frame.removeAttribute(origRefKey);
+          frame.setAttribute("src", frame.src);
+          frame.removeAttribute("srcdoc"); // prevent src being overwritten
+
+          switch (options["capture.frame"]) {
+            case "link":
+              // do nothing
+              return;
+            case "blank":
+              frame.setAttribute("src", "about:blank");
+              return;
+            case "comment":
+              frame.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(frame.outerHTML)), frame);
+              return;
+            case "remove":
+              frame.parentNode.removeChild(frame);
+              return;
+            case "save":
+            default:
+              break;
+          }
+
+          var captureFrameCallback = function (result) {
+            if (result.filename) {
+              frame.src = result.filename;
+            } else {
+              frame.removeAttribute("src");
+            }
+            isDebug && console.debug("capture frame", result);
+            remainingTasks--;
+            captureCheckDone();
+          };
+
+          var frameSettings = JSON.parse(JSON.stringify(settings));
+          frameSettings.frameIsMain = false;
+
+          var frameDoc;
+          try {
+            frameDoc = frameSrc.contentDocument;
+          } catch (ex) {
+            // console.debug(ex);
+          }
+          if (frameDoc) {
+            // frame document accessible: capture the content document directly
             remainingTasks++;
-            capturer.invoke("downloadFile", {
-              url: elem.src,
-              settings: settings,
-              options: options
-            }, function (response) {
-              elem.src = response.url;
-              remainingTasks--;
-              captureCheckDone();
+            capturer.captureDocumentOrFile(frameDoc, frameSettings, options, function (result) {
+              if (result && !result.error) {
+                captureFrameCallback(result);
+              } else {
+                captureFrameCallback({
+                  filename: frame.src
+                });
+              }
+            });
+          } else {
+            // frame document inaccessible: get the content document through a messaging technique, and then capture it
+            remainingTasks++;
+            getFrameContent(frameSrc, timeId, frameSettings, options, function (response) {
+              if (response && !response.error) {
+                captureFrameCallback(response);
+              } else {
+                captureFrameCallback({
+                  timeId: timeId,
+                  frameUrl: doc.URL,
+                  filename: frame.src
+                });
+              }
             });
           }
           break;
-      }
-    });
 
-    // scripts: noscript
-    Array.prototype.slice.call(rootNode.querySelectorAll('noscript')).forEach(function (elem) {
-      switch (options["capture.noscript"]) {
-        case "comment":
-          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-          return;
-        case "remove":
-          elem.parentNode.removeChild(elem);
-          return;
-        case "save":
-        default:
-          // do nothing
+        case "a":
+        case "area":
+          if (!elem.hasAttribute("href")) { break; }
+          elem.setAttribute("href", elem.href);
+
+          // scripts: script-like anchors
+          if (elem.href.toLowerCase().startsWith("javascript:")) {
+            switch (options["capture.scriptAnchor"]) {
+              case "save":
+                // do nothing
+                break;
+              case "blank":
+                elem.setAttribute("href", "javascript:");
+                break;
+              case "remove":
+              default:
+                elem.removeAttribute("href");
+                break;
+            }
+          }
+          break;
+
+        // images: img
+        case "img":
+          if (elem.hasAttribute("src")) {
+            elem.setAttribute("src", elem.src);
+          }
+          if (elem.hasAttribute("srcset")) {
+            elem.setAttribute("srcset",
+              scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
+                return rewriteRelativeUrl(url);
+              })
+            );
+          }
+
+          switch (options["capture.image"]) {
+            case "link":
+              // do nothing
+              return;
+            case "blank":
+              if (elem.hasAttribute("src")) {
+                elem.setAttribute("src", "about:blank");
+              }
+              if (elem.hasAttribute("srcset")) {
+                elem.setAttribute("srcset", "about:blank");
+              }
+              return;
+            case "comment":
+              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+              return;
+            case "remove":
+              elem.parentNode.removeChild(elem);
+              return;
+            case "save":
+            default:
+              if (elem.hasAttribute("src")) {
+                remainingTasks++;
+                capturer.invoke("downloadFile", {
+                  url: elem.src,
+                  settings: settings,
+                  options: options
+                }, function (response) {
+                  elem.src = response.url;
+                  remainingTasks--;
+                  captureCheckDone();
+                });
+              }
+              if (elem.hasAttribute("srcset")) {
+                remainingTasks++;
+                downloadSrcset(elem.getAttribute("srcset"), function (response) {
+                  elem.setAttribute("srcset", response);
+                  remainingTasks--;
+                  captureCheckDone();
+                });
+              }
+              break;
+          }
+          break;
+
+        // images: picture
+        case "picture":
+          Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
+            elem.setAttribute("srcset",
+              scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
+                return rewriteRelativeUrl(url);
+              })
+            );
+          });
+
+          switch (options["capture.image"]) {
+            case "link":
+              // do nothing
+              return;
+            case "blank":
+              Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
+                elem.setAttribute("srcset", "about:blank");
+              });
+              return;
+            case "comment":
+              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+              return;
+            case "remove":
+              elem.parentNode.removeChild(elem);
+              return;
+            case "save":
+            default:
+              Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
+                remainingTasks++;
+                downloadSrcset(elem.getAttribute("srcset"), function (response) {
+                  elem.setAttribute("srcset", response);
+                  remainingTasks--;
+                  captureCheckDone();
+                });
+              });
+              break;
+          }
+          break;
+
+        // media: audio
+        case "audio":
+          Array.prototype.forEach.call(elem.querySelectorAll('source[src], track[src]'), function (elem) {
+            elem.setAttribute("src", elem.src);
+          });
+
+          switch (options["capture.audio"]) {
+            case "link":
+              // do nothing
+              return;
+            case "blank":
+              Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
+                elem.setAttribute("src", "about:blank");
+              });
+              return;
+            case "comment":
+              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+              return;
+            case "remove":
+              elem.parentNode.removeChild(elem);
+              return;
+            case "save":
+            default:
+              Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
+                remainingTasks++;
+                capturer.invoke("downloadFile", {
+                  url: elem.src,
+                  settings: settings,
+                  options: options
+                }, function (response) {
+                  elem.src = response.url;
+                  remainingTasks--;
+                  captureCheckDone();
+                });
+              });
+              break;
+          }
+          break;
+
+        // media: video
+        case "video":
+          Array.prototype.forEach.call(elem.querySelectorAll('source[src], track[src]'), function (elem) {
+            elem.setAttribute("src", elem.src);
+          });
+
+          switch (options["capture.video"]) {
+            case "link":
+              // do nothing
+              return;
+            case "blank":
+              Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
+                elem.setAttribute("src", "about:blank");
+              });
+              return;
+            case "comment":
+              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+              return;
+            case "remove":
+              elem.parentNode.removeChild(elem);
+              return;
+            case "save":
+            default:
+              Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
+                remainingTasks++;
+                capturer.invoke("downloadFile", {
+                  url: elem.src,
+                  settings: settings,
+                  options: options
+                }, function (response) {
+                  elem.src = response.url;
+                  remainingTasks--;
+                  captureCheckDone();
+                });
+              });
+              break;
+          }
+          break;
+
+        // media: embed
+        case "embed":
+          if (elem.hasAttribute("src")) {
+            elem.setAttribute("src", elem.src);
+          }
+
+          switch (options["capture.embed"]) {
+            case "link":
+              // do nothing
+              return;
+            case "blank":
+              if (elem.hasAttribute("src")) {
+                elem.setAttribute("src", "about:blank");
+              }
+              return;
+            case "comment":
+              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+              return;
+            case "remove":
+              elem.parentNode.removeChild(elem);
+              return;
+            case "save":
+            default:
+              if (elem.hasAttribute("src")) {
+                remainingTasks++;
+                capturer.invoke("downloadFile", {
+                  url: elem.src,
+                  settings: settings,
+                  options: options
+                }, function (response) {
+                  elem.src = response.url;
+                  remainingTasks--;
+                  captureCheckDone();
+                });
+              }
+              break;
+          }
+          break;
+
+        // media: embed
+        case "object":
+          if (elem.hasAttribute("data")) {
+            elem.setAttribute("data", elem.data);
+          }
+
+          switch (options["capture.object"]) {
+            case "link":
+              // do nothing
+              return;
+            case "blank":
+              if (elem.hasAttribute("data")) {
+                elem.setAttribute("data", "about:blank");
+              }
+              return;
+            case "comment":
+              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+              return;
+            case "remove":
+              elem.parentNode.removeChild(elem);
+              return;
+            case "save":
+            default:
+              if (elem.hasAttribute("data")) {
+                remainingTasks++;
+                capturer.invoke("downloadFile", {
+                  url: elem.data,
+                  settings: settings,
+                  options: options
+                }, function (response) {
+                  elem.data = response.url;
+                  remainingTasks--;
+                  captureCheckDone();
+                });
+              }
+              break;
+          }
+          break;
+
+        // media: applet
+        case "applet":
+          if (elem.hasAttribute("archive")) {
+            var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("archive"));
+            elem.setAttribute("archive", rewriteUrl);
+          }
+
+          switch (options["capture.applet"]) {
+            case "link":
+              // do nothing
+              return;
+            case "blank":
+              if (elem.hasAttribute("archive")) {
+                elem.setAttribute("archive", "about:blank");
+              }
+              return;
+            case "comment":
+              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+              return;
+            case "remove":
+              elem.parentNode.removeChild(elem);
+              return;
+            case "save":
+            default:
+              if (elem.hasAttribute("archive")) {
+                remainingTasks++;
+                capturer.invoke("downloadFile", {
+                  url: rewriteUrl,
+                  settings: settings,
+                  options: options,
+                }, function (response) {
+                  elem.setAttribute("archive", response.url);
+                  remainingTasks--;
+                  captureCheckDone();
+                });
+              }
+              break;
+          }
+          break;
+
+        // media: canvas
+        case "canvas":
+          var canvasOrig = origRefNodes[elem.getAttribute(origRefKey)];
+          elem.removeAttribute(origRefKey);
+
+          switch (options["capture.canvas"]) {
+            case "blank":
+              // do nothing
+              break;
+            case "comment":
+              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+              return;
+            case "remove":
+              elem.parentNode.removeChild(elem);
+              return;
+            case "save":
+            default:
+              var canvasScript = doc.createElement("script");
+              canvasScript.textContent = "(" + canvasDataScript.toString().replace(/\s+/g, " ") + ")('" + canvasOrig.toDataURL() + "')";
+              elem.parentNode.insertBefore(canvasScript, elem.nextSibling);
+              break;
+          }
+          break;
+
+        case "form":
+          if ( elem.hasAttribute("action") ) {
+              elem.setAttribute("action", elem.action);
+          }
+          break;
+
+        case "input":
+          switch (elem.type.toLowerCase()) {
+            // images: input
+            case "image":
+              if (elem.hasAttribute("src")) {
+                elem.setAttribute("src", elem.src);
+              }
+              switch (options["capture.image"]) {
+                case "link":
+                  // do nothing
+                  return;
+                case "blank":
+                  elem.setAttribute("src", "about:blank");
+                  return;
+                case "comment":
+                  elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+                  return;
+                case "remove":
+                  elem.parentNode.removeChild(elem);
+                  return;
+                case "save":
+                default:
+                  remainingTasks++;
+                  capturer.invoke("downloadFile", {
+                    url: elem.src,
+                    settings: settings,
+                    options: options
+                  }, function (response) {
+                    elem.src = response.url;
+                    remainingTasks--;
+                    captureCheckDone();
+                  });
+                  break;
+              }
+              break;
+          }
           break;
       }
-    });
 
-    // scripts: script-like attributes
-    // remove attributes that acts like a javascript
-    switch (options["capture.scriptAttr"]) {
-      case "save":
-        // do nothing
-        break;
-      case "remove":
-      default:
-        Array.prototype.slice.call(rootNode.querySelectorAll("body, body *")).forEach(function (elem) {
+      // scripts: script-like attributes
+      // manage attributes that act like a javascript
+      switch (options["capture.scriptAttr"]) {
+        case "save":
+          // do nothing
+          break;
+        case "remove":
+        default:
           // general: remove on* attributes
-          Array.prototype.slice.call(elem.attributes).forEach(function (attr) {
+          Array.prototype.forEach.call(elem.attributes, function (attr) {
             if (attr.name.toLowerCase().indexOf("on") === 0) {
               elem.removeAttribute(attr.name);
             }
           });
           // other specific
           elem.removeAttribute("contextmenu");
-        });
+      }
+    });
+
+    // force UTF-8
+    if (!hasMeta) {
+      var metaNode = doc.createElement("meta");
+      metaNode.setAttribute("charset", "UTF-8");
+      headNode.insertBefore(metaNode, headNode.firstChild);
+      headNode.insertBefore(doc.createTextNode("\n"), headNode.firstChild);
     }
-
-    // scripts: script-like anchors
-    Array.prototype.slice.call(rootNode.querySelectorAll('a[href^="javascript:"], area[href^="javascript:"]')).forEach(function (elem) {
-      switch (options["capture.scriptAnchor"]) {
-        case "save":
-          // do nothing
-          break;
-        case "blank":
-          elem.setAttribute("href", "javascript:");
-          break;
-        case "remove":
-        default:
-          elem.removeAttribute("href");
-          break;
-      }
-    });
-
-    // frames
-    Array.prototype.slice.call(rootNode.querySelectorAll("frame[src], iframe[src]")).forEach(function (frame) {
-      var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
-      frame.removeAttribute(origRefKey);
-      frame.setAttribute("src", frame.src);
-      frame.removeAttribute("srcdoc"); // prevent src being overwritten
-
-      switch (options["capture.frame"]) {
-        case "link":
-          // do nothing
-          return;
-        case "blank":
-          frame.setAttribute("src", "about:blank");
-          return;
-        case "comment":
-          frame.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(frame.outerHTML)), frame);
-          return;
-        case "remove":
-          frame.parentNode.removeChild(frame);
-          return;
-        case "save":
-        default:
-          break;
-      }
-
-      var captureFrameCallback = function (result) {
-        if (result.filename) {
-          frame.src = result.filename;
-        } else {
-          frame.removeAttribute("src");
-        }
-        isDebug && console.debug("capture frame", result);
-        remainingTasks--;
-        captureCheckDone();
-      };
-
-      var frameSettings = JSON.parse(JSON.stringify(settings));
-      frameSettings.frameIsMain = false;
-
-      var frameDoc;
-      try {
-        frameDoc = frameSrc.contentDocument;
-      } catch (ex) {
-        // console.debug(ex);
-      }
-      if (frameDoc) {
-        remainingTasks++;
-        capturer.captureDocumentOrFile(frameDoc, frameSettings, options, function (result) {
-          if (result && !result.error) {
-            captureFrameCallback(result);
-          } else {
-            captureFrameCallback({
-              filename: frame.src
-            });
-          }
-        });
-      } else {
-        remainingTasks++;
-        getFrameContent(frameSrc, timeId, frameSettings, options, function (response) {
-          if (response && !response.error) {
-            captureFrameCallback(response);
-          } else {
-            captureFrameCallback({
-              timeId: timeId,
-              frameUrl: doc.URL,
-              filename: frame.src
-            });
-          }
-        });
-      }
-    });
-
-    // images: img, pre-set
-    // rewrite the url for img and input[type="image"] beforehand so that these nodes in a
-    // picture node won't get non-fixed if the picture is commented-out
-    Array.prototype.slice.call(rootNode.querySelectorAll('img[src], img[srcset]')).forEach(function (elem) {
-      if (elem.hasAttribute("src")) {
-        elem.setAttribute("src", elem.src);
-      }
-      if (elem.hasAttribute("srcset")) {
-        elem.setAttribute("srcset",
-          scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
-            return rewriteRelativeUrl(url);
-          })
-        );
-      }
-    });
-
-    // images: input, pre-set
-    Array.prototype.slice.call(rootNode.querySelectorAll('input[type="image"][src]')).forEach(function (elem) {
-      elem.setAttribute("src", elem.src);
-    });
-
-    // images: picture
-    Array.prototype.slice.call(rootNode.querySelectorAll('picture')).forEach(function (elem) {
-      Array.prototype.slice.call(elem.querySelectorAll('source[srcset]')).forEach(function (elem) {
-        elem.setAttribute("srcset",
-          scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
-            return rewriteRelativeUrl(url);
-          })
-        );
-      });
-
-      switch (options["capture.image"]) {
-        case "link":
-          // do nothing
-          return;
-        case "blank":
-          Array.prototype.slice.call(elem.querySelectorAll('source[srcset]')).forEach(function (elem) {
-            elem.setAttribute("srcset", "about:blank");
-          });
-          return;
-        case "comment":
-          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-          return;
-        case "remove":
-          elem.parentNode.removeChild(elem);
-          return;
-        case "save":
-        default:
-          Array.prototype.slice.call(elem.querySelectorAll('source[srcset]')).forEach(function (elem) {
-            remainingTasks++;
-            downloadSrcset(elem.getAttribute("srcset"), function (response) {
-              elem.setAttribute("srcset", response);
-              remainingTasks--;
-              captureCheckDone();
-            });
-          });
-          break;
-      }
-    });
-
-    // images: img, post-set
-    Array.prototype.slice.call(rootNode.querySelectorAll('img[src], img[srcset]')).forEach(function (elem) {
-      switch (options["capture.image"]) {
-        case "link":
-          // do nothing
-          return;
-        case "blank":
-          if (elem.hasAttribute("src")) {
-            elem.setAttribute("src", "about:blank");
-          }
-          if (elem.hasAttribute("srcset")) {
-            elem.setAttribute("srcset", "about:blank");
-          }
-          return;
-        case "comment":
-          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-          return;
-        case "remove":
-          elem.parentNode.removeChild(elem);
-          return;
-        case "save":
-        default:
-          if (elem.hasAttribute("src")) {
-            remainingTasks++;
-            capturer.invoke("downloadFile", {
-              url: elem.src,
-              settings: settings,
-              options: options
-            }, function (response) {
-              elem.src = response.url;
-              remainingTasks--;
-              captureCheckDone();
-            });
-          }
-          if (elem.hasAttribute("srcset")) {
-            remainingTasks++;
-            downloadSrcset(elem.getAttribute("srcset"), function (response) {
-              elem.setAttribute("srcset", response);
-              remainingTasks--;
-              captureCheckDone();
-            });
-          }
-          break;
-      }
-    });
-
-    // images: input, post-set
-    Array.prototype.slice.call(rootNode.querySelectorAll('input[type="image"][src]')).forEach(function (elem) {
-      switch (options["capture.image"]) {
-        case "link":
-          // do nothing
-          return;
-        case "blank":
-          elem.setAttribute("src", "about:blank");
-          return;
-        case "comment":
-          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-          return;
-        case "remove":
-          elem.parentNode.removeChild(elem);
-          return;
-        case "save":
-        default:
-          remainingTasks++;
-          capturer.invoke("downloadFile", {
-            url: elem.src,
-            settings: settings,
-            options: options
-          }, function (response) {
-            elem.src = response.url;
-            remainingTasks--;
-            captureCheckDone();
-          });
-          break;
-      }
-    });
-
-    // other media: audio
-    Array.prototype.slice.call(rootNode.querySelectorAll('audio')).forEach(function (elem) {
-      Array.prototype.slice.call(elem.querySelectorAll('source, track')).forEach(function (elem) {
-        elem.setAttribute("src", elem.src);
-      });
-
-      switch (options["capture.audio"]) {
-        case "link":
-          // do nothing
-          return;
-        case "blank":
-          Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
-            elem.setAttribute("src", "about:blank");
-          });
-          return;
-        case "comment":
-          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-          return;
-        case "remove":
-          elem.parentNode.removeChild(elem);
-          return;
-        case "save":
-        default:
-          Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
-            remainingTasks++;
-            capturer.invoke("downloadFile", {
-              url: elem.src,
-              settings: settings,
-              options: options
-            }, function (response) {
-              elem.src = response.url;
-              remainingTasks--;
-              captureCheckDone();
-            });
-          });
-          break;
-      }
-    });
-
-    // other media: video
-    Array.prototype.slice.call(rootNode.querySelectorAll('video')).forEach(function (elem) {
-      Array.prototype.slice.call(elem.querySelectorAll('source, track')).forEach(function (elem) {
-        elem.setAttribute("src", elem.src);
-      });
-
-      switch (options["capture.video"]) {
-        case "link":
-          // do nothing
-          return;
-        case "blank":
-          Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
-            elem.setAttribute("src", "about:blank");
-          });
-          return;
-        case "comment":
-          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-          return;
-        case "remove":
-          elem.parentNode.removeChild(elem);
-          return;
-        case "save":
-        default:
-          Array.prototype.slice.call(elem.querySelectorAll('source')).forEach(function (elem) {
-            remainingTasks++;
-            capturer.invoke("downloadFile", {
-              url: elem.src,
-              settings: settings,
-              options: options
-            }, function (response) {
-              elem.src = response.url;
-              remainingTasks--;
-              captureCheckDone();
-            });
-          });
-          break;
-      }
-    });
-
-    // other media: embed
-    Array.prototype.slice.call(rootNode.querySelectorAll('embed')).forEach(function (elem) {
-      elem.setAttribute("src", elem.src);
-
-      switch (options["capture.embed"]) {
-        case "link":
-          // do nothing
-          return;
-        case "blank":
-          elem.setAttribute("src", "about:blank");
-          return;
-        case "comment":
-          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-          return;
-        case "remove":
-          elem.parentNode.removeChild(elem);
-          return;
-        case "save":
-        default:
-          remainingTasks++;
-          capturer.invoke("downloadFile", {
-            url: elem.src,
-            settings: settings,
-            options: options
-          }, function (response) {
-            elem.src = response.url;
-            remainingTasks--;
-            captureCheckDone();
-          });
-          break;
-      }
-    });
-
-    // other media: object
-    Array.prototype.slice.call(rootNode.querySelectorAll('object')).forEach(function (elem) {
-      elem.setAttribute("data", elem.data);
-
-      switch (options["capture.object"]) {
-        case "link":
-          // do nothing
-          return;
-        case "blank":
-          elem.setAttribute("data", "about:blank");
-          return;
-        case "comment":
-          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-          return;
-        case "remove":
-          elem.parentNode.removeChild(elem);
-          return;
-        case "save":
-        default:
-          remainingTasks++;
-          capturer.invoke("downloadFile", {
-            url: elem.data,
-            settings: settings,
-            options: options
-          }, function (response) {
-            elem.data = response.url;
-            remainingTasks--;
-            captureCheckDone();
-          });
-          break;
-      }
-    });
-
-    // other media: applet
-    Array.prototype.slice.call(rootNode.querySelectorAll('applet')).forEach(function (elem) {
-      var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("archive"));
-      elem.setAttribute("archive", rewriteUrl);
-
-      switch (options["capture.applet"]) {
-        case "link":
-          // do nothing
-          return;
-        case "blank":
-          elem.setAttribute("archive", "about:blank");
-          return;
-        case "comment":
-          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-          return;
-        case "remove":
-          elem.parentNode.removeChild(elem);
-          return;
-        case "save":
-        default:
-          remainingTasks++;
-          capturer.invoke("downloadFile", {
-            url: rewriteUrl,
-            settings: settings,
-            options: options,
-          }, function (response) {
-            elem.setAttribute("archive", response.url);
-            remainingTasks--;
-            captureCheckDone();
-          });
-          break;
-      }
-    });
-
-    // other media: canvas
-    // must place after scripts are parsed to prevent an overwrite
-    Array.prototype.slice.call(rootNode.querySelectorAll('canvas')).forEach(function (elem) {
-      var canvasOrig = origRefNodes[elem.getAttribute(origRefKey)];
-      elem.removeAttribute(origRefKey);
-
-      switch (options["capture.canvas"]) {
-        case "blank":
-          // do nothing
-          break;
-        case "comment":
-          elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-          return;
-        case "remove":
-          elem.parentNode.removeChild(elem);
-          return;
-        case "save":
-        default:
-          var canvasScript = doc.createElement("script");
-          canvasScript.textContent = "(" + canvasDataScript.toString().replace(/\s+/g, " ") + ")('" + canvasOrig.toDataURL() + "')";
-          elem.parentNode.insertBefore(canvasScript, elem.nextSibling);
-          break;
-      }
-    });
-
-    // deprecated: background attribute (deprecated since HTML5)
-    Array.prototype.slice.call(rootNode.querySelectorAll(
-      'body[background], table[background], tr[background], th[background], td[background]'
-    )).forEach(function (elem) {
-      var rewriteUrl = rewriteRelativeUrl(elem.getAttribute("background"));
-      elem.setAttribute("background", rewriteUrl);
-
-      switch (options["capture.imageBackground"]) {
-        case "link":
-          // do nothing
-          return;
-        case "remove":
-          elem.removeAttribute("background");
-          return;
-        case "save":
-        default:
-          remainingTasks++;
-          capturer.invoke("downloadFile", {
-            url: rewriteUrl,
-            settings: settings,
-            options: options
-          }, function (response) {
-            elem.setAttribute("background", response.url);
-            remainingTasks--;
-            captureCheckDone();
-          });
-          break;
-      }
-    });
 
     captureCheckDone();
   };
