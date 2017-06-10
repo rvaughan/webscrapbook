@@ -32,10 +32,10 @@ scrapbook.options = {
   "capture.font": ["save", "link", "comment", "blank", "remove", 0],
   "capture.style": ["save", "link", "comment", "blank", "remove", 0],
   "capture.script": ["save", "link", "comment", "blank", "remove", 2],
-  "capture.noscript": ["save", "comment", "remove", 0],
+  "capture.noscript": ["save", "comment", "blank", "remove", 0],
   "capture.scriptAttr": ["save", "remove", 1],
   "capture.scriptAnchor": ["save", "blank", "remove", 1],
-  "capture.base": ["save", "empty", 0],
+  "capture.base": ["save", "comment", "blank", "remove", 0],
 };
 
 scrapbook.isOptionsSynced = false;

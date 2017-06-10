@@ -196,9 +196,15 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           elem.setAttribute("href", elem.href);
 
           switch (options["capture.base"]) {
-            case "empty":
+            case "blank":
               elem.removeAttribute("href");
               break;
+            case "comment":
+              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+              return;
+            case "remove":
+              elem.parentNode.removeChild(elem);
+              return;
             case "save":
             default:
               // do nothing
@@ -289,6 +295,9 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         // scripts: noscript
         case "noscript":
           switch (options["capture.noscript"]) {
+            case "blank":
+              elem.contentText = "";
+              break;
             case "comment":
               elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
               return;
