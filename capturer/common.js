@@ -262,7 +262,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               if (elem.hasAttribute("src")) {
                 elem.setAttribute("src", captureGetSkippedUrl(elem.src));
               } else {
-                captureRemoveTextContent(elem);
+                captureRewriteTextContent(elem, null);
               }
               break;
             case "remove":
@@ -290,7 +290,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         case "noscript":
           switch (options["capture.noscript"]) {
             case "blank":
-              captureRemoveTextContent(elem);
+              captureRewriteTextContent(elem, null);
               break;
             case "remove":
               captureRemoveNode(elem);
@@ -890,13 +890,17 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     }
   };
 
-  // remove the textContent, record it if option set
-  var captureRemoveTextContent = function (elem) {
+  // rewrite (or remove if value is null/undefined) the textContent, record it if option set
+  var captureRewriteTextContent = function (elem, value) {
     if (!elem.textContent) return;
     if (options["capture.recordRemovedAttr"]) {
       elem.setAttribute("data-sb-orig-textContent", elem.textContent);
     }
-    elem.textContent = "";
+    if (value === null && value === undefined) {
+      elem.textContent = "";
+    } else {
+      elem.textContent = value;
+    }
   };
 
   var canvasDataScript = function (data) {
