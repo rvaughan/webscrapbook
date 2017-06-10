@@ -197,7 +197,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
 
           switch (options["capture.base"]) {
             case "blank":
-              elem.removeAttribute("href");
+              removeAttr(elem, "href");
               break;
             case "comment":
               elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
@@ -326,7 +326,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 // do nothing
                 break;
               case "remove":
-                elem.removeAttribute("background");
+                removeAttr(elem, "background");
                 break;
               case "save":
               default:
@@ -351,7 +351,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
           frame.removeAttribute(origRefKey);
           frame.setAttribute("src", frame.src);
-          frame.removeAttribute("srcdoc"); // prevent src being overwritten
+          removeAttr(frame, "srcdoc"); // prevent src being overwritten
 
           switch (options["capture.frame"]) {
             case "link":
@@ -375,7 +375,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             if (result.filename) {
               frame.src = result.filename;
             } else {
-              frame.removeAttribute("src");
+              removeAttr(frame, "src");
             }
             isDebug && console.debug("capture frame", result);
             remainingTasks--;
@@ -436,7 +436,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 break;
               case "remove":
               default:
-                elem.removeAttribute("href");
+                removeAttr(elem, "href");
                 break;
             }
           }
@@ -812,7 +812,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         default:
           Array.prototype.forEach.call(elem.attributes, function (attr) {
             if (attr.name.toLowerCase().startsWith("on")) {
-              elem.removeAttribute(attr.name);
+              removeAttr(elem, attr.name);
             }
           });
       }
@@ -821,7 +821,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
       // We have to remove integrity check because we could modify the content
       // and they might not work correctly in the offline environment.
       if ( options["capture.removeIntegrity"] ) {
-        elem.removeAttribute("integrity");
+        removeAttr(elem, "integrity");
       }
     });
 
@@ -892,6 +892,15 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         }
       });
     });
+  };
+
+  // remove the specified attr, record it if option set
+  var removeAttr = function (elem, attr) {
+    if (!elem.hasAttribute(attr)) return;
+    if (options["capture.recordRemovedAttr"]) {
+      elem.setAttribute("data-sb-orig-" + attr, elem.getAttribute(attr));
+    }
+    elem.removeAttribute(attr);
   };
 
   var canvasDataScript = function (data) {
