@@ -473,7 +473,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               }
               if (elem.hasAttribute("srcset")) {
                 remainingTasks++;
-                var downloader = new ComplexUrlDownloader();
+                var downloader = new capturer.ComplexUrlDownloader(settings, options);
                 var rewriteUrl = scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
                   return downloader.getUrlHash(url);
                 });
@@ -513,7 +513,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             default:
               Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
                 remainingTasks++;
-                var downloader = new ComplexUrlDownloader();
+                var downloader = new capturer.ComplexUrlDownloader(settings, options);
                 var rewriteUrl = scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
                   return downloader.getUrlHash(url);
                 });
@@ -824,52 +824,6 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     }, callback);
   };
 
-  /**
-   * A class that manages a text containing multiple URLs to be downloaded and rewritten
-   *
-   * @class ComplexUrlDownloader
-   */
-  var ComplexUrlDownloader = function () {
-    var urlHash = [], urlRewrittenCount = 0;
-
-    this.getUrlHash = function (url) {
-      var key = scrapbook.getUuid();
-      urlHash[key] = url;
-      return "urn:scrapbook:url:" + key;
-    };
-
-    this.startDownloads = function (callback) {
-      var keys = Object.keys(urlHash), len = keys.length;
-      if (len > 0) {
-        keys.forEach(function (key) {
-          capturer.invoke("downloadFile", {
-            url: urlHash[key],
-            settings: settings,
-            options: options
-          }, function (response) {
-            urlHash[key] = response.url;
-            if (++urlRewrittenCount === len) {
-              callback();
-            }
-          });
-        });
-      } else {
-        callback();
-      }
-    };
-
-    this.finalRewrite = function (text) {
-      return text.replace(/urn:scrapbook:url:([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})/g, function (match, key) {
-        var url = urlHash[key];
-        // This could happen when a web page really contains a content text in our format.
-        // We return the original text for keys not defineded in the map to prevent a bad replace
-        // since it's nearly impossible for them to hit on the hash keys we are using.
-        if (!url) return match;
-        return url;
-      });
-    };
-  };
-
   // remove the specified node, record it if option set
   var captureRemoveNode = function (elem) {
     if (options["capture.recordRemovedNode"]) {
@@ -958,4 +912,52 @@ capturer.resolveRelativeUrl = function (baseUrl, relativeUrl) {
   }
   rewriters[baseUrl].setAttribute("href", relativeUrl);
   return rewriters[baseUrl].href;
+};
+
+
+/********************************************************************
+ * A class that manages a text containing multiple URLs to be
+ * downloaded and rewritten
+ *
+ * @class ComplexUrlDownloader
+ *******************************************************************/
+capturer.ComplexUrlDownloader = function (settings, options) {
+  var urlHash = [], urlRewrittenCount = 0;
+
+  this.getUrlHash = function (url) {
+    var key = scrapbook.getUuid();
+    urlHash[key] = url;
+    return "urn:scrapbook:url:" + key;
+  };
+
+  this.startDownloads = function (callback) {
+    var keys = Object.keys(urlHash), len = keys.length;
+    if (len > 0) {
+      keys.forEach(function (key) {
+        capturer.invoke("downloadFile", {
+          url: urlHash[key],
+          settings: settings,
+          options: options
+        }, function (response) {
+          urlHash[key] = response.url;
+          if (++urlRewrittenCount === len) {
+            callback();
+          }
+        });
+      });
+    } else {
+      callback();
+    }
+  };
+
+  this.finalRewrite = function (text) {
+    return text.replace(/urn:scrapbook:url:([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})/g, function (match, key) {
+      var url = urlHash[key];
+      // This could happen when a web page really contains a content text in our format.
+      // We return the original text for keys not defineded in the map to prevent a bad replace
+      // since it's nearly impossible for them to hit on the hash keys we are using.
+      if (!url) return match;
+      return url;
+    });
+  };
 };
