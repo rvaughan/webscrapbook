@@ -20,10 +20,6 @@ scrapbook.options = {
   "capture.saveAsUtf8": true,
   "capture.saveAsciiFilename": false,
   "capture.saveInlineAsHtml": false,
-  "capture.recordRemovedNode": false,
-  "capture.recordRemovedAttr": false,
-  "capture.recordSkippedUrl": false,
-  "capture.removeIntegrity": true,
   "capture.image": ["save", "link", "blank", "remove", 0],
   "capture.imageBackground": ["save", "link", "remove", 0],
   "capture.audio": ["save", "link", "blank", "remove", 0],
@@ -40,6 +36,10 @@ scrapbook.options = {
   "capture.scriptAttr": ["save", "remove", 1],
   "capture.scriptAnchor": ["save", "blank", "remove", 1],
   "capture.base": ["save", "blank", "remove", 0],
+  "capture.removeIntegrity": true,
+  "capture.recordRemovedNode": false,
+  "capture.recordRemovedAttr": false,
+  "capture.recordSkippedUrl": false,
 };
 
 scrapbook.isOptionsSynced = false;
