@@ -265,7 +265,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               if (elem.hasAttribute("src")) {
                 elem.setAttribute("src", "about:blank");
               } else {
-                elem.textContent = "";
+                removeTextContent(elem);
               }
               break;
             case "comment":
@@ -296,7 +296,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         case "noscript":
           switch (options["capture.noscript"]) {
             case "blank":
-              elem.contentText = "";
+              captureRemoveTextContent(elem);
               break;
             case "comment":
               elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
@@ -901,6 +901,15 @@ capturer.captureDocument = function (doc, settings, options, callback) {
       elem.setAttribute("data-sb-orig-" + attr, elem.getAttribute(attr));
     }
     elem.removeAttribute(attr);
+  };
+
+  // remove the textContent, record it if option set
+  var removeTextContent = function (elem) {
+    if (!elem.textContent) return;
+    if (options["capture.recordRemovedAttr"]) {
+      elem.setAttribute("data-sb-orig-textContent", elem.textContent);
+    }
+    elem.textContent = "";
   };
 
   var canvasDataScript = function (data) {
