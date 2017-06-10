@@ -79,7 +79,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     var selection = doc.getSelection();
     if (selection && selection.isCollapsed) { selection = null; }
     if (scrapbook.getOption("capture.saveSelectionOnly") && selection) {
-      var selNodeTree = []; // it's not enough to preserve order of sparsely selected table cells
+      var selNodeTree = []; // @TODO: it's not enough to preserve order of sparsely selected table cells
       for (var iRange = 0, iRangeMax = selection.rangeCount; iRange < iRangeMax; ++iRange) {
         var myRange = selection.getRangeAt(iRange);
         var curNode = myRange.commonAncestorContainer;
