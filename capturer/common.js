@@ -816,6 +816,13 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             }
           });
       }
+
+      // handle integrity
+      // We have to remove integrity check because we could modify the content
+      // and they might not work correctly in the offline environment.
+      if ( options["capture.removeIntegrity"] ) {
+        elem.removeAttribute("integrity");
+      }
     });
 
     // force UTF-8
