@@ -202,6 +202,7 @@ capturer.downloadFile = function (params, callback) {
   sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
   var filename = scrapbook.urlToFilename(sourceUrl);
   var isDuplicate;
+  var headers = {};
   
   var xhr = new XMLHttpRequest();
 
@@ -237,17 +238,32 @@ capturer.downloadFile = function (params, callback) {
 
   xhr.onreadystatechange = function () {
     if (xhr.readyState === 2) {
+      // determine the filename
       // if header Content-Disposition is defined, use it
       try {
         var headerContentDisposition = xhr.getResponseHeader("Content-Disposition");
-        var contentDisposition = scrapbook.parseHeaderContentDisposition(headerContentDisposition);
-        filename = contentDisposition.parameters.filename || filename;
+        if (headerContentDisposition) {
+          var contentDisposition = scrapbook.parseHeaderContentDisposition(headerContentDisposition);
+          headers.isAttachment = (contentDisposition.type === "attachment");
+          headers.filename = contentDisposition.parameters.filename;
+          filename = headers.filename || filename;
+        }
       } catch (ex) {}
 
-      // determine the filename
       // @TODO: 
       //   if header Content-Disposition is not defined but Content-Type is defined, 
       //   make file extension compatible with it.
+      try {
+        var headerContentType = xhr.getResponseHeader("Content-Type");
+        if (headerContentType) {
+          var contentType = scrapbook.parseHeaderContentType(headerContentType);
+          headers.contentType = contentType.contentType;
+          headers.charset = contentType.charset;
+        }
+      } catch (ex) {
+        console.error(ex);
+      }
+
       filename = scrapbook.validateFilename(filename);
       ({newFilename: filename, isDuplicate} = capturer.getUniqueFilename(timeId, filename, sourceUrl));
       if (isDuplicate) {
@@ -256,6 +272,7 @@ capturer.downloadFile = function (params, callback) {
       }
     } else if (xhr.readyState === 4) {
       if ((xhr.status == 200 || xhr.status == 0) && xhr.response) {
+        params.headers = headers;
         xhr_complete(xhr.response);
       } else {
         xhr.onerror();
