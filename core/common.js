@@ -21,6 +21,7 @@ scrapbook.options = {
   "capture.saveAsciiFilename": false,
   "capture.saveInlineAsHtml": false,
   "capture.recordRemovedAttr": false,
+  "capture.recordSkippedUrl": false,
   "capture.removeIntegrity": true,
   "capture.image": ["save", "link", "comment", "blank", "remove", 0],
   "capture.imageBackground": ["save", "link", "remove", 0],

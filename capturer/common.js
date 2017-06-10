@@ -263,7 +263,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("src")) {
-                elem.setAttribute("src", "about:blank");
+                elem.setAttribute("src", getSkippedUrl(elem.src));
               } else {
                 removeTextContent(elem);
               }
@@ -358,7 +358,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               // do nothing
               break;
             case "blank":
-              frame.setAttribute("src", "about:blank");
+              frame.setAttribute("src", getSkippedUrl(frame.src));
               break;
             case "comment":
               frame.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(frame.outerHTML)), frame);
@@ -461,10 +461,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("src")) {
-                elem.setAttribute("src", "about:blank");
+                elem.setAttribute("src", getSkippedUrl(elem.src));
               }
               if (elem.hasAttribute("srcset")) {
-                elem.setAttribute("srcset", "about:blank");
+                removeAttr(elem, "srcset");
               }
               break;
             case "comment":
@@ -515,7 +515,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
-                elem.setAttribute("srcset", "about:blank");
+                removeAttr(elem, "srcset");
               });
               break;
             case "comment":
@@ -550,7 +550,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
-                elem.setAttribute("src", "about:blank");
+                elem.setAttribute("src", getSkippedUrl(elem.src));
               });
               break;
             case "comment":
@@ -589,7 +589,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
-                elem.setAttribute("src", "about:blank");
+                elem.setAttribute("src", getSkippedUrl(elem.src));
               });
               break;
             case "comment":
@@ -628,7 +628,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("src")) {
-                elem.setAttribute("src", "about:blank");
+                elem.setAttribute("src", getSkippedUrl(elem.src));
               }
               break;
             case "comment":
@@ -667,7 +667,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("data")) {
-                elem.setAttribute("data", "about:blank");
+                elem.setAttribute("data", getSkippedUrl(elem.data));
               }
               break;
             case "comment":
@@ -707,7 +707,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("archive")) {
-                elem.setAttribute("archive", "about:blank");
+                elem.setAttribute("archive", getSkippedUrl(rewriteUrl));
               }
               break;
             case "comment":
@@ -776,7 +776,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   // do nothing
                   break;
                 case "blank":
-                  elem.setAttribute("src", "about:blank");
+                  elem.setAttribute("src", getSkippedUrl(elem.src));
                   break;
                 case "comment":
                   elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
@@ -892,6 +892,18 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         }
       });
     });
+  };
+
+  // get the skipped form for specific URLs that we do not handle
+  var getSkippedUrl = function (url) {
+    if (options["capture.recordSkippedUrl"]) {
+      if (!url.startsWith("urn:scrapbook:download:skip:")) {
+        return "urn:scrapbook:download:skip:" + url;
+      }
+    } else {
+      return "about:blank";
+    }
+    return url;
   };
 
   // remove the specified attr, record it if option set
