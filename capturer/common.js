@@ -473,8 +473,12 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               }
               if (elem.hasAttribute("srcset")) {
                 remainingTasks++;
-                downloadComplexUrl(elem.getAttribute("srcset"), scrapbook.parseSrcset, function (response) {
-                  captureRewriteUri(elem, "srcset", response);
+                var downloader = new ComplexUrlDownloader();
+                var rewriteUrl = scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
+                  return downloader.getUrlHash(url);
+                });
+                downloader.startDownloads(function () {
+                  elem.setAttribute("srcset", downloader.finalRewrite(rewriteUrl));
                   remainingTasks--;
                   captureCheckDone();
                 });
@@ -509,8 +513,12 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             default:
               Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
                 remainingTasks++;
-                downloadComplexUrl(elem.getAttribute("srcset"), scrapbook.parseSrcset, function (response) {
-                  captureRewriteUri(elem, "srcset", response);
+                var downloader = new ComplexUrlDownloader();
+                var rewriteUrl = scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
+                  return downloader.getUrlHash(url);
+                });
+                downloader.startDownloads(function () {
+                  elem.setAttribute("srcset", downloader.finalRewrite(rewriteUrl));
                   remainingTasks--;
                   captureCheckDone();
                 });
@@ -832,20 +840,41 @@ capturer.captureDocument = function (doc, settings, options, callback) {
   };
 
   /**
-   * process a text containing multiples which are to be downloaded and
-   * be rewritten, then fire the callback
+   * A class that manages a text containing multiple URLs to be downloaded and rewritten
    *
-   * @param {string} text
-   * @param {function} rewriter - the rewriter callback, which takes a text
-   *                              and fires a callback that rewrites each single URL
-   * @param {function} callback - the callback function to be fired when all downloads
-   *                              are completed, that takes the final rewritten text
+   * @class ComplexUrlDownloader
    */
-  var downloadComplexUrl = function (text, rewriter, callback) {
-    var urlHash = [], urlHashCount = 0, urlRewrittenCount = 0;
+  var ComplexUrlDownloader = function () {
+    var urlHash = [], urlRewrittenCount = 0;
 
-    var onAllDownloaded = function () {
-      var newText = text.replace(/urn:scrapbook:url:([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})/g, function (match, key) {
+    this.getUrlHash = function (url) {
+      var key = scrapbook.getUuid();
+      urlHash[key] = url;
+      return "urn:scrapbook:url:" + key;
+    };
+
+    this.startDownloads = function (callback) {
+      var keys = Object.keys(urlHash), len = keys.length;
+      if (len > 0) {
+        keys.forEach(function (key) {
+          capturer.invoke("downloadFile", {
+            url: urlHash[key],
+            settings: settings,
+            options: options
+          }, function (response) {
+            urlHash[key] = response.url;
+            if (++urlRewrittenCount === len) {
+              callback();
+            }
+          });
+        });
+      } else {
+        callback();
+      }
+    };
+
+    this.finalRewrite = function (text) {
+      return text.replace(/urn:scrapbook:url:([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})/g, function (match, key) {
         var url = urlHash[key];
         // This could happen when a web page really contains a content text in our format.
         // We return the original text for keys not defineded in the map to prevent a bad replace
@@ -853,28 +882,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         if (!url) return match;
         return url;
       });
-      callback(newText);
     };
-
-    text = rewriter(text, function (url) {
-      var key = scrapbook.getUuid();
-      urlHash[key] = url;
-      ++urlHashCount;
-      return "urn:scrapbook:url:" + key;
-    });
-
-    Object.keys(urlHash).forEach(function (key) {
-      capturer.invoke("downloadFile", {
-        url: urlHash[key],
-        settings: settings,
-        options: options
-      }, function (response) {
-        urlHash[key] = response.url;
-        if (++urlRewrittenCount === urlHashCount) {
-          onAllDownloaded();
-        }
-      });
-    });
   };
 
   // remove the specified node, record it if option set
