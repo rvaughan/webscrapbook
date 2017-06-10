@@ -164,7 +164,7 @@ capturer.registerDocument = function (params, callback) {
 capturer.saveDocument = function (params, callback) {
   var timeId = params.settings.timeId;
   var frameUrl = params.frameUrl;
-  var targetDir = scrapbook.options.dataFolder + "/" + timeId;
+  var targetDir = params.options["dataFolder"] + "/" + timeId;
   var autoErase = !params.settings.frameIsMain;
   var filename = params.data.documentName + "." + ((params.data.mime === "application/xhtml+xml") ? "xhtml" : "html");
   filename = scrapbook.validateFilename(filename);
@@ -197,17 +197,44 @@ capturer.saveDocument = function (params, callback) {
 capturer.downloadFile = function (params, callback) {
   isDebug && console.debug("downloadFile", params);
   var timeId = params.settings.timeId;
-  var targetDir = scrapbook.options.dataFolder + "/" + timeId;
+  var targetDir = params.options["dataFolder"] + "/" + timeId;
   var sourceUrl = params.url;
   sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
   var filename = scrapbook.urlToFilename(sourceUrl);
   var isDuplicate;
   
   var xhr = new XMLHttpRequest();
+
   var xhr_shutdown = function () {
     xhr.onreadystatechange = xhr.onerror = xhr.ontimeout = null;
     xhr.abort();
   };
+
+  var xhr_complete = function (blob) {
+    // download the data
+    try {
+      chrome.downloads.download({
+        url: URL.createObjectURL(blob),
+        filename: targetDir + "/" + filename,
+        conflictAction: "uniquify",
+      }, function (downloadId) {
+        capturer.downloadInfo[downloadId] = {
+          timeId: timeId,
+          src: sourceUrl,
+          autoErase: true,
+          onComplete: function () {
+            callback({ url: filename });
+          },
+          onError: function () {
+            callback({ url: capturer.getErrorUrl(sourceUrl) });
+          }
+        };
+      });
+    } catch (ex) {
+      callback({ url: capturer.getErrorUrl(sourceUrl) });
+    }
+  };
+
   xhr.onreadystatechange = function () {
     if (xhr.readyState === 2) {
       // if header Content-Disposition is defined, use it
@@ -229,45 +256,26 @@ capturer.downloadFile = function (params, callback) {
       }
     } else if (xhr.readyState === 4) {
       if ((xhr.status == 200 || xhr.status == 0) && xhr.response) {
-        // download 
-        var params = {
-          url: URL.createObjectURL(xhr.response),
-          filename: targetDir + "/" + filename,
-          conflictAction: "uniquify",
-        };
-        try {
-          chrome.downloads.download(params, function (downloadId) {
-            capturer.downloadInfo[downloadId] = {
-              timeId: timeId,
-              src: sourceUrl,
-              autoErase: true,
-              onComplete: function () {
-                callback({ url: filename });
-              },
-              onError: function () {
-                callback({ url: capturer.getErrorUrl(sourceUrl) });
-              }
-            };
-          });
-        } catch (ex) {
-          callback({ url: capturer.getErrorUrl(sourceUrl) });
-        }
+        xhr_complete(xhr.response);
       } else {
         xhr.onerror();
       }
     }
   };
+
   xhr.ontimeout = function () {
     console.warn(scrapbook.lang("ErrorFileDownloadTimeout", sourceUrl));
     callback({ url: capturer.getErrorUrl(sourceUrl), error: "timeout" });
     xhr_shutdown();
   };
+
   xhr.onerror = function () {
     var err = [xhr.status, xhr.statusText].join(" ");
     console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
     callback({ url: capturer.getErrorUrl(sourceUrl), error: err });
     xhr_shutdown();
   };
+
   xhr.responseType = "blob";
   xhr.open("GET", sourceUrl, true);
   xhr.send();
@@ -291,7 +299,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
       frameIsMain: true,
       documentName: "index",
     },
-    options: scrapbook.getOptions("capture"),
+    options: scrapbook.getOptions(""),
   };
 
   isDebug && console.debug(cmd + " (main) send", tabId, message);
