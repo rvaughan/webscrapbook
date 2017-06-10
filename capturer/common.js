@@ -199,11 +199,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             case "blank":
               captureRemoveAttr(elem, "href");
               break;
-            case "comment":
-              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-              return;
             case "remove":
-              elem.parentNode.removeChild(elem);
+              captureRemoveNode(elem);
               return;
             case "save":
             default:
@@ -268,11 +265,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 captureRemoveTextContent(elem);
               }
               break;
-            case "comment":
-              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-              return;
             case "remove":
-              elem.parentNode.removeChild(elem);
+              captureRemoveNode(elem);
               return;
             case "save":
             default:
@@ -298,11 +292,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             case "blank":
               captureRemoveTextContent(elem);
               break;
-            case "comment":
-              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-              return;
             case "remove":
-              elem.parentNode.removeChild(elem);
+              captureRemoveNode(elem);
               return;
             case "save":
             default:
@@ -360,11 +351,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             case "blank":
               frame.setAttribute("src", captureGetSkippedUrl(frame.src));
               break;
-            case "comment":
-              frame.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(frame.outerHTML)), frame);
-              return;
             case "remove":
-              frame.parentNode.removeChild(frame);
+              captureRemoveNode(frame);
               return;
             case "save":
             default:
@@ -467,11 +455,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 captureRemoveAttr(elem, "srcset");
               }
               break;
-            case "comment":
-              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-              return;
             case "remove":
-              elem.parentNode.removeChild(elem);
+              captureRemoveNode(elem);
               return;
             case "save":
             default:
@@ -518,11 +503,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 captureRemoveAttr(elem, "srcset");
               });
               break;
-            case "comment":
-              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-              return;
             case "remove":
-              elem.parentNode.removeChild(elem);
+              captureRemoveNode(elem);
               return;
             case "save":
             default:
@@ -553,11 +535,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 elem.setAttribute("src", captureGetSkippedUrl(elem.src));
               });
               break;
-            case "comment":
-              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-              return;
             case "remove":
-              elem.parentNode.removeChild(elem);
+              captureRemoveNode(elem);
               return;
             case "save":
             default:
@@ -592,11 +571,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 elem.setAttribute("src", captureGetSkippedUrl(elem.src));
               });
               break;
-            case "comment":
-              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-              return;
             case "remove":
-              elem.parentNode.removeChild(elem);
+              captureRemoveNode(elem);
               return;
             case "save":
             default:
@@ -631,11 +607,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 elem.setAttribute("src", captureGetSkippedUrl(elem.src));
               }
               break;
-            case "comment":
-              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-              return;
             case "remove":
-              elem.parentNode.removeChild(elem);
+              captureRemoveNode(elem);
               return;
             case "save":
             default:
@@ -670,11 +643,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 elem.setAttribute("data", captureGetSkippedUrl(elem.data));
               }
               break;
-            case "comment":
-              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-              return;
             case "remove":
-              elem.parentNode.removeChild(elem);
+              captureRemoveNode(elem);
               return;
             case "save":
             default:
@@ -710,11 +680,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 elem.setAttribute("archive", captureGetSkippedUrl(rewriteUrl));
               }
               break;
-            case "comment":
-              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-              return;
             case "remove":
-              elem.parentNode.removeChild(elem);
+              captureRemoveNode(elem);
               return;
             case "save":
             default:
@@ -743,11 +710,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             case "blank":
               // do nothing
               break;
-            case "comment":
-              elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-              return;
             case "remove":
-              elem.parentNode.removeChild(elem);
+              captureRemoveNode(elem);
               return;
             case "save":
             default:
@@ -778,11 +742,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 case "blank":
                   elem.setAttribute("src", captureGetSkippedUrl(elem.src));
                   break;
-                case "comment":
-                  elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
-                  return;
                 case "remove":
-                  elem.parentNode.removeChild(elem);
+                  captureRemoveNode(elem);
                   return;
                 case "save":
                 default:
@@ -904,6 +865,16 @@ capturer.captureDocument = function (doc, settings, options, callback) {
       return "about:blank";
     }
     return url;
+  };
+
+  // remove the specified node, record it if option set
+  var captureRemoveNode = function (elem) {
+    if (options["capture.recordRemovedNode"]) {
+      elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+    }
+    else {
+      elem.parentNode.removeChild(elem);
+    }
   };
 
   // remove the specified attr, record it if option set
