@@ -203,7 +203,7 @@ capturer.downloadFile = function (params, callback) {
   var filename;
   var isDuplicate;
 
-  if (sourceUrl.indexOf("file:") == 0) {
+  if (sourceUrl.startsWith("file:")) {
     filename = scrapbook.urlToFilename(sourceUrl);
     filename = scrapbook.validateFilename(filename);
     ({newFilename: filename, isDuplicate} = capturer.getUniqueFilename(timeId, filename, sourceUrl));

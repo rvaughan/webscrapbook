@@ -804,7 +804,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         default:
           // general: remove on* attributes
           Array.prototype.forEach.call(elem.attributes, function (attr) {
-            if (attr.name.toLowerCase().indexOf("on") === 0) {
+            if (attr.name.toLowerCase().startsWith("on")) {
               elem.removeAttribute(attr.name);
             }
           });
