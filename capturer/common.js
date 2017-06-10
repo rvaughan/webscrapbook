@@ -69,7 +69,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     // give certain nodes an unique id for later refrence,
     // since cloned nodes may not have some information
     // e.g. cloned iframes has no content, cloned canvas has no image
-    var origRefKey = "data-sb-id-" + timeId;
+    var origRefKey = "data-sb-" + timeId + "-id";
     var origRefNodes = Array.prototype.slice.call(doc.querySelectorAll("frame, iframe, canvas"));
     origRefNodes.forEach(function (elem, index) {
       elem.setAttribute(origRefKey, index);
@@ -868,7 +868,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
   var captureRewriteAttr = function (elem, attr, value) {
     if (!elem.hasAttribute(attr)) return;
     if (options["capture.recordRemovedAttr"]) {
-      elem.setAttribute("data-sb-orig-" + attr, elem.getAttribute(attr));
+      elem.setAttribute("data-sb-" + timeId + "-orig-" + attr, elem.getAttribute(attr));
     }
     if (value === null && value === undefined) {
       elem.removeAttribute(attr);
@@ -881,7 +881,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
   var captureRewriteTextContent = function (elem, value) {
     if (!elem.textContent) return;
     if (options["capture.recordRemovedAttr"]) {
-      elem.setAttribute("data-sb-orig-textContent", elem.textContent);
+      elem.setAttribute("data-sb-" + timeId + "-orig-textContent", elem.textContent);
     }
     if (value === null && value === undefined) {
       elem.textContent = "";
@@ -894,7 +894,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
   var captureRewriteUri = function (elem, attr, value) {
     if (!elem.hasAttribute(attr)) return;
     if (options["capture.recordSourceUri"]) {
-      elem.setAttribute("data-sb-orig-" + attr, elem.getAttribute(attr));
+      elem.setAttribute("data-sb-" + timeId + "-orig-" + attr, elem.getAttribute(attr));
     }
     if (value === null && value === undefined) {
       elem.removeAttribute(attr);
