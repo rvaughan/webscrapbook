@@ -857,7 +857,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
   // remove the specified node, record it if option set
   var captureRemoveNode = function (elem) {
     if (options["capture.recordRemovedNode"]) {
-      elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
+      elem.parentNode.replaceChild(doc.createComment("sb-" + timeId + "-orig-node--" + scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
     }
     else {
       elem.parentNode.removeChild(elem);
