@@ -8,14 +8,9 @@
 capturer.isContentScript = false;
 
 /**
- * @type {Object.<string~timeId, Object.<string~documentName, number~count>>}
+ * @type {Object.<string~timeId, {usedDocumentNames: Object.<string~documentName, number~count>, fileToUrl: Object.<string~filename, string~src>}>}
  */
-capturer.usedDocumentNames = [];
-
-/**
- * @type {Object.<string~timeId, Object.<string~filename, string~src>>}
- */
-capturer.fileToUrl = {};
+capturer.captureInfo = {};
  
 /**
  * @type {Object.<string~downloadId, {timeId: string, src: string, autoErase: boolean, onComplete: function, onError: function}>}
@@ -31,7 +26,8 @@ capturer.downloadInfo = {};
  * @return {{newFilename: string, isDuplicate: boolean}}
  */
 capturer.getUniqueFilename = function (timeId, filename, src) {
-  capturer.fileToUrl[timeId] = capturer.fileToUrl[timeId] || {
+  if (!capturer.captureInfo[timeId]) { capturer.captureInfo[timeId] = {}; }
+  capturer.captureInfo[timeId].fileToUrl = capturer.captureInfo[timeId].fileToUrl || {
     "index.html": true,
     "index.xhtml": true,
     "index.dat": true,
@@ -48,14 +44,14 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
   var seq = 0;
   newFilename = newFilenameBase + newFilenameExt;
   var newFilenameCI = newFilename.toLowerCase();
-  while (capturer.fileToUrl[timeId][newFilenameCI] !== undefined) {
-    if (capturer.fileToUrl[timeId][newFilenameCI] === tokenSrc) {
+  while (capturer.captureInfo[timeId].fileToUrl[newFilenameCI] !== undefined) {
+    if (capturer.captureInfo[timeId].fileToUrl[newFilenameCI] === tokenSrc) {
       return { newFilename: newFilename, isDuplicate: true };
     }
     newFilename = newFilenameBase + "-" + (++seq) + newFilenameExt;
     newFilenameCI = newFilename.toLowerCase(); 
   }
-  capturer.fileToUrl[timeId][newFilenameCI] = tokenSrc;
+  capturer.captureInfo[timeId].fileToUrl[newFilenameCI] = tokenSrc;
   return { newFilename: newFilename, isDuplicate: false };
 };
 
@@ -155,12 +151,13 @@ capturer.captureFile = function (params, callback) {
 capturer.registerDocument = function (params, callback) {
   var timeId = params.settings.timeId;
   var documentName = params.settings.documentName;
-  if (!capturer.usedDocumentNames[timeId]) { capturer.usedDocumentNames[timeId] = {}; }
-  if (!capturer.usedDocumentNames[timeId][documentName]) { capturer.usedDocumentNames[timeId][documentName] = 0; }
-  var fixedDocumentName = (capturer.usedDocumentNames[timeId][documentName] > 0) ?
-    (documentName + "_" + capturer.usedDocumentNames[timeId][documentName]) :
+  if (!capturer.captureInfo[timeId]) { capturer.captureInfo[timeId] = {}; }
+  if (!capturer.captureInfo[timeId].usedDocumentNames) { capturer.captureInfo[timeId].usedDocumentNames = {}; }
+  if (!capturer.captureInfo[timeId].usedDocumentNames[documentName]) { capturer.captureInfo[timeId].usedDocumentNames[documentName] = 0; }
+  var fixedDocumentName = (capturer.captureInfo[timeId].usedDocumentNames[documentName] > 0) ?
+    (documentName + "_" + capturer.captureInfo[timeId].usedDocumentNames[documentName]) :
     documentName;
-  capturer.usedDocumentNames[timeId][documentName]++;
+  capturer.captureInfo[timeId].usedDocumentNames[documentName]++;
   callback({ documentName: fixedDocumentName });
 };
 
@@ -342,8 +339,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
       console.error(scrapbook.lang("ErrorCapture", ["tab " + tabId]));
       return;
     }
-    delete(capturer.usedDocumentNames[timeId]);
-    delete(capturer.fileToUrl[timeId]);
+    delete(capturer.captureInfo[timeId]);
   });
 });
 
