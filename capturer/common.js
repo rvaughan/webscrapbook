@@ -197,7 +197,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
 
           switch (options["capture.base"]) {
             case "blank":
-              removeAttr(elem, "href");
+              captureRemoveAttr(elem, "href");
               break;
             case "comment":
               elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
@@ -263,9 +263,9 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("src")) {
-                elem.setAttribute("src", getSkippedUrl(elem.src));
+                elem.setAttribute("src", captureGetSkippedUrl(elem.src));
               } else {
-                removeTextContent(elem);
+                captureRemoveTextContent(elem);
               }
               break;
             case "comment":
@@ -326,7 +326,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 // do nothing
                 break;
               case "remove":
-                removeAttr(elem, "background");
+                captureRemoveAttr(elem, "background");
                 break;
               case "save":
               default:
@@ -351,14 +351,14 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
           frame.removeAttribute(origRefKey);
           frame.setAttribute("src", frame.src);
-          removeAttr(frame, "srcdoc"); // prevent src being overwritten
+          captureRemoveAttr(frame, "srcdoc"); // prevent src being overwritten
 
           switch (options["capture.frame"]) {
             case "link":
               // do nothing
               break;
             case "blank":
-              frame.setAttribute("src", getSkippedUrl(frame.src));
+              frame.setAttribute("src", captureGetSkippedUrl(frame.src));
               break;
             case "comment":
               frame.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(frame.outerHTML)), frame);
@@ -375,7 +375,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             if (result.filename) {
               frame.src = result.filename;
             } else {
-              removeAttr(frame, "src");
+              captureRemoveAttr(frame, "src");
             }
             isDebug && console.debug("capture frame", result);
             remainingTasks--;
@@ -436,7 +436,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 break;
               case "remove":
               default:
-                removeAttr(elem, "href");
+                captureRemoveAttr(elem, "href");
                 break;
             }
           }
@@ -461,10 +461,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("src")) {
-                elem.setAttribute("src", getSkippedUrl(elem.src));
+                elem.setAttribute("src", captureGetSkippedUrl(elem.src));
               }
               if (elem.hasAttribute("srcset")) {
-                removeAttr(elem, "srcset");
+                captureRemoveAttr(elem, "srcset");
               }
               break;
             case "comment":
@@ -515,7 +515,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
-                removeAttr(elem, "srcset");
+                captureRemoveAttr(elem, "srcset");
               });
               break;
             case "comment":
@@ -550,7 +550,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
-                elem.setAttribute("src", getSkippedUrl(elem.src));
+                elem.setAttribute("src", captureGetSkippedUrl(elem.src));
               });
               break;
             case "comment":
@@ -589,7 +589,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
-                elem.setAttribute("src", getSkippedUrl(elem.src));
+                elem.setAttribute("src", captureGetSkippedUrl(elem.src));
               });
               break;
             case "comment":
@@ -628,7 +628,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("src")) {
-                elem.setAttribute("src", getSkippedUrl(elem.src));
+                elem.setAttribute("src", captureGetSkippedUrl(elem.src));
               }
               break;
             case "comment":
@@ -667,7 +667,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("data")) {
-                elem.setAttribute("data", getSkippedUrl(elem.data));
+                elem.setAttribute("data", captureGetSkippedUrl(elem.data));
               }
               break;
             case "comment":
@@ -707,7 +707,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("archive")) {
-                elem.setAttribute("archive", getSkippedUrl(rewriteUrl));
+                elem.setAttribute("archive", captureGetSkippedUrl(rewriteUrl));
               }
               break;
             case "comment":
@@ -776,7 +776,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   // do nothing
                   break;
                 case "blank":
-                  elem.setAttribute("src", getSkippedUrl(elem.src));
+                  elem.setAttribute("src", captureGetSkippedUrl(elem.src));
                   break;
                 case "comment":
                   elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
@@ -812,7 +812,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         default:
           Array.prototype.forEach.call(elem.attributes, function (attr) {
             if (attr.name.toLowerCase().startsWith("on")) {
-              removeAttr(elem, attr.name);
+              captureRemoveAttr(elem, attr.name);
             }
           });
       }
@@ -821,7 +821,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
       // We have to remove integrity check because we could modify the content
       // and they might not work correctly in the offline environment.
       if ( options["capture.removeIntegrity"] ) {
-        removeAttr(elem, "integrity");
+        captureRemoveAttr(elem, "integrity");
       }
     });
 
@@ -895,7 +895,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
   };
 
   // get the skipped form for specific URLs that we do not handle
-  var getSkippedUrl = function (url) {
+  var captureGetSkippedUrl = function (url) {
     if (options["capture.recordSkippedUrl"]) {
       if (!url.startsWith("urn:scrapbook:download:skip:")) {
         return "urn:scrapbook:download:skip:" + url;
@@ -907,7 +907,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
   };
 
   // remove the specified attr, record it if option set
-  var removeAttr = function (elem, attr) {
+  var captureRemoveAttr = function (elem, attr) {
     if (!elem.hasAttribute(attr)) return;
     if (options["capture.recordRemovedAttr"]) {
       elem.setAttribute("data-sb-orig-" + attr, elem.getAttribute(attr));
@@ -916,7 +916,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
   };
 
   // remove the textContent, record it if option set
-  var removeTextContent = function (elem) {
+  var captureRemoveTextContent = function (elem) {
     if (!elem.textContent) return;
     if (options["capture.recordRemovedAttr"]) {
       elem.setAttribute("data-sb-orig-textContent", elem.textContent);
