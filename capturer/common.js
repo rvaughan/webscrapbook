@@ -231,7 +231,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               case "og:video:url":
               case "og:video:secure_url":
               case "og:url":
-                var rewriteUrl = resolveRelativeUrl(doc.URL, elem.getAttribute("content"));
+                var rewriteUrl = capturer.resolveRelativeUrl(doc.URL, elem.getAttribute("content"));
                 elem.setAttribute("content", rewriteUrl);
                 break;
             }
@@ -308,7 +308,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         case "td":
           // deprecated: background attribute (deprecated since HTML5)
           if (elem.hasAttribute("background")) {
-            var rewriteUrl = resolveRelativeUrl(doc.URL, elem.getAttribute("background"));
+            var rewriteUrl = capturer.resolveRelativeUrl(doc.URL, elem.getAttribute("background"));
             elem.setAttribute("background", rewriteUrl);
 
             switch (options["capture.imageBackground"]) {
@@ -437,7 +437,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           if (elem.hasAttribute("srcset")) {
             elem.setAttribute("srcset",
               scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
-                return resolveRelativeUrl(doc.URL, url);
+                return capturer.resolveRelativeUrl(doc.URL, url);
               })
             );
           }
@@ -492,7 +492,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
             elem.setAttribute("srcset",
               scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
-                return resolveRelativeUrl(doc.URL, url);
+                return capturer.resolveRelativeUrl(doc.URL, url);
               })
             );
           });
@@ -674,7 +674,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         // media: applet
         case "applet":
           if (elem.hasAttribute("archive")) {
-            var rewriteUrl = resolveRelativeUrl(doc.URL, elem.getAttribute("archive"));
+            var rewriteUrl = capturer.resolveRelativeUrl(doc.URL, elem.getAttribute("archive"));
             elem.setAttribute("archive", rewriteUrl);
           }
 
@@ -824,21 +824,6 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     }, callback);
   };
 
-  var resolveRelativeUrl = function (baseUrl, relativeUrl) {
-    if (!arguments.callee.rewriters) { arguments.callee.rewriters = {}; }
-    var rewriters = arguments.callee.rewriters;
-    if (!rewriters[baseUrl]) {
-      var subDoc = doc.implementation.createHTMLDocument("");
-      var base = subDoc.createElement("base");
-      base.href = baseUrl;
-      subDoc.querySelector("head").appendChild(base);
-      var a = subDoc.createElement("a");
-      rewriters[baseUrl] = a;
-    }
-    rewriters[baseUrl].setAttribute("href", relativeUrl);
-    return rewriters[baseUrl].href;
-  };
-
   /**
    * A class that manages a text containing multiple URLs to be downloaded and rewritten
    *
@@ -958,4 +943,19 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     documentName = response.documentName;
     captureMain();
   });
+};
+
+capturer.resolveRelativeUrl = function (baseUrl, relativeUrl) {
+  if (!arguments.callee.rewriters) { arguments.callee.rewriters = {}; }
+  var rewriters = arguments.callee.rewriters;
+  if (!rewriters[baseUrl]) {
+    var subDoc = document.implementation.createHTMLDocument("");
+    var base = subDoc.createElement("base");
+    base.href = baseUrl;
+    subDoc.querySelector("head").appendChild(base);
+    var a = subDoc.createElement("a");
+    rewriters[baseUrl] = a;
+  }
+  rewriters[baseUrl].setAttribute("href", relativeUrl);
+  return rewriters[baseUrl].href;
 };
