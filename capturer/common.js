@@ -198,7 +198,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           switch (options["capture.base"]) {
             case "empty":
               elem.removeAttribute("href");
-              return;
+              break;
             case "save":
             default:
               // do nothing
@@ -254,14 +254,14 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           switch (options["capture.script"]) {
             case "link":
               // do nothing
-              return;
+              break;
             case "blank":
               if (elem.hasAttribute("src")) {
                 elem.setAttribute("src", "about:blank");
               } else {
                 elem.textContent = "";
               }
-              return;
+              break;
             case "comment":
               elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
               return;
@@ -315,10 +315,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             switch (options["capture.imageBackground"]) {
               case "link":
                 // do nothing
-                return;
+                break;
               case "remove":
                 elem.removeAttribute("background");
-                return;
+                break;
               case "save":
               default:
                 remainingTasks++;
@@ -347,10 +347,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           switch (options["capture.frame"]) {
             case "link":
               // do nothing
-              return;
+              break;
             case "blank":
               frame.setAttribute("src", "about:blank");
-              return;
+              break;
             case "comment":
               frame.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(frame.outerHTML)), frame);
               return;
@@ -449,7 +449,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           switch (options["capture.image"]) {
             case "link":
               // do nothing
-              return;
+              break;
             case "blank":
               if (elem.hasAttribute("src")) {
                 elem.setAttribute("src", "about:blank");
@@ -457,7 +457,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               if (elem.hasAttribute("srcset")) {
                 elem.setAttribute("srcset", "about:blank");
               }
-              return;
+              break;
             case "comment":
               elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
               return;
@@ -503,12 +503,12 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           switch (options["capture.image"]) {
             case "link":
               // do nothing
-              return;
+              break;
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
                 elem.setAttribute("srcset", "about:blank");
               });
-              return;
+              break;
             case "comment":
               elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
               return;
@@ -538,12 +538,12 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           switch (options["capture.audio"]) {
             case "link":
               // do nothing
-              return;
+              break;
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
                 elem.setAttribute("src", "about:blank");
               });
-              return;
+              break;
             case "comment":
               elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
               return;
@@ -577,12 +577,12 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           switch (options["capture.video"]) {
             case "link":
               // do nothing
-              return;
+              break;
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
                 elem.setAttribute("src", "about:blank");
               });
-              return;
+              break;
             case "comment":
               elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
               return;
@@ -616,12 +616,12 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           switch (options["capture.embed"]) {
             case "link":
               // do nothing
-              return;
+              break;
             case "blank":
               if (elem.hasAttribute("src")) {
                 elem.setAttribute("src", "about:blank");
               }
-              return;
+              break;
             case "comment":
               elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
               return;
@@ -655,12 +655,12 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           switch (options["capture.object"]) {
             case "link":
               // do nothing
-              return;
+              break;
             case "blank":
               if (elem.hasAttribute("data")) {
                 elem.setAttribute("data", "about:blank");
               }
-              return;
+              break;
             case "comment":
               elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
               return;
@@ -695,12 +695,12 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           switch (options["capture.applet"]) {
             case "link":
               // do nothing
-              return;
+              break;
             case "blank":
               if (elem.hasAttribute("archive")) {
                 elem.setAttribute("archive", "about:blank");
               }
-              return;
+              break;
             case "comment":
               elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
               return;
@@ -765,10 +765,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               switch (options["capture.image"]) {
                 case "link":
                   // do nothing
-                  return;
+                  break;
                 case "blank":
                   elem.setAttribute("src", "about:blank");
-                  return;
+                  break;
                 case "comment":
                   elem.parentNode.replaceChild(doc.createComment(scrapbook.escapeHtmlComment(elem.outerHTML)), elem);
                   return;
