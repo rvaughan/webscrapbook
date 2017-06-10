@@ -39,7 +39,7 @@ scrapbook.options = {
   "capture.removeIntegrity": true,
   "capture.recordRemovedNode": false,
   "capture.recordRemovedAttr": false,
-  "capture.recordSkippedUrl": false,
+  "capture.recordSourceUri": false,
 };
 
 scrapbook.isOptionsSynced = false;

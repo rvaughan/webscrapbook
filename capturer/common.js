@@ -260,7 +260,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("src")) {
-                elem.setAttribute("src", captureGetSkippedUrl(elem.src));
+                captureRewriteUri(elem, "src", "about:blank");
               } else {
                 captureRewriteTextContent(elem, null);
               }
@@ -349,7 +349,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               // do nothing
               break;
             case "blank":
-              frame.setAttribute("src", captureGetSkippedUrl(frame.src));
+              captureRewriteUri(frame, "src", "about:blank");
               break;
             case "remove":
               captureRemoveNode(frame);
@@ -449,7 +449,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("src")) {
-                elem.setAttribute("src", captureGetSkippedUrl(elem.src));
+                captureRewriteUri(elem, "src", "about:blank");
               }
               if (elem.hasAttribute("srcset")) {
                 captureRewriteAttr(elem, "srcset", null);
@@ -532,7 +532,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
-                elem.setAttribute("src", captureGetSkippedUrl(elem.src));
+                captureRewriteUri(elem, "src", "about:blank");
               });
               break;
             case "remove":
@@ -568,7 +568,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
-                elem.setAttribute("src", captureGetSkippedUrl(elem.src));
+                captureRewriteUri(elem, "src", "about:blank");
               });
               break;
             case "remove":
@@ -604,7 +604,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("src")) {
-                elem.setAttribute("src", captureGetSkippedUrl(elem.src));
+                captureRewriteUri(elem, "src", "about:blank");
               }
               break;
             case "remove":
@@ -640,7 +640,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("data")) {
-                elem.setAttribute("data", captureGetSkippedUrl(elem.data));
+                captureRewriteUri(elem, "data", "about:blank");
               }
               break;
             case "remove":
@@ -677,7 +677,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
             case "blank":
               if (elem.hasAttribute("archive")) {
-                elem.setAttribute("archive", captureGetSkippedUrl(rewriteUrl));
+                captureRewriteUri(elem, "archive", "about:blank");
               }
               break;
             case "remove":
@@ -740,7 +740,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   // do nothing
                   break;
                 case "blank":
-                  elem.setAttribute("src", captureGetSkippedUrl(elem.src));
+                  captureRewriteUri(elem, "src", "about:blank");
                   break;
                 case "remove":
                   captureRemoveNode(elem);
@@ -855,18 +855,6 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     });
   };
 
-  // get the skipped form for specific URLs that we do not handle
-  var captureGetSkippedUrl = function (url) {
-    if (options["capture.recordSkippedUrl"]) {
-      if (!url.startsWith("urn:scrapbook:download:skip:")) {
-        return "urn:scrapbook:download:skip:" + url;
-      }
-    } else {
-      return "about:blank";
-    }
-    return url;
-  };
-
   // remove the specified node, record it if option set
   var captureRemoveNode = function (elem) {
     if (options["capture.recordRemovedNode"]) {
@@ -900,6 +888,19 @@ capturer.captureDocument = function (doc, settings, options, callback) {
       elem.textContent = "";
     } else {
       elem.textContent = value;
+    }
+  };
+
+  // similar to captureRewriteAttr, but use option capture.recordSourceUri
+  var captureRewriteUri = function (elem, attr, value) {
+    if (!elem.hasAttribute(attr)) return;
+    if (options["capture.recordSourceUri"]) {
+      elem.setAttribute("data-sb-orig-" + attr, elem.getAttribute(attr));
+    }
+    if (value === null && value === undefined) {
+      elem.removeAttribute(attr);
+    } else {
+      elem.setAttribute(attr, value);
     }
   };
 
