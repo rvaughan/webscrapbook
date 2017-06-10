@@ -200,41 +200,8 @@ capturer.downloadFile = function (params, callback) {
   var targetDir = scrapbook.options.dataFolder + "/" + timeId;
   var sourceUrl = params.url;
   sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
-  var filename;
+  var filename = scrapbook.urlToFilename(sourceUrl);
   var isDuplicate;
-
-  if (sourceUrl.startsWith("file:")) {
-    filename = scrapbook.urlToFilename(sourceUrl);
-    filename = scrapbook.validateFilename(filename);
-    ({newFilename: filename, isDuplicate} = capturer.getUniqueFilename(timeId, filename, sourceUrl));
-    if (isDuplicate) {
-      callback({ url: filename, isDuplicate: true });
-      return;
-    }
-    var params = {
-      url: sourceUrl,
-      filename: targetDir + "/" + filename,
-      conflictAction: "uniquify",
-    };
-    try {
-      chrome.downloads.download(params, function (downloadId) {
-        capturer.downloadInfo[downloadId] = {
-          timeId: timeId,
-          src: sourceUrl,
-          autoErase: true,
-          onComplete: function () {
-            callback({ url: filename });
-          },
-          onError: function () {
-            callback({ url: capturer.getErrorUrl(sourceUrl) });
-          }
-        };
-      });
-    } catch (ex) {
-      callback({ url: capturer.getErrorUrl(sourceUrl) });
-    }
-    return true; // async response
-  }
   
   var xhr = new XMLHttpRequest();
   var xhr_shutdown = function () {
@@ -247,14 +214,13 @@ capturer.downloadFile = function (params, callback) {
       try {
         var headerContentDisposition = xhr.getResponseHeader("Content-Disposition");
         var contentDisposition = scrapbook.parseHeaderContentDisposition(headerContentDisposition);
-        filename = contentDisposition.parameters.filename;
+        filename = contentDisposition.parameters.filename || filename;
       } catch (ex) {}
 
       // determine the filename
       // @TODO: 
       //   if header Content-Disposition is not defined but Content-Type is defined, 
       //   make file extension compatible with it.
-      filename = filename || scrapbook.urlToFilename(sourceUrl);
       filename = scrapbook.validateFilename(filename);
       ({newFilename: filename, isDuplicate} = capturer.getUniqueFilename(timeId, filename, sourceUrl));
       if (isDuplicate) {
