@@ -35,7 +35,7 @@ scrapbook.options = {
   "capture.scriptAnchor": ["save", "blank", "remove", 1],
   "capture.scriptAttr": ["save", "remove", 1],
   "capture.noscript": ["save", "blank", "remove", 0],
-  "capture.base": ["save", "blank", "remove", 0],
+  "capture.base": ["save", "blank", "remove", 1],
   "capture.removeIntegrity": true,
   "capture.recordRemovedNode": false,
   "capture.recordRemovedAttr": false,
