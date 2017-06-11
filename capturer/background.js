@@ -182,8 +182,8 @@ capturer.saveDocument = function (params, callback) {
       onComplete: function () {
         callback({ timeId: timeId, frameUrl: frameUrl, targetDir: targetDir, filename: filename });
       },
-      onError: function () {
-        callback({ url: capturer.getErrorUrl(frameUrl, params.options) });
+      onError: function (err) {
+        callback({ url: capturer.getErrorUrl(frameUrl, params.options), error: err });
       }
     };
   });
@@ -232,13 +232,13 @@ capturer.downloadFile = function (params, callback) {
             // @TODO: do we need to escape the URL to be safe to included in CSS or so?
             callback({ url: filename });
           },
-          onError: function () {
-            callback({ url: capturer.getErrorUrl(sourceUrl, params.options) });
+          onError: function (err) {
+            callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: err });
           }
         };
       });
     } catch (ex) {
-      callback({ url: capturer.getErrorUrl(sourceUrl, params.options) });
+      callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: ex });
     }
   };
 
@@ -264,7 +264,7 @@ capturer.downloadFile = function (params, callback) {
           }
         }
       } else {
-        callback({ url: capturer.getErrorUrl(sourceUrl, params.options) });
+        callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: "data URI cannot be read as file" });
       }
     } else {
       callback({ url: sourceUrl });
@@ -419,8 +419,9 @@ chrome.downloads.onChanged.addListener(function (downloadDelta) {
   } else if (downloadDelta.error) {
     var downloadId = downloadDelta.id;
     chrome.downloads.search({ id: downloadId }, function (results) {
-      console.warn(scrapbook.lang("ErrorFileDownloadError", [capturer.downloadInfo[downloadId].src, results[0].error]));
-      capturer.downloadInfo[downloadId].onError();
+      var err = results[0].error;
+      console.warn(scrapbook.lang("ErrorFileDownloadError", [capturer.downloadInfo[downloadId].src, err]));
+      capturer.downloadInfo[downloadId].onError(err);
       erase(downloadId);
     });
   }
