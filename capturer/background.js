@@ -202,6 +202,21 @@ capturer.downloadFile = function (params, callback) {
   var headers = {};
 
   var onComplete = function (blob) {
+    if (!blob) {
+      callback({ url: capturer.getErrorUrl(sourceUrl, params.options) });
+    }
+
+    // save blob as data URI?
+    if (params.options["capture.saveFileAsDataUri"] && !sourceUrl.startsWith("data:")) {
+      var reader = new FileReader();
+      reader.onloadend = function(event) {
+        var dataUri = event.target.result;
+        callback({ url: dataUri });
+      }
+      reader.readAsDataURL(blob);
+      return;
+    }
+
     // download the data
     try {
       chrome.downloads.download({
@@ -284,10 +299,12 @@ capturer.downloadFile = function (params, callback) {
       }
 
       filename = scrapbook.validateFilename(filename);
-      ({newFilename: filename, isDuplicate} = capturer.getUniqueFilename(timeId, filename, sourceUrl));
-      if (isDuplicate) {
-        callback({ url: filename, isDuplicate: true });
-        xhr_shutdown();
+      if (!params.options["capture.saveFileAsDataUri"]) {
+        ({newFilename: filename, isDuplicate} = capturer.getUniqueFilename(timeId, filename, sourceUrl));
+        if (isDuplicate) {
+          callback({ url: filename, isDuplicate: true });
+          xhr_shutdown();
+        }
       }
     } else if (xhr.readyState === 4) {
       if ((xhr.status == 200 || xhr.status == 0) && xhr.response) {

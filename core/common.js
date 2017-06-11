@@ -19,6 +19,7 @@ scrapbook.options = {
   "capture.saveSelectionOnly": true,
   "capture.saveAsUtf8": true,
   "capture.saveAsciiFilename": false,
+  "capture.saveFileAsDataUri": false,
   "capture.saveInlineAsHtml": false,
   "capture.saveDataUriAsFile": false,
   "capture.image": ["save", "link", "blank", "remove", 0],
