@@ -73,7 +73,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     var origRefNodes = Array.prototype.slice.call(doc.querySelectorAll("frame, iframe, canvas"));
     origRefNodes.forEach(function (elem, index) {
       elem.setAttribute(origRefKey, index);
-    });
+    }, this);
 
     // construct the node list
     var selection = doc.getSelection();
@@ -182,7 +182,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     // remove the temporary map key
     origRefNodes.forEach(function (elem) {
       elem.removeAttribute(origRefKey);
-    });
+    }, this);
 
     // inspect nodes
     var hasMeta = false;
@@ -495,7 +495,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 return capturer.resolveRelativeUrl(doc.URL, url);
               })
             );
-          });
+          }, this);
 
           switch (options["capture.image"]) {
             case "link":
@@ -504,7 +504,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
                 captureRewriteAttr(elem, "srcset", null);
-              });
+              }, this);
               break;
             case "remove":
               captureRemoveNode(elem);
@@ -516,13 +516,13 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 var downloader = new capturer.ComplexUrlDownloader(settings, options);
                 var rewriteUrl = scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
                   return downloader.getUrlHash(url);
-                });
+                }, this);
                 downloader.startDownloads(function () {
                   elem.setAttribute("srcset", downloader.finalRewrite(rewriteUrl));
                   remainingTasks--;
                   captureCheckDone();
                 });
-              });
+              }, this);
               break;
           }
           break;
@@ -531,7 +531,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         case "audio":
           Array.prototype.forEach.call(elem.querySelectorAll('source[src], track[src]'), function (elem) {
             elem.setAttribute("src", elem.src);
-          });
+          }, this);
 
           switch (options["capture.audio"]) {
             case "link":
@@ -540,7 +540,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
                 captureRewriteUri(elem, "src", "about:blank");
-              });
+              }, this);
               break;
             case "remove":
               captureRemoveNode(elem);
@@ -558,7 +558,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   remainingTasks--;
                   captureCheckDone();
                 });
-              });
+              }, this);
               break;
           }
           break;
@@ -567,7 +567,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         case "video":
           Array.prototype.forEach.call(elem.querySelectorAll('source[src], track[src]'), function (elem) {
             elem.setAttribute("src", elem.src);
-          });
+          }, this);
 
           switch (options["capture.video"]) {
             case "link":
@@ -576,7 +576,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             case "blank":
               Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
                 captureRewriteUri(elem, "src", "about:blank");
-              });
+              }, this);
               break;
             case "remove":
               captureRemoveNode(elem);
@@ -594,7 +594,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   remainingTasks--;
                   captureCheckDone();
                 });
-              });
+              }, this);
               break;
           }
           break;
@@ -782,7 +782,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             if (attr.name.toLowerCase().startsWith("on")) {
               captureRewriteAttr(elem, attr.name, null);
             }
-          });
+          }, this);
       }
 
       // handle integrity
@@ -791,7 +791,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
       if ( options["capture.removeIntegrity"] ) {
         captureRewriteAttr(elem, "integrity", null);
       }
-    });
+    }, this);
 
     // force UTF-8
     if (!hasMeta) {
@@ -944,7 +944,7 @@ capturer.ComplexUrlDownloader = function (settings, options) {
             callback();
           }
         });
-      });
+      }, this);
     } else {
       callback();
     }
