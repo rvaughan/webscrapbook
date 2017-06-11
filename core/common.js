@@ -103,12 +103,12 @@ scrapbook.saveOptions = function (callback) {
  *******************************************************************/
 
 scrapbook.loadLanguages = function (rootNode) {
-  Array.prototype.slice.call(rootNode.getElementsByTagName("*")).forEach(function (elem) {
+  Array.prototype.forEach.call(rootNode.getElementsByTagName("*"), function (elem) {
     var str = elem.textContent;
     if (/^__MSG_(.*?)__$/.test(str)) {
       elem.textContent = chrome.i18n.getMessage(RegExp.$1);
     }
-  });
+  }, this);
 };
 
 scrapbook.lang = function (key, args) {
