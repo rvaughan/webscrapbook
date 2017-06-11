@@ -38,6 +38,8 @@
     "persistent": false,
     "scripts": [
       "core/common.js",
+      "lib/jsSHA.js",
+      "lib/mime.js",
       "core/optionsAuto.js",
       "capturer/common.js",
       "capturer/background.js"

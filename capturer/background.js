@@ -204,15 +204,8 @@ capturer.downloadFile = function (params, callback) {
   var filename = scrapbook.urlToFilename(sourceUrl);
   var isDuplicate;
   var headers = {};
-  
-  var xhr = new XMLHttpRequest();
 
-  var xhr_shutdown = function () {
-    xhr.onreadystatechange = xhr.onerror = xhr.ontimeout = null;
-    xhr.abort();
-  };
-
-  var xhr_complete = function (blob) {
+  var onComplete = function (blob) {
     // download the data
     try {
       chrome.downloads.download({
@@ -236,6 +229,28 @@ capturer.downloadFile = function (params, callback) {
     } catch (ex) {
       callback({ url: capturer.getErrorUrl(sourceUrl) });
     }
+  };
+
+  if (sourceUrl.startsWith("data:")) {
+    if (params.options["capture.saveDataUriAsFile"]) {
+      var file = scrapbook.dataUriToFile(sourceUrl);
+      if (file) {
+        filename = file.name;
+        onComplete(file);
+      } else {
+        callback({ url: capturer.getErrorUrl(sourceUrl) });
+      }
+    } else {
+      callback({ url: sourceUrl });
+    }
+    return true; // async response
+  }
+
+  var xhr = new XMLHttpRequest();
+
+  var xhr_shutdown = function () {
+    xhr.onreadystatechange = xhr.onerror = xhr.ontimeout = null;
+    xhr.abort();
   };
 
   xhr.onreadystatechange = function () {
@@ -278,10 +293,10 @@ capturer.downloadFile = function (params, callback) {
         params.xhr = xhr;
         if (rewriteMethod && capturer[rewriteMethod]) {
           capturer[rewriteMethod](params, function (response) {
-            xhr_complete(response);
+            onComplete(response);
           });
         } else {
-          xhr_complete(xhr.response);
+          onComplete(xhr.response);
         }
       } else {
         xhr.onerror();

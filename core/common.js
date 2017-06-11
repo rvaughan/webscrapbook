@@ -20,7 +20,7 @@ scrapbook.options = {
   "capture.saveAsUtf8": true,
   "capture.saveAsciiFilename": false,
   "capture.saveInlineAsHtml": false,
-  "capture.saveDataUri": false,
+  "capture.saveDataUriAsFile": false,
   "capture.image": ["save", "link", "blank", "remove", 0],
   "capture.imageBackground": ["save", "link", "remove", 0],
   "capture.audio": ["save", "link", "blank", "remove", 0],
@@ -323,6 +323,58 @@ scrapbook.stringToDataUri = function (str, mime) {
   return "data:" + mime + ";base64," + this.unicodeToBase64(str);
 };
 
+scrapbook.dataUriToFile = function (dataUri) {
+  if (dataUri.startsWith("data:")) {
+    dataUri = dataUri.slice(5);
+
+    if (/^(.*?),(.*?)$/.test(dataUri)) {
+      var metas = RegExp.$1.split(";");
+      var data = RegExp.$2;
+      var mime = metas.shift();
+      var base64 = false;
+      var parameters = {};
+
+      metas.forEach(function (meta) {
+        if (/^(.*?)=(.*?)$/.test(meta)) {
+          parameters[RegExp.$1.toLowerCase()] = RegExp.$2;
+        } else if (meta == "base64") {
+          base64 = true;
+        }
+      }, this);
+
+      var ext = Mime.prototype.extension(mime);
+      ext = ext ? ("." + ext) : "";
+
+      if (base64) {
+        var bstr = atob(data), n = bstr.length, u8ar = new Uint8Array(n);
+        while (n--) { u8ar[n] = bstr.charCodeAt(n); }
+        var filename = scrapbook.sha1(u8ar, "ARRAYBUFFER") + ext;
+        var file = new File([u8ar], filename, { type: mime });
+      } else {
+        var charset = (parameters.charset || "US-ASCII").toLowerCase();
+        switch (charset) {
+          case "us-ascii":
+            var str = unescape(data);
+            var filename = scrapbook.sha1(str, "BYTES") + ext;
+            var file = new File([str], filename, { type: mime });
+            break;
+          case "utf-8":
+            var str = decodeURIComponent(data);
+            var filename = scrapbook.sha1(str, "TEXT") + ext;
+            var file = new File([str], filename, { type: mime });
+            break;
+          default:
+            console.error('Unsupported charset in data URI: ' + charset);
+            file = null;
+            break;
+        }
+      }
+      return file;
+    }
+  }
+  return null;
+};
+
 scrapbook.unicodeToUtf8 = function (chars) {
   return unescape(encodeURIComponent(chars));
 };
@@ -337,6 +389,17 @@ scrapbook.unicodeToBase64 = function (str) {
 
 scrapbook.base64ToUnicode = function (str) {
   return decodeURIComponent(escape(atob(str)));
+};
+
+/**
+ * supported data types: "B64", "BYTES", "TEXT", "ARRAYBUFFER"
+ *
+ * @require jsSHA
+ */
+scrapbook.sha1 = function (data, type) {
+  var shaObj = new jsSHA("SHA-1", type);
+  shaObj.update(data);
+  return shaObj.getHash("HEX");
 };
 
 scrapbook.intToFixedStr = function (number, width, padder) {
