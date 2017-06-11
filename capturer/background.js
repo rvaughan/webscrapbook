@@ -243,7 +243,7 @@ capturer.downloadFile = function (params, callback) {
   };
 
   if (sourceUrl.startsWith("data:")) {
-    if (params.options["capture.saveDataUriAsFile"]) {
+    if (params.options["capture.saveDataUriAsFile"] && !params.options["capture.saveFileAsDataUri"]) {
       var file = scrapbook.dataUriToFile(sourceUrl);
       if (file) {
         filename = file.name;
