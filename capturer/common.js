@@ -1080,6 +1080,16 @@ capturer.resolveRelativeUrl = function (baseUrl, relativeUrl) {
   return rewriters[baseUrl].href;
 };
 
+capturer.getErrorUrl = function (sourceUrl, options) {
+  if (!options || options["capture.recordErrorUri"]) {
+    var prefix = "urn:scrapbook:download:error:";
+    if (!sourceUrl.startsWith(prefix)) {
+      return prefix + sourceUrl;
+    }
+  }
+  return sourceUrl;
+};
+
 /**
  * Process a downloaded CSS file and rewrite it
  *

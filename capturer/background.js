@@ -55,10 +55,6 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
   return { newFilename: newFilename, isDuplicate: false };
 };
 
-capturer.getErrorUrl = function (sourceUrl) {
-  return "urn:scrapbook:download:error:" + sourceUrl;
-};
-
 capturer.captureUrl = function (params, callback) {
   isDebug && console.debug("call: captureUrl", params);
 
@@ -100,13 +96,13 @@ capturer.captureUrl = function (params, callback) {
   };
   xhr.ontimeout = function () {
     console.warn(scrapbook.lang("ErrorFileDownloadTimeout", sourceUrl));
-    callback({ url: capturer.getErrorUrl(sourceUrl), error: "timeout" });
+    callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: "timeout" });
     xhr_shutdown();
   };
   xhr.onerror = function () {
     var err = [xhr.status, xhr.statusText].join(" ");
     console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
-    callback({ url: capturer.getErrorUrl(sourceUrl), error: err });
+    callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: err });
     xhr_shutdown();
   };
   xhr.responseType = "document";
@@ -187,7 +183,7 @@ capturer.saveDocument = function (params, callback) {
         callback({ timeId: timeId, frameUrl: frameUrl, targetDir: targetDir, filename: filename });
       },
       onError: function () {
-        callback({ url: capturer.getErrorUrl(frameUrl) });
+        callback({ url: capturer.getErrorUrl(frameUrl, params.options) });
       }
     };
   });
@@ -222,12 +218,12 @@ capturer.downloadFile = function (params, callback) {
             callback({ url: filename });
           },
           onError: function () {
-            callback({ url: capturer.getErrorUrl(sourceUrl) });
+            callback({ url: capturer.getErrorUrl(sourceUrl, params.options) });
           }
         };
       });
     } catch (ex) {
-      callback({ url: capturer.getErrorUrl(sourceUrl) });
+      callback({ url: capturer.getErrorUrl(sourceUrl, params.options) });
     }
   };
 
@@ -238,7 +234,7 @@ capturer.downloadFile = function (params, callback) {
         filename = file.name;
         onComplete(file);
       } else {
-        callback({ url: capturer.getErrorUrl(sourceUrl) });
+        callback({ url: capturer.getErrorUrl(sourceUrl, params.options) });
       }
     } else {
       callback({ url: sourceUrl });
@@ -306,14 +302,14 @@ capturer.downloadFile = function (params, callback) {
 
   xhr.ontimeout = function () {
     console.warn(scrapbook.lang("ErrorFileDownloadTimeout", sourceUrl));
-    callback({ url: capturer.getErrorUrl(sourceUrl), error: "timeout" });
+    callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: "timeout" });
     xhr_shutdown();
   };
 
   xhr.onerror = function () {
     var err = [xhr.status, xhr.statusText].join(" ");
     console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
-    callback({ url: capturer.getErrorUrl(sourceUrl), error: err });
+    callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: err });
     xhr_shutdown();
   };
 

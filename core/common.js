@@ -43,6 +43,7 @@ scrapbook.options = {
   "capture.recordRemovedNode": false,
   "capture.recordRemovedAttr": false,
   "capture.recordSourceUri": false,
+  "capture.recordErrorUri": true,
 };
 
 scrapbook.isOptionsSynced = false;
