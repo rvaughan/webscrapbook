@@ -232,7 +232,13 @@ capturer.downloadFile = function (params, callback) {
       var file = scrapbook.dataUriToFile(sourceUrl);
       if (file) {
         filename = file.name;
-        onComplete(file);
+        filename = scrapbook.validateFilename(filename);
+        ({newFilename: filename, isDuplicate} = capturer.getUniqueFilename(timeId, filename, sourceUrl));
+        if (isDuplicate) {
+          callback({ url: filename, isDuplicate: true });
+        } else {
+          onComplete(file);
+        }
       } else {
         callback({ url: capturer.getErrorUrl(sourceUrl, params.options) });
       }
