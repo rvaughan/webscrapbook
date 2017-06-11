@@ -252,7 +252,16 @@ capturer.downloadFile = function (params, callback) {
         if (isDuplicate) {
           callback({ url: filename, isDuplicate: true });
         } else {
-          onComplete(file);
+          if (rewriteMethod && capturer[rewriteMethod]) {
+            params.data = file;
+            params.charset = null;
+            params.url = null;
+            capturer[rewriteMethod](params, function (response) {
+              onComplete(response);
+            });
+          } else {
+            onComplete(file);
+          }
         }
       } else {
         callback({ url: capturer.getErrorUrl(sourceUrl, params.options) });
@@ -308,9 +317,10 @@ capturer.downloadFile = function (params, callback) {
       }
     } else if (xhr.readyState === 4) {
       if ((xhr.status == 200 || xhr.status == 0) && xhr.response) {
-        params.headers = headers;
-        params.xhr = xhr;
         if (rewriteMethod && capturer[rewriteMethod]) {
+          params.data = xhr.response;
+          params.charset = headers.charset;
+          params.url = xhr.responseURL;
           capturer[rewriteMethod](params, function (response) {
             onComplete(response);
           });

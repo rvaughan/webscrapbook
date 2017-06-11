@@ -1102,9 +1102,9 @@ capturer.getErrorUrl = function (sourceUrl, options) {
  * We follow 1-3 but not 4: if no supported charset found, handle it as a byte string.
  */
 capturer.processCssFile = function(params, callback) {
-  var data = params.xhr.response;
-  var charset = params.headers.charset;
-  var refUrl = params.xhr.responseURL;
+  var data = params.data;
+  var charset = params.charset;
+  var refUrl = params.url;
   
   var reader = new FileReader();
   reader.addEventListener("loadend", function() {
