@@ -341,128 +341,56 @@ scrapbook.parseHeaderContentType = function (string) {
 };
 
 /**
- * @typedef {Object} ContentDispositionParameter
- * @property {string} [filename] - the filename
- */
-
-/**
  * Parse Content-Disposition string from the HTTP Header
  *
  * ref: https://github.com/jshttp/content-disposition/blob/master/index.js
  *
  * @param {string} string - The string to parse, not including "Content-Disposition: "
- * @return {{type: ('inline'|'attachment'), parameters: {ContentDispositionParameter}}}
+ * @return {{type: ('inline'|'attachment'), parameters: {[filename: string]}}}
  */
 scrapbook.parseHeaderContentDisposition = function (string) {
-  var dispositionTypeRegExp = /^([!#$%&'\*\+\-\.0-9A-Z\^_`a-z\|~]+) *(?:$|;)/;
-  var paramRegExp = /; *([!#$%&'\*\+\-\.0-9A-Z\^_`a-z\|~]+) *= *("(?:[ !\x23-\x5b\x5d-\x7e\x80-\xff]|\\[\x20-\x7e])*"|[!#$%&'\*\+\-\.0-9A-Z\^_`a-z\|~]+) */g;
-  var qescRegExp = /\\([\u0000-\u007f])/g;
-  var extValueRegExp = /^([A-Za-z0-9!#$%&+\-^_`{}~]+)'(?:[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}|[A-Za-z]{4,8}|)'((?:%[0-9A-Fa-f]{2}|[A-Za-z0-9!#$&+\-\.^_`|~])+)$/;
-  var hexEscapeReplaceRegExp = /%([0-9A-Fa-f]{2})/g;
-  var nonLatin1RegExp = /[^\x20-\x7e\xa0-\xff]/g;
+  var result = { type: undefined, parameters: {} };
 
   if (!string || typeof string !== 'string') {
-    throw new TypeError('argument string is required');
+    return result;
   }
 
-  var match = dispositionTypeRegExp.exec(string);
+  var parts = string.split(";");
+  result.type = parts.shift().trim();
 
-  if (!match) {
-    throw new TypeError('invalid type format');
-  }
+  parts.forEach(function (part) {
+    if (/^(.*?)=(.*?)$/.test(part)) {
+      var field = RegExp.$1.trim();
+      var value = RegExp.$2.trim();
 
-  // normalize type
-  var index = match[0].length;
-  var type = match[1].toLowerCase();
+      // manage double quoted value
+      if (/^"(.*?)"$/.test(value)) {
+        value = RegExp.$1;
+      }
 
-  var key;
-  var names = [];
-  var params = {};
-  var value;
-
-  // calculate index to start at
-  index = paramRegExp.lastIndex = match[0].substr(-1) === ';' ? index - 1 : index;
-
-  // match parameters
-  while (match = paramRegExp.exec(string)) {
-    if (match.index !== index) {
-      throw new TypeError('invalid parameter format');
+      if (/^(.*)\*$/.test(field)) {
+        // ext-value
+        field = RegExp.$1;
+        if (/^(.*?)'(.*?)'(.*?)$/.test(value)) {
+          var charset = RegExp.$1.toLowerCase(), lang = RegExp.$2.toLowerCase(), value = RegExp.$3;
+          switch (charset) {
+            case 'iso-8859-1':
+              value = decodeURIComponent(value).replace(/[^\x20-\x7e\xa0-\xff]/g, "?");
+              break;
+            case 'utf-8':
+              value = decodeURIComponent(value);
+              break;
+            default:
+              console.error('Unsupported charset in the extended field of header content-disposition: ' + charset);
+              return;
+          }
+        };
+      }
+      result.parameters[field] = value;
     }
+  }, this);
 
-    index += match[0].length;
-    key = match[1].toLowerCase();
-    value = match[2];
-
-    if (names.indexOf(key) !== -1) {
-      throw new TypeError('invalid duplicate parameter');
-    }
-
-    names.push(key);
-
-    if (key.indexOf('*') + 1 === key.length) {
-      // decode extended value
-      key = key.slice(0, -1);
-      value = decodefield(value);
-
-      // overwrite existing value
-      params[key] = value;
-      continue;
-    }
-
-    if (typeof params[key] === 'string') {
-      continue;
-    }
-
-    if (value[0] === '"') {
-      // remove quotes and escapes
-      value = value.substr(1, value.length - 2).replace(qescRegExp, '$1');
-    }
-
-    params[key] = value;
-  }
-
-  if (index !== -1 && index !== string.length) {
-    throw new TypeError('invalid parameter format');
-  }
-
-  return { type: type, parameters: params };
-
-  function decodefield(str) {
-    var match = extValueRegExp.exec(str);
-
-    if (!match) {
-      throw new TypeError('invalid extended field value')
-    }
-
-    var charset = match[1].toLowerCase();
-    var encoded = match[2];
-    var value;
-
-    // to binary string
-    var binary = encoded.replace(hexEscapeReplaceRegExp, pdecode);
-
-    switch (charset) {
-      case 'iso-8859-1':
-        value = getlatin1(binary);
-        break;
-      case 'utf-8':
-        value = binary;
-        break;
-      default:
-        throw new TypeError('unsupported charset in extended field');
-    }
-
-    return value;
-  }
-
-  function getlatin1(val) {
-    // simple Unicode -> ISO-8859-1 transformation
-    return String(val).replace(nonLatin1RegExp, '?');
-  }
-
-  function pdecode(str, hex) {
-    return String.fromCharCode(parseInt(hex, 16));
-  }
+  return result;
 };
 
 
