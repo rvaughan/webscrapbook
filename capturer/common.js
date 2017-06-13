@@ -1122,7 +1122,7 @@ capturer.processCssFile = function(params, callback) {
     var rewriteCss = capturer.ProcessCssFileText(text, refUrl, downloader, params.options);
     downloader.startDownloads(function () {
       text = downloader.finalRewrite(rewriteCss);
-      var blob = new Blob([text], { type: "text/css" });
+      var blob = new Blob([text], { type: "text/css;charset=UTF-8" });
       callback(blob);
     });
   });
