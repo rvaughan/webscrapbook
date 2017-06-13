@@ -198,27 +198,31 @@ capturer.saveDocument = function (params, callback) {
   filename = scrapbook.validateFilename(filename);
   filename = capturer.getUniqueFilename(timeId, filename, true).newFilename;
 
-  var params = {
-    url: URL.createObjectURL(new Blob([params.data.content], { type: params.data.mime })),
-    filename: targetDir + "/" + filename,
-    conflictAction: "uniquify",
-  };
-
-  isDebug && console.debug("download start", params);
-  chrome.downloads.download(params, function (downloadId) {
-    isDebug && console.debug("download response", downloadId);
-    capturer.downloadInfo[downloadId] = {
-      timeId: timeId,
-      src: frameUrl,
-      autoErase: autoErase,
-      onComplete: function () {
-        callback({ timeId: timeId, frameUrl: frameUrl, targetDir: targetDir, filename: filename });
-      },
-      onError: function (err) {
-        callback({ url: capturer.getErrorUrl(frameUrl, params.options), error: err });
-      }
+  try {
+    var downloadParams = {
+      url: URL.createObjectURL(new Blob([params.data.content], { type: params.data.mime })),
+      filename: targetDir + "/" + filename,
+      conflictAction: "uniquify",
     };
-  });
+
+    isDebug && console.debug("download start", downloadParams);
+    chrome.downloads.download(downloadParams, function (downloadId) {
+      isDebug && console.debug("download response", downloadId);
+      capturer.downloadInfo[downloadId] = {
+        timeId: timeId,
+        src: frameUrl,
+        autoErase: autoErase,
+        onComplete: function () {
+          callback({ timeId: timeId, frameUrl: frameUrl, targetDir: targetDir, filename: filename });
+        },
+        onError: function (err) {
+          callback({ url: capturer.getErrorUrl(frameUrl, params.options), error: err });
+        }
+      };
+    });
+  } catch (ex) {
+    callback({ url: capturer.getErrorUrl(frameUrl, params.options), error: ex });
+  }
   return true; // async response
 };
 
