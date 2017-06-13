@@ -181,6 +181,12 @@ capturer.captureDocument = function (doc, settings, options, callback) {
       }
     }
 
+    // record source URL
+    if (options["capture.recordDocumentMeta"]) {
+      let url = doc.URL.startsWith("data:") ? "data:" : doc.URL;
+      rootNode.setAttribute("data-sb-" + timeId + "-source", url);
+    }
+
     // build the map of cloned style elements
     Array.prototype.forEach.call(rootNode.querySelectorAll("link, style"), function (elem) {
       var idx = elem.getAttribute(origRefKey);
