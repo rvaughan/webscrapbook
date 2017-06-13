@@ -235,8 +235,7 @@ capturer.downloadFile = function (params, callback) {
 
   var timeId = params.settings.timeId;
   var targetDir = params.options["dataFolder"] + "/" + timeId;
-  var sourceUrl = params.url;
-  sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
+  var sourceUrl = params.url; sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
   var rewriteMethod = params.rewriteMethod;
   var filename = scrapbook.urlToFilename(sourceUrl);
   var isDuplicate;
@@ -260,11 +259,15 @@ capturer.downloadFile = function (params, callback) {
 
     // download the data
     try {
-      chrome.downloads.download({
+      var downloadParams = {
         url: URL.createObjectURL(blob),
         filename: targetDir + "/" + filename,
         conflictAction: "uniquify",
-      }, function (downloadId) {
+      };
+
+      isDebug && console.debug("download start", downloadParams);
+      chrome.downloads.download(downloadParams, function (downloadId) {
+        isDebug && console.debug("download response", downloadId);
         capturer.downloadInfo[downloadId] = {
           timeId: timeId,
           src: sourceUrl,
