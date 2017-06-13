@@ -198,6 +198,14 @@ capturer.saveDocument = function (params, callback) {
   filename = scrapbook.validateFilename(filename);
   filename = capturer.getUniqueFilename(timeId, filename, true).newFilename;
 
+  // save as data URI?
+  // the main frame should still be downloaded
+  if (params.options["capture.saveFileAsDataUri"] && !params.settings.frameIsMain) {
+    var dataUri = scrapbook.stringToDataUri(params.data.content, params.data.mime);
+    callback({ timeId: timeId, frameUrl: frameUrl, targetDir: targetDir, filename: dataUri });
+    return true; // async response
+  }
+
   try {
     var downloadParams = {
       url: URL.createObjectURL(new Blob([params.data.content], { type: params.data.mime })),
