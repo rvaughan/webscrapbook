@@ -801,14 +801,20 @@ capturer.captureDocument = function (doc, settings, options, callback) {
       headNode.insertBefore(doc.createTextNode("\n"), headNode.firstChild);
     }
 
+    // captureCheckDone calls before here should be nullified
+    // since the document parsing is not finished yet at that moment
+    captureCheckDone = function () {
+      if (remainingTasks <= 0) {
+        captureDone();
+      }
+    };
+
+    // the document parsing is finished, finalize the document 
+    // if there is no pending downloads now
     captureCheckDone();
   };
 
-  var captureCheckDone = function () {
-    if (remainingTasks <= 0) {
-      captureDone();
-    }
-  };
+  var captureCheckDone = function () {};
 
   var captureDone = function () {
     var content = scrapbook.doctypeToString(doc.doctype) + rootNode.outerHTML;
