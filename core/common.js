@@ -321,9 +321,10 @@ scrapbook.unescapeCss = function(str) {
   return str.replace(that.replaceRegex, that.replaceFunc);
 };
 
-scrapbook.stringToDataUri = function (str, mime) {
+scrapbook.stringToDataUri = function (str, mime, charset) {
   mime = mime || "";
-  return "data:" + mime + ";base64," + this.unicodeToBase64(str);
+  charset = charset ? ";charset=" + charset : "";
+  return "data:" + mime + charset + ";base64," + this.unicodeToBase64(str);
 };
 
 scrapbook.dataUriToFile = function (dataUri) {

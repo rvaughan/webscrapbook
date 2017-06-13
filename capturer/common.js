@@ -992,6 +992,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
       data: {
         documentName: documentName,
         mime: mime,
+        charset: "UTF-8",
         content: content,
       }
     }, callback);

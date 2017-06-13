@@ -185,7 +185,7 @@ capturer.registerDocument = function (params, callback) {
  *   - {Object} params.settings
  *   - {Object} params.options
  *   - {string} params.frameUrl
- *   - {{documentName: string, mime: string, content: string}} params.data
+ *   - {{documentName: string, mime: string, charset: string, content: string}} params.data
  */
 capturer.saveDocument = function (params, callback) {
   isDebug && console.debug("call: saveDocument", params);
@@ -201,7 +201,7 @@ capturer.saveDocument = function (params, callback) {
   // save as data URI?
   // the main frame should still be downloaded
   if (params.options["capture.saveFileAsDataUri"] && !params.settings.frameIsMain) {
-    var dataUri = scrapbook.stringToDataUri(params.data.content, params.data.mime);
+    var dataUri = scrapbook.stringToDataUri(params.data.content, params.data.mime, params.data.charset);
     callback({ timeId: timeId, frameUrl: frameUrl, targetDir: targetDir, filename: dataUri });
     return true; // async response
   }
