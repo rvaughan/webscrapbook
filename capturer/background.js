@@ -55,6 +55,13 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
   return { newFilename: newFilename, isDuplicate: false };
 };
 
+/**
+ * @kind invokable
+ * @param {Object} params 
+ *   - {Object} params.settings
+ *   - {Object} params.options
+ *   - {string} params.url
+ */
 capturer.captureUrl = function (params, callback) {
   isDebug && console.debug("call: captureUrl", params);
 
@@ -112,6 +119,13 @@ capturer.captureUrl = function (params, callback) {
   return true; // async response
 };
 
+/**
+ * @kind invokable
+ * @param {Object} params 
+ *   - {Object} params.settings
+ *   - {Object} params.options
+ *   - {string} params.url
+ */
 capturer.captureFile = function (params, callback) {
   isDebug && console.debug("call: captureFile", params);
 
@@ -144,6 +158,12 @@ capturer.captureFile = function (params, callback) {
   return true; // async response
 };
 
+/**
+ * @kind invokable
+ * @param {Object} params 
+ *   - {Object} params.settings
+ *   - {Object} params.options
+ */
 capturer.registerDocument = function (params, callback) {
   var timeId = params.settings.timeId;
   var documentName = params.settings.documentName;
@@ -157,6 +177,14 @@ capturer.registerDocument = function (params, callback) {
   callback({ documentName: fixedDocumentName });
 };
 
+/**
+ * @kind invokable
+ * @param {Object} params 
+ *   - {Object} params.settings
+ *   - {Object} params.options
+ *   - {string} params.frameUrl
+ *   - {{documentName: string, mime: string, content: string}} params.data
+ */
 capturer.saveDocument = function (params, callback) {
   var timeId = params.settings.timeId;
   var frameUrl = params.frameUrl;
@@ -190,6 +218,14 @@ capturer.saveDocument = function (params, callback) {
   return true; // async response
 };
 
+/**
+ * @kind invokable
+ * @param {Object} params 
+ *   - {Object} params.settings
+ *   - {Object} params.options
+ *   - {string} params.url
+ *   - {string} params.rewriteMethod
+ */
 capturer.downloadFile = function (params, callback) {
   isDebug && console.debug("downloadFile", params);
   var timeId = params.settings.timeId;

@@ -11,7 +11,8 @@ var capturer = {};
 capturer.isContentScript = true;
 
 /**
- * Invoke the method from the background script and invoke the callback afterwards
+ * Invoke an invokable capturer method from the background script with
+ * given arguments and call the callback function afterwards
  */
 capturer.invoke = function (method, args, callback) {
   if (capturer.isContentScript) {
