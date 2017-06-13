@@ -165,6 +165,8 @@ capturer.captureFile = function (params, callback) {
  *   - {Object} params.options
  */
 capturer.registerDocument = function (params, callback) {
+  isDebug && console.debug("call: registerDocument", params);
+
   var timeId = params.settings.timeId;
   var documentName = params.settings.documentName;
   if (!capturer.captureInfo[timeId]) { capturer.captureInfo[timeId] = {}; }
@@ -186,6 +188,8 @@ capturer.registerDocument = function (params, callback) {
  *   - {{documentName: string, mime: string, content: string}} params.data
  */
 capturer.saveDocument = function (params, callback) {
+  isDebug && console.debug("call: saveDocument", params);
+
   var timeId = params.settings.timeId;
   var frameUrl = params.frameUrl;
   var targetDir = params.options["dataFolder"] + "/" + timeId;
@@ -227,7 +231,8 @@ capturer.saveDocument = function (params, callback) {
  *   - {string} params.rewriteMethod
  */
 capturer.downloadFile = function (params, callback) {
-  isDebug && console.debug("downloadFile", params);
+  isDebug && console.debug("call: downloadFile", params);
+
   var timeId = params.settings.timeId;
   var targetDir = params.options["dataFolder"] + "/" + timeId;
   var sourceUrl = params.url;
