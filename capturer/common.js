@@ -1101,32 +1101,87 @@ capturer.getErrorUrl = function (sourceUrl, options) {
 /**
  * Process a downloaded CSS file and rewrite it
  *
- * @TODO: support charset detection
  * Browser normally determine the charset of a CSS file via:
  * 1. HTTP header content-type
  * 2. Unicode BOM in the CSS file
  * 3. @charset rule in the CSS file
  * 4. assume it's UTF-8
- * We follow 1-3 but not 4: if no supported charset found, handle it as a byte string.
+ *
+ * We save the CSS file as UTF-8 for better compatibility.
+ * For case 3, a UTF-8 BOM is prepended to suppress the @charset rule.
+ * We don't follow case 4 and save the CSS file as byte string so that
+ * the user could fix the encoding manually.
  */
 capturer.processCssFile = function(params, callback) {
   var data = params.data;
   var charset = params.charset;
   var refUrl = params.url;
-  
-  var reader = new FileReader();
-  reader.addEventListener("loadend", function() {
-    var text = reader.result;
 
+  var readCssText = function (blob, charset, callback) {
+    var reader = new FileReader();
+    reader.addEventListener("loadend", function () {
+      callback(this.result);
+    });
+    reader.readAsText(blob, charset);
+  };
+
+  var readCssBytes = function (blob, callback) {
+    var reader = new FileReader();
+    reader.addEventListener("loadend", function () {
+      var bstr = scrapbook.arrayBufferToByteString(this.result);
+      callback(bstr);
+    });
+    reader.readAsArrayBuffer(blob);
+  };
+
+  var processCss = function (text) {
     var downloader = new capturer.ComplexUrlDownloader(params.settings, params.options);
     var rewriteCss = capturer.ProcessCssFileText(text, refUrl, downloader, params.options);
     downloader.startDownloads(function () {
       text = downloader.finalRewrite(rewriteCss);
-      var blob = new Blob([text], { type: "text/css;charset=UTF-8" });
+      if (charset) {
+        var blob = new Blob([text], { type: "text/css;charset=UTF-8" });
+      } else {
+        var ab = scrapbook.byteStringToArrayBuffer(text);
+        var blob = new Blob([ab], { type: "text/css" });
+      }
       callback(blob);
     });
-  });
-  reader.readAsText(data, charset);
+  };
+
+  if (charset) {
+    readCssText(data, charset, function (text) {
+      processCss(text);
+    });
+  } else {
+    var hasCharsetRule = false;
+    readCssBytes(data, function (bytes) {
+      if (bytes.startsWith("\xEF\xBB\xBF")) {
+        charset = "UTF-8";
+      } else if (bytes.startsWith("\xFE\xFF")) {
+        charset = "UTF-16BE";
+      } else if (bytes.startsWith("\xFF\xFE")) {
+        charset = "UTF-16LE";
+      } else if (bytes.startsWith("\x00\x00\xFE\xFF")) {
+        charset = "UTF-32BE";
+      } else if (bytes.startsWith("\x00\x00\xFF\xFE")) {
+        charset = "UTF-32LE";
+      } else if (/^@charset (["'])(\w+)\1;/.test(bytes)) {
+        charset = RegExp.$2;
+        hasCharsetRule = true;
+      }
+      if (charset) {
+        readCssText(data, charset, function (text) {
+          // The read text does not contain a BOM.
+          // This added UTF-16 BOM will be converted to UTF-8 BOM automatically when creating blob.
+          if (hasCharsetRule) { text = "\ufeff" + text; }
+          processCss(text);
+        });
+      } else {
+        processCss(bytes);
+      }
+    });
+  }
 };
 
 /**

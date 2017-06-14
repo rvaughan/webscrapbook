@@ -412,6 +412,14 @@ scrapbook.intToFixedStr = function (number, width, padder) {
   return number.length >= width ? number : new Array(width - number.length + 1).join(padder) + number;
 };
 
+scrapbook.byteStringToArrayBuffer = function (bstr) {
+  return (new Uint8Array(Array.prototype.map.call(bstr, function (x) { return x.charCodeAt(0); }))).buffer;
+};
+
+scrapbook.arrayBufferToByteString = function (ab) {
+  return String.fromCharCode.apply(null, new Uint8Array(ab));
+};
+
 
 /********************************************************************
  * String handling - HTML Header parsing
