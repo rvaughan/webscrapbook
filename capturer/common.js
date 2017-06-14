@@ -546,7 +546,36 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         case "a":
         case "area":
           if (!elem.hasAttribute("href")) { break; }
-          elem.setAttribute("href", elem.href);
+          let url = elem.href;
+
+          // adjust hash links to target the current page
+          let [urlMain, urlHash] = scrapbook.splitUrlByAnchor(url);
+          if (urlMain === scrapbook.splitUrlByAnchor(doc.URL)[0]) {
+            // This link targets the current page.
+            if (urlHash === '' || urlHash === '#') {
+              // link to the current page as a whole
+              elem.setAttribute('href', '#');
+              break;
+            }
+            // For full capture (no selection), relink to the captured page.
+            // For partial capture, the captured page could be incomplete,
+            // relink to the captured page only when the target node is included in the selected fragment.
+            let hasLocalTarget = !selection;
+            if (!hasLocalTarget) {
+              let targetId = decodeURIComponent(urlHash.slice(1)).replace(/\W/g, '\\$&');
+              if (rootNode.querySelector('[id="' + targetId + '"], a[name="' + targetId + '"]')) {
+                hasLocalTarget = true;
+              }
+            }
+            if (hasLocalTarget) {
+              // if the original link is already a pure hash, 
+              // skip the rewrite to prevent a potential encoding change
+              if (elem.getAttribute('href').charAt(0) != "#") {
+                elem.setAttribute('href', urlHash);
+              }
+              break;
+            }
+          }
 
           // scripts: script-like anchors
           if (elem.href.toLowerCase().startsWith("javascript:")) {
@@ -563,6 +592,9 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 break;
             }
           }
+
+          // normal anchors
+          elem.setAttribute("href", elem.href);
           break;
 
         // images: img
