@@ -349,15 +349,20 @@ capturer.downloadFile = function (params, callback) {
         }
       } catch (ex) {}
 
-      // @TODO: 
-      //   if header Content-Disposition is not defined but Content-Type is defined, 
-      //   make file extension compatible with it.
+      // if no file extension, give one according to header Content-Type.
       try {
         var headerContentType = xhr.getResponseHeader("Content-Type");
         if (headerContentType) {
           var contentType = scrapbook.parseHeaderContentType(headerContentType);
           headers.contentType = contentType.contentType;
           headers.charset = contentType.charset;
+          if (headers.contentType) {
+            let { base, extension } = scrapbook.filenameParts(filename);
+            if (!extension) {
+              extension = Mime.prototype.extension(headers.contentType);
+              filename = base + "." + (extension || "dat");
+            }
+          }
         }
       } catch (ex) {
         console.error(ex);
