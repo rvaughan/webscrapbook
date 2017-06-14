@@ -1336,12 +1336,13 @@ capturer.ComplexUrlDownloader = function (settings, options) {
 
   this.finalRewrite = function (text) {
     return text.replace(/urn:scrapbook:url:([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})/g, function (match, key) {
-      var url = urlHash[key].newUrl;
+      if (urlHash[key]) {
+        return urlHash[key].newUrl;
+      }
       // This could happen when a web page really contains a content text in our format.
       // We return the original text for keys not defineded in the map to prevent a bad replace
       // since it's nearly impossible for them to hit on the hash keys we are using.
-      if (!url) return match;
-      return url;
+      return match;
     });
   };
 };
