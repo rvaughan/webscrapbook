@@ -609,8 +609,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               }
               if (elem.hasAttribute("srcset")) {
                 remainingTasks++;
-                var downloader = new capturer.ComplexUrlDownloader(settings, options);
-                var rewriteUrl = scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
+                let downloader = new capturer.ComplexUrlDownloader(settings, options);
+                let rewriteUrl = scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
                   return downloader.getUrlHash(url);
                 });
                 downloader.startDownloads(function () {
@@ -649,8 +649,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             default:
               Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
                 remainingTasks++;
-                var downloader = new capturer.ComplexUrlDownloader(settings, options);
-                var rewriteUrl = scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
+                let downloader = new capturer.ComplexUrlDownloader(settings, options);
+                let rewriteUrl = scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
                   return downloader.getUrlHash(url);
                 }, this);
                 downloader.startDownloads(function () {
@@ -810,7 +810,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
         // media: applet
         case "applet":
           if (elem.hasAttribute("archive")) {
-            var rewriteUrl = capturer.resolveRelativeUrl(doc.URL, elem.getAttribute("archive"));
+            let rewriteUrl = capturer.resolveRelativeUrl(doc.URL, elem.getAttribute("archive"));
             elem.setAttribute("archive", rewriteUrl);
           }
 
@@ -846,7 +846,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
 
         // media: canvas
         case "canvas":
-          var canvasOrig = origRefNodes[elem.getAttribute(origRefKey)];
+          let canvasOrig = origRefNodes[elem.getAttribute(origRefKey)];
           elem.removeAttribute(origRefKey);
 
           switch (options["capture.canvas"]) {
@@ -858,7 +858,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               return;
             case "save":
             default:
-              var canvasScript = doc.createElement("script");
+              let canvasScript = doc.createElement("script");
               canvasScript.textContent = "(" + canvasDataScript.toString().replace(/\s+/g, " ") + ")('" + canvasOrig.toDataURL() + "')";
               elem.parentNode.insertBefore(canvasScript, elem.nextSibling);
               break;
@@ -921,8 +921,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             switch (options["capture.rewriteCss"]) {
               case "url":
                 remainingTasks++;
-                var downloader = new capturer.ComplexUrlDownloader(settings, options);
-                var rewriteCss = capturer.ProcessCssFileText(elem.getAttribute("style"), doc.URL, downloader, options);
+                let downloader = new capturer.ComplexUrlDownloader(settings, options);
+                let rewriteCss = capturer.ProcessCssFileText(elem.getAttribute("style"), doc.URL, downloader, options);
                 downloader.startDownloads(function () {
                   elem.setAttribute("style", downloader.finalRewrite(rewriteCss));
                   remainingTasks--;
@@ -962,7 +962,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
 
     // force UTF-8
     if (!hasMeta) {
-      var metaNode = doc.createElement("meta");
+      let metaNode = doc.createElement("meta");
       metaNode.setAttribute("charset", "UTF-8");
       headNode.insertBefore(metaNode, headNode.firstChild);
       headNode.insertBefore(doc.createTextNode("\n"), headNode.firstChild);
