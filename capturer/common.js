@@ -493,12 +493,16 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             case "save":
             default:
               var captureFrameCallback = function (result) {
-                if (result.filename) {
-                  captureRewriteUri(frame, "src", result.filename);
+                isDebug && console.debug("captureFrameCallback", result);
+                if (result) {
+                  if (!result.error) {
+                    captureRewriteUri(frame, "src", result.filename);
+                  } else {
+                    captureRewriteUri(frame, "src", result.url);
+                  }
                 } else {
                   captureRewriteAttr(frame, "src", null);
                 }
-                isDebug && console.debug("capture frame", result);
                 remainingTasks--;
                 captureCheckDone();
               };
@@ -516,27 +520,13 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 // frame document accessible: capture the content document directly
                 remainingTasks++;
                 capturer.captureDocumentOrFile(frameDoc, frameSettings, options, function (result) {
-                  if (result && !result.error) {
-                    captureFrameCallback(result);
-                  } else {
-                    captureFrameCallback({
-                      filename: frame.src
-                    });
-                  }
+                  captureFrameCallback(result);
                 });
               } else {
                 // frame document inaccessible: get the content document through a messaging technique, and then capture it
                 remainingTasks++;
                 getFrameContent(frameSrc, timeId, frameSettings, options, function (response) {
-                  if (response && !response.error) {
-                    captureFrameCallback(response);
-                  } else {
-                    captureFrameCallback({
-                      timeId: timeId,
-                      frameUrl: doc.URL,
-                      filename: frame.src
-                    });
-                  }
+                  captureFrameCallback(response);
                 });
               }
               break;
