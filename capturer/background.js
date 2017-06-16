@@ -206,16 +206,16 @@ capturer.saveDocument = function (params, callback) {
     return true; // async response
   }
 
-  try {
-    var downloadParams = {
-      url: URL.createObjectURL(new Blob([params.data.content], { type: params.data.mime })),
-      filename: targetDir + "/" + filename,
-      conflictAction: "uniquify",
-    };
+  var downloadParams = {
+    url: URL.createObjectURL(new Blob([params.data.content], { type: params.data.mime })),
+    filename: targetDir + "/" + filename,
+    conflictAction: "uniquify",
+  };
 
-    isDebug && console.debug("download start", downloadParams);
-    chrome.downloads.download(downloadParams, function (downloadId) {
-      isDebug && console.debug("download response", downloadId);
+  isDebug && console.debug("download start", downloadParams);
+  chrome.downloads.download(downloadParams, function (downloadId) {
+    isDebug && console.debug("download response", downloadId);
+    if (downloadId) {
       capturer.downloadInfo[downloadId] = {
         timeId: timeId,
         src: frameUrl,
@@ -227,10 +227,11 @@ capturer.saveDocument = function (params, callback) {
           callback({ url: capturer.getErrorUrl(frameUrl, params.options), error: err });
         }
       };
-    });
-  } catch (ex) {
-    callback({ url: capturer.getErrorUrl(frameUrl, params.options), error: ex });
-  }
+    } else {
+      var err = chrome.runtime.lastError.message;
+      callback({ url: capturer.getErrorUrl(frameUrl, params.options), error: err });
+    }
+  });
   return true; // async response
 };
 
@@ -270,16 +271,16 @@ capturer.downloadFile = function (params, callback) {
     }
 
     // download the data
-    try {
-      var downloadParams = {
-        url: URL.createObjectURL(blob),
-        filename: targetDir + "/" + filename,
-        conflictAction: "uniquify",
-      };
+    var downloadParams = {
+      url: URL.createObjectURL(blob),
+      filename: targetDir + "/" + filename,
+      conflictAction: "uniquify",
+    };
 
-      isDebug && console.debug("download start", downloadParams);
-      chrome.downloads.download(downloadParams, function (downloadId) {
-        isDebug && console.debug("download response", downloadId);
+    isDebug && console.debug("download start", downloadParams);
+    chrome.downloads.download(downloadParams, function (downloadId) {
+      isDebug && console.debug("download response", downloadId);
+      if (downloadId) {
         capturer.downloadInfo[downloadId] = {
           timeId: timeId,
           src: sourceUrl,
@@ -292,10 +293,12 @@ capturer.downloadFile = function (params, callback) {
             callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: err });
           }
         };
-      });
-    } catch (ex) {
-      callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: ex });
-    }
+      } else {
+        var err = chrome.runtime.lastError.message;
+        console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
+        callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: err });
+      }
+    });
   };
 
   if (sourceUrl.startsWith("data:")) {
