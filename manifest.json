@@ -25,11 +25,8 @@
   },
 
   "permissions": [
-    // "activeTab",
     "downloads",
     "tabs",
-    // "notifications",
-    // "contextMenus",
     "storage",
     "<all_urls>"
   ],
@@ -51,7 +48,6 @@
     //"open_in_tab": true,
     "page": "core/options.html"
   },
-  "options_page": "core/options.html", // for backward compatibility
 
   "browser_action": {
     "default_icon": {
