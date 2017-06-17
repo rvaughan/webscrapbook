@@ -31,7 +31,7 @@
     "<all_urls>"
   ],
 
-  "background" : {
+  "background": {
     "persistent": false,
     "scripts": [
       "core/common.js",
@@ -56,20 +56,20 @@
     "default_title": "__MSG_BrowserActionTitle__"
   },
 
-  "content_scripts" : [
+  "content_scripts": [
     {
-      "run_at" : "document_start",
-      "matches" : [
+      "run_at": "document_start",
+      "matches": [
         "http://*/*",
         "https://*/*",
         "file://*/*"
       ],
-      "js" : [
+      "js": [
         "core/common.js",
         "capturer/common.js",
         "capturer/content.js"
       ],
-      "all_frames" : true
+      "all_frames": true
     }
   ]
 }
