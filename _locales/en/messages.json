@@ -6,6 +6,9 @@
   "CaptureTab": {
     "message": "Capture the current page"
   },
+  "CaptureAllTabs": {
+    "message": "Capture all tabs"
+  },
   "ErrorCapture": {
     "message": "Capture failed: $URL$",
     "placeholders": {
@@ -14,6 +17,13 @@
   },
   "ErrorContentScriptNotReady": {
     "message": "The content script is not ready. Refresh this page, wait for all elements to be loaded, and try again."
+  },
+  "ErrorContentScriptNotReady2": {
+    "message": "The content script is not ready. Refresh this page, wait for all elements to be loaded, and try again. At '$URL$' (tab $TAB$)",
+    "placeholders": {
+      "url": {"content" : "$1"},
+      "tab": {"content" : "$2"}
+    }
   },
   "ErrorDocumentNotReady": {
     "message": "Page not load: $URL$",

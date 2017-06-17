@@ -6,6 +6,9 @@
   "CaptureTab": {
     "message": "擷取目前網頁"
   },
+  "CaptureAllTabs": {
+    "message": "擷取所有分頁"
+  },
   "ErrorCapture": {
     "message": "擷取失敗: $URL$",
     "placeholders": {
@@ -14,6 +17,13 @@
   },
   "ErrorContentScriptNotReady": {
     "message": "內容處理腳本未就緒，請重新整理本頁面並確認所有內容已完全載入再嘗試。"
+  },
+  "ErrorContentScriptNotReady2": {
+    "message": "內容處理腳本未就緒，請重新整理本頁面並確認所有內容已完全載入再嘗試。於 '$URL$' (分頁 $TAB$)",
+    "placeholders": {
+      "url": {"content" : "$1"},
+      "tab": {"content" : "$2"}
+    }
   },
   "ErrorDocumentNotReady": {
     "message": "頁面未載入: $URL$",

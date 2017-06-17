@@ -14,4 +14,11 @@ document.addEventListener('DOMContentLoaded', function () {
       window.close();
     });
   });
+
+  document.getElementById("captureAllTabs").addEventListener('click', function () {
+    chrome.runtime.getBackgroundPage(function (win) {
+      win.capturer.captureAllTabs();
+      window.close();
+    });
+  });
 });

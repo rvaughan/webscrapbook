@@ -61,7 +61,19 @@ capturer.captureActiveTab = function () {
   });
 };
 
-capturer.captureTab = function (tab) {
+capturer.captureAllTabs = function () {
+  chrome.tabs.query({currentWindow: true}, function (tabs) {
+    var delay = 0;
+    tabs.forEach(function (tab) {
+      setTimeout(function () {
+        capturer.captureTab(tab, true);
+      }, delay);
+      delay += 5;
+    });
+  });
+};
+
+capturer.captureTab = function (tab, quiet) {
   var cmd = "capturer.captureDocumentOrFile";
   var timeId = scrapbook.dateToId();
   var tabId = tab.id;
@@ -79,7 +91,11 @@ capturer.captureTab = function (tab) {
   chrome.tabs.sendMessage(tabId, message, {frameId: 0}, function (response) {
     isDebug && console.debug(cmd + " (main) response", tabId, response);
     if (!response) {
-      alert(scrapbook.lang("ErrorCapture", [scrapbook.lang("ErrorContentScriptNotReady")]));
+      if (!quiet) {
+        alert(scrapbook.lang("ErrorCapture", [scrapbook.lang("ErrorContentScriptNotReady")]));
+      } else{
+        console.error(scrapbook.lang("ErrorCapture", [scrapbook.lang("ErrorContentScriptNotReady2", [tab.url, tab.id])]));
+      }
       return;
     }
     if (response.error) {
