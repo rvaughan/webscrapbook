@@ -433,7 +433,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
       frameIsMain: true,
       documentName: "index",
     },
-    options: scrapbook.getOptions(""),
+    options: scrapbook.getOptions("capture"),
   };
 
   isDebug && console.debug(cmd + " (main) send", tabId, message);
