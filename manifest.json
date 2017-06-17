@@ -60,9 +60,7 @@
     {
       "run_at": "document_start",
       "matches": [
-        "http://*/*",
-        "https://*/*",
-        "file://*/*"
+        "<all_urls>"
       ],
       "js": [
         "core/common.js",
