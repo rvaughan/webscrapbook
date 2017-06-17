@@ -1,7 +1,7 @@
 {
   "BrowserActionTitle": {
     "description": "Title for the browser action that's visible to the user of extension",
-    "message": "Capture the web page with ScrapBook X"
+    "message": "Capture the web page with WebScrapBook"
   },
   "ErrorCapture": {
     "message": "Capture failed: $URL$",

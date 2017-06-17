@@ -1,7 +1,7 @@
 {
   "BrowserActionTitle": {
     "description": "Title for the browser action that's visible to the user of extension",
-    "message": "用 ScrapBook X 擷取網頁"
+    "message": "用 WebScrapBook 擷取網頁"
   },
   "ErrorCapture": {
     "message": "擷取失敗: $URL$",
