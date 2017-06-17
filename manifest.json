@@ -53,7 +53,8 @@
     "default_icon": {
       "128": "core/scrapbook_128.png"
     },
-    "default_title": "__MSG_BrowserActionTitle__"
+    "default_title": "__MSG_BrowserActionTitle__",
+    "default_popup": "core/browserAction.html"
   },
 
   "content_scripts": [

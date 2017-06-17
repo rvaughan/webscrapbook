@@ -55,6 +55,41 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
   return { newFilename: newFilename, isDuplicate: false };
 };
 
+capturer.captureActiveTab = function () {
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    capturer.captureTab(tabs[0]);
+  });
+};
+
+capturer.captureTab = function (tab) {
+  var cmd = "capturer.captureDocumentOrFile";
+  var timeId = scrapbook.dateToId();
+  var tabId = tab.id;
+  var message = {
+    cmd: cmd,
+    settings: {
+      timeId: timeId,
+      frameIsMain: true,
+      documentName: "index",
+    },
+    options: scrapbook.getOptions("capture"),
+  };
+
+  isDebug && console.debug(cmd + " (main) send", tabId, message);
+  chrome.tabs.sendMessage(tabId, message, { frameId: 0 }, function (response) {
+    isDebug && console.debug(cmd + " (main) response", tabId, response);
+    if (!response) {
+      alert(scrapbook.lang("ErrorCapture", [scrapbook.lang("ErrorContentScriptNotReady")]));
+      return;
+    }
+    if (response.error) {
+      console.error(scrapbook.lang("ErrorCapture", ["tab " + tabId]));
+      return;
+    }
+    delete(capturer.captureInfo[timeId]);
+  });
+};
+
 /**
  * @kind invokable
  * @param {Object} params 
@@ -507,35 +542,6 @@ capturer.saveBlob = function (params, callback) {
 /**
  * Events handling
  */
-
-chrome.browserAction.onClicked.addListener(function (tab) {
-  var cmd = "capturer.captureDocumentOrFile";
-  var timeId = scrapbook.dateToId();
-  var tabId = tab.id;
-  var message = {
-    cmd: cmd,
-    settings: {
-      timeId: timeId,
-      frameIsMain: true,
-      documentName: "index",
-    },
-    options: scrapbook.getOptions("capture"),
-  };
-
-  isDebug && console.debug(cmd + " (main) send", tabId, message);
-  chrome.tabs.sendMessage(tabId, message, { frameId: 0 }, function (response) {
-    isDebug && console.debug(cmd + " (main) response", tabId, response);
-    if (!response) {
-      alert(scrapbook.lang("ErrorCapture", [scrapbook.lang("ErrorContentScriptNotReady")]));
-      return;
-    }
-    if (response.error) {
-      console.error(scrapbook.lang("ErrorCapture", ["tab " + tabId]));
-      return;
-    }
-    delete(capturer.captureInfo[timeId]);
-  });
-});
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   isDebug && console.debug(message.cmd + " receive", sender.tab.id, message.args);

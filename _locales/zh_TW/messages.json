@@ -3,6 +3,9 @@
     "description": "Title for the browser action that's visible to the user of extension",
     "message": "用 WebScrapBook 擷取網頁"
   },
+  "CaptureTab": {
+    "message": "擷取目前網頁"
+  },
   "ErrorCapture": {
     "message": "擷取失敗: $URL$",
     "placeholders": {
