@@ -535,7 +535,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               } else {
                 // frame document inaccessible: get the content document through a messaging technique, and then capture it
                 remainingTasks++;
-                getFrameContent(frameSrc, timeId, frameSettings, options, function (response) {
+                capturer.getFrameContent(frameSrc, timeId, frameSettings, options, function (response) {
                   captureFrameCallback(response);
                 });
               }
@@ -1115,6 +1115,34 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     documentName = response.documentName;
     captureMain();
   });
+};
+
+capturer.getFrameContent = function (frameElement, timeId, settings, options, callback) {
+  var channel = new MessageChannel();
+  var timeout = setTimeout(function () {
+    callback(undefined);
+    delete channel;
+  }, 1000);
+  frameElement.contentWindow.postMessage({
+    extension: chrome.runtime.id,
+    cmd: "capturer.captureDocumentOrFile",
+    timeId: timeId,
+    settings: settings,
+    options: options
+  }, "*", [channel.port2]);
+  channel.port1.onmessage = function (event) {
+    var message = event.data;
+    if (message.extension !== chrome.runtime.id) { return; }
+    if (message.timeId !== timeId) { return; }
+    isDebug && console.debug("channel receive", event);
+    
+    if (message.cmd === "capturer.captureDocumentOrFile.start") {
+      clearTimeout(timeout);
+    } else if (message.cmd === "capturer.captureDocumentOrFile.complete") {
+      callback(message.response);
+      delete channel;
+    }
+  };
 };
 
 capturer.resolveRelativeUrl = function (baseUrl, relativeUrl) {

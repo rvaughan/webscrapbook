@@ -5,7 +5,7 @@
  * @require {Object} scrapbook
  *******************************************************************/
 
-function getFrameContent(frameElement, timeId, settings, options, callback) {
+capturer.getFrameContent = function (frameElement, timeId, settings, options, callback) {
   var channel = new MessageChannel();
   var timeout = setTimeout(function () {
     callback(undefined);
@@ -31,7 +31,7 @@ function getFrameContent(frameElement, timeId, settings, options, callback) {
       delete channel;
     }
   };
-}
+};
 
 window.addEventListener("message", function (event) {
   var message = event.data;
