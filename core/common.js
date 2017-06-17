@@ -71,9 +71,9 @@ scrapbook.getOptions = function (keyPrefix) {
 
 scrapbook.setOption = function (key, value, callback) {
   scrapbook.options[key] = value;
-  chrome.storage.sync.set({ key: value }, function () {
+  chrome.storage.sync.set({key: value}, function () {
     if (callback) {
-      callback({ key: value });
+      callback({key: value});
     }
   });
 };
@@ -190,9 +190,9 @@ scrapbook.splitUrlByAnchor = function(url) {
 scrapbook.filenameParts = function (filename) {
   var pos = filename.lastIndexOf(".");
   if (pos != -1) {
-    return { base: filename.substring(0, pos), extension: filename.substring(pos + 1, filename.length) };
+    return {base: filename.substring(0, pos), extension: filename.substring(pos + 1, filename.length)};
   }
-  return { base: filename, extension: "" };
+  return {base: filename, extension: ""};
 };
 
 /**
@@ -352,19 +352,19 @@ scrapbook.dataUriToFile = function (dataUri) {
         var bstr = atob(data), n = bstr.length, u8ar = new Uint8Array(n);
         while (n--) { u8ar[n] = bstr.charCodeAt(n); }
         var filename = scrapbook.sha1(u8ar, "ARRAYBUFFER") + ext;
-        var file = new File([u8ar], filename, { type: mime });
+        var file = new File([u8ar], filename, {type: mime});
       } else {
         var charset = (parameters.charset || "US-ASCII").toLowerCase();
         switch (charset) {
           case "us-ascii":
             var str = unescape(data);
             var filename = scrapbook.sha1(str, "BYTES") + ext;
-            var file = new File([str], filename, { type: mime });
+            var file = new File([str], filename, {type: mime});
             break;
           case "utf-8":
             var str = decodeURIComponent(data);
             var filename = scrapbook.sha1(str, "TEXT") + ext;
-            var file = new File([str], filename, { type: mime });
+            var file = new File([str], filename, {type: mime});
             break;
           default:
             console.error('Unsupported charset in data URI: ' + charset);
@@ -431,7 +431,7 @@ scrapbook.arrayBufferToByteString = function (ab) {
  */
 scrapbook.parseHeaderContentType = function (string) {
   var match = string.match(/^\s*(.*?)(?:\s*;\s*charset\s*=\s*(.*?))?$/i);
-  return { contentType: match[1], charset: match[2] };
+  return {contentType: match[1], charset: match[2]};
 };
 
 /**
@@ -443,7 +443,7 @@ scrapbook.parseHeaderContentType = function (string) {
  * @return {{type: ('inline'|'attachment'), parameters: {[filename: string]}}}
  */
 scrapbook.parseHeaderContentDisposition = function (string) {
-  var result = { type: undefined, parameters: {} };
+  var result = {type: undefined, parameters: {}};
 
   if (!string || typeof string !== 'string') {
     return result;

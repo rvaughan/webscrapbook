@@ -37,7 +37,7 @@ capturer.captureDocumentOrFile = function (doc, settings, options, callback) {
 
   if (doc.readyState !== "complete") {
     console.error(scrapbook.lang("ErrorDocumentNotReady", [doc.URL]));
-    callback({ error: "document not load" });
+    callback({error: "document not load"});
     return false;
   }
 
@@ -62,7 +62,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
 
   if (doc.readyState !== "complete") {
     console.error(scrapbook.lang("ErrorDocumentNotReady", [doc.URL]));
-    callback({ error: "document not load" });
+    callback({error: "document not load"});
     return false;
   }
 
@@ -1220,10 +1220,10 @@ capturer.processCssFile = function(params, callback) {
     downloader.startDownloads(function () {
       text = downloader.finalRewrite(rewriteCss);
       if (charset) {
-        var blob = new Blob([text], { type: "text/css;charset=UTF-8" });
+        var blob = new Blob([text], {type: "text/css;charset=UTF-8"});
       } else {
         var ab = scrapbook.byteStringToArrayBuffer(text);
-        var blob = new Blob([ab], { type: "text/css" });
+        var blob = new Blob([ab], {type: "text/css"});
       }
       callback(blob);
     });
