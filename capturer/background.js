@@ -214,8 +214,8 @@ capturer.registerDocument = function (params, callback) {
   if (!capturer.captureInfo[timeId].usedDocumentNames) { capturer.captureInfo[timeId].usedDocumentNames = {}; }
   if (!capturer.captureInfo[timeId].usedDocumentNames[documentName]) { capturer.captureInfo[timeId].usedDocumentNames[documentName] = 0; }
   var fixedDocumentName = (capturer.captureInfo[timeId].usedDocumentNames[documentName] > 0) ?
-    (documentName + "_" + capturer.captureInfo[timeId].usedDocumentNames[documentName]) :
-    documentName;
+      (documentName + "_" + capturer.captureInfo[timeId].usedDocumentNames[documentName]) :
+      documentName;
   capturer.captureInfo[timeId].usedDocumentNames[documentName]++;
   callback({documentName: fixedDocumentName});
 };

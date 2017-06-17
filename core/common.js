@@ -147,10 +147,10 @@ scrapbook.escapeFilename = function (filename) {
  */
 scrapbook.validateFilename = function (filename, forceAscii) {
   filename = filename
-               .replace(/[\x00-\x1F\x7F]+|^ +/g, "")
-               .replace(/^\./, "_.").replace(/^ +/, "").replace(/[. ]+$/, "")  // leading/trailing spaces and dots are not allowed in Windows
-               .replace(/[:"?*\\/|]/g, "_")
-               .replace(/[<]/g, "(").replace(/[>]/g, ")");
+      .replace(/[\x00-\x1F\x7F]+|^ +/g, "")
+      .replace(/^\./, "_.").replace(/^ +/, "").replace(/[. ]+$/, "")  // leading/trailing spaces and dots are not allowed in Windows
+      .replace(/[:"?*\\/|]/g, "_")
+      .replace(/[<]/g, "(").replace(/[>]/g, ")");
   if (forceAscii) {
     filename = filename.replace(/[^\x00-\x7F]+/g, function (m) { return encodeURI(m); });
   }
@@ -204,12 +204,12 @@ scrapbook.filenameParts = function (filename) {
 scrapbook.dateToId = function(date) {
   var dd = date || new Date();
   return dd.getUTCFullYear() +
-    this.intToFixedStr(dd.getUTCMonth() + 1, 2) +
-    this.intToFixedStr(dd.getUTCDate(), 2) +
-    this.intToFixedStr(dd.getUTCHours(), 2) +
-    this.intToFixedStr(dd.getUTCMinutes(), 2) +
-    this.intToFixedStr(dd.getUTCSeconds(), 2) +
-    this.intToFixedStr(dd.getUTCMilliseconds(), 3);
+      this.intToFixedStr(dd.getUTCMonth() + 1, 2) +
+      this.intToFixedStr(dd.getUTCDate(), 2) +
+      this.intToFixedStr(dd.getUTCHours(), 2) +
+      this.intToFixedStr(dd.getUTCMinutes(), 2) +
+      this.intToFixedStr(dd.getUTCSeconds(), 2) +
+      this.intToFixedStr(dd.getUTCMilliseconds(), 3);
 };
 
 /**
@@ -219,9 +219,9 @@ scrapbook.idToDate = function(id) {
   var dd;
   if (id.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{3})$/)) {
     dd = new Date(
-      parseInt(RegExp.$1, 10), parseInt(RegExp.$2, 10) - 1, parseInt(RegExp.$3, 10),
-      parseInt(RegExp.$4, 10), parseInt(RegExp.$5, 10), parseInt(RegExp.$6, 10), parseInt(RegExp.$7, 10)
-    );
+        parseInt(RegExp.$1, 10), parseInt(RegExp.$2, 10) - 1, parseInt(RegExp.$3, 10),
+        parseInt(RegExp.$4, 10), parseInt(RegExp.$5, 10), parseInt(RegExp.$6, 10), parseInt(RegExp.$7, 10)
+        );
     dd.setTime(dd.valueOf() - dd.getTimezoneOffset() * 60 * 1000);
   }
   return dd;
@@ -237,11 +237,11 @@ scrapbook.idToDate = function(id) {
 scrapbook.dateToIdOld = function(date) {
   var dd = date || new Date();
   return dd.getFullYear() +
-    this.intToFixedStr(dd.getMonth() + 1, 2) +
-    this.intToFixedStr(dd.getDate(), 2) +
-    this.intToFixedStr(dd.getHours(), 2) +
-    this.intToFixedStr(dd.getMinutes(), 2) +
-    this.intToFixedStr(dd.getSeconds(), 2);
+      this.intToFixedStr(dd.getMonth() + 1, 2) +
+      this.intToFixedStr(dd.getDate(), 2) +
+      this.intToFixedStr(dd.getHours(), 2) +
+      this.intToFixedStr(dd.getMinutes(), 2) +
+      this.intToFixedStr(dd.getSeconds(), 2);
 };
 
 /**
@@ -252,9 +252,9 @@ scrapbook.idToDateOld = function(id) {
   var dd;
   if (id.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/)) {
     dd = new Date(
-      parseInt(RegExp.$1, 10), parseInt(RegExp.$2, 10) - 1, parseInt(RegExp.$3, 10),
-      parseInt(RegExp.$4, 10), parseInt(RegExp.$5, 10), parseInt(RegExp.$6, 10)
-    );
+        parseInt(RegExp.$1, 10), parseInt(RegExp.$2, 10) - 1, parseInt(RegExp.$3, 10),
+        parseInt(RegExp.$4, 10), parseInt(RegExp.$5, 10), parseInt(RegExp.$6, 10)
+        );
   }
   return dd;
 };
