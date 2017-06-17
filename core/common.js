@@ -109,7 +109,7 @@ scrapbook.saveOptions = function (callback) {
  *******************************************************************/
 
 scrapbook.lang = function (key, args) {
-  return chrome.i18n.getMessage(key, args);
+  return chrome.i18n.getMessage(key, args) || "__MSG_" + key + "__";
 };
 
 scrapbook.loadLanguages = function (rootNode) {
