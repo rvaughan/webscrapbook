@@ -192,7 +192,7 @@ capturer.saveDocument = function (params, callback) {
 
   var timeId = params.settings.timeId;
   var frameUrl = params.frameUrl;
-  var targetDir = params.options["dataFolder"] + "/" + timeId;
+  var targetDir = params.options["capture.dataFolder"] + "/" + timeId;
   var autoErase = !params.settings.frameIsMain;
   var filename = params.data.documentName + "." + ((params.data.mime === "application/xhtml+xml") ? "xhtml" : "html");
   filename = scrapbook.validateFilename(filename);
@@ -247,7 +247,7 @@ capturer.downloadFile = function (params, callback) {
   isDebug && console.debug("call: downloadFile", params);
 
   var timeId = params.settings.timeId;
-  var targetDir = params.options["dataFolder"] + "/" + timeId;
+  var targetDir = params.options["capture.dataFolder"] + "/" + timeId;
   var sourceUrl = params.url; sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
   var rewriteMethod = params.rewriteMethod;
   var filename = scrapbook.urlToFilename(sourceUrl);
