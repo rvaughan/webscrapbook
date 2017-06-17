@@ -252,63 +252,18 @@ capturer.saveDocument = function (params, callback) {
 capturer.downloadFile = function (params, callback) {
   isDebug && console.debug("call: downloadFile", params);
 
-  var timeId = params.settings.timeId;
-  var targetDir = params.options["capture.dataFolder"] + "/" + timeId;
+  var settings = params.settings;
+  var options = params.options;
+  var timeId = settings.timeId;
+  var targetDir = options["capture.dataFolder"] + "/" + timeId;
   var sourceUrl = params.url; sourceUrl = scrapbook.splitUrlByAnchor(sourceUrl)[0];
   var rewriteMethod = params.rewriteMethod;
   var filename = scrapbook.urlToFilename(sourceUrl);
   var isDuplicate;
   var headers = {};
 
-  var onComplete = function (blob) {
-    if (!blob) {
-      callback({ url: capturer.getErrorUrl(sourceUrl, params.options) });
-    }
-
-    // save blob as data URI?
-    if (params.options["capture.saveFileAsDataUri"] && !sourceUrl.startsWith("data:")) {
-      let reader = new FileReader();
-      reader.onloadend = function(event) {
-        let dataUri = event.target.result;
-        callback({ url: dataUri });
-      }
-      reader.readAsDataURL(blob);
-      return;
-    }
-
-    // download the data
-    var downloadParams = {
-      url: URL.createObjectURL(blob),
-      filename: targetDir + "/" + filename,
-      conflictAction: "uniquify",
-    };
-
-    isDebug && console.debug("download start", downloadParams);
-    chrome.downloads.download(downloadParams, function (downloadId) {
-      isDebug && console.debug("download response", downloadId);
-      if (downloadId) {
-        capturer.downloadInfo[downloadId] = {
-          timeId: timeId,
-          src: sourceUrl,
-          autoErase: true,
-          onComplete: function () {
-            // @TODO: do we need to escape the URL to be safe to included in CSS or so?
-            callback({ url: filename });
-          },
-          onError: function (err) {
-            callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: err });
-          }
-        };
-      } else {
-        let err = chrome.runtime.lastError.message;
-        console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
-        callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: err });
-      }
-    });
-  };
-
   if (sourceUrl.startsWith("data:")) {
-    if (params.options["capture.saveDataUriAsFile"] && !params.options["capture.saveFileAsDataUri"]) {
+    if (options["capture.saveDataUriAsFile"] && !options["capture.saveFileAsDataUri"]) {
       let file = scrapbook.dataUriToFile(sourceUrl);
       if (file) {
         filename = file.name;
@@ -322,14 +277,26 @@ capturer.downloadFile = function (params, callback) {
             params.charset = null;
             params.url = null;
             capturer[rewriteMethod](params, function (response) {
-              onComplete(response);
+              capturer.saveBlob({
+                settings: settings,
+                options: options,
+                blob: response,
+                filename: filename,
+                sourceUrl: sourceUrl,
+              }, callback);
             });
           } else {
-            onComplete(file);
+            capturer.saveBlob({
+              settings: settings,
+              options: options,
+              blob: file,
+              filename: filename,
+              sourceUrl: sourceUrl,
+            }, callback);
           }
         }
       } else {
-        callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: "data URI cannot be read as file" });
+        callback({ url: capturer.getErrorUrl(sourceUrl, options), error: "data URI cannot be read as file" });
       }
     } else {
       callback({ url: sourceUrl });
@@ -378,7 +345,7 @@ capturer.downloadFile = function (params, callback) {
       }
 
       filename = scrapbook.validateFilename(filename);
-      if (!params.options["capture.saveFileAsDataUri"]) {
+      if (!options["capture.saveFileAsDataUri"]) {
         ({newFilename: filename, isDuplicate} = capturer.getUniqueFilename(timeId, filename, sourceUrl));
         if (isDuplicate) {
           callback({ url: filename, isDuplicate: true });
@@ -392,10 +359,22 @@ capturer.downloadFile = function (params, callback) {
           params.charset = headers.charset;
           params.url = xhr.responseURL;
           capturer[rewriteMethod](params, function (response) {
-            onComplete(response);
+            capturer.saveBlob({
+              settings: settings,
+              options: options,
+              blob: response,
+              filename: filename,
+              sourceUrl: sourceUrl,
+            }, callback);
           });
         } else {
-          onComplete(xhr.response);
+          capturer.saveBlob({
+            settings: settings,
+            options: options,
+            blob: xhr.response,
+            filename: filename,
+            sourceUrl: sourceUrl,
+          }, callback);
         }
       } else {
         xhr.onerror();
@@ -405,20 +384,88 @@ capturer.downloadFile = function (params, callback) {
 
   xhr.ontimeout = function () {
     console.warn(scrapbook.lang("ErrorFileDownloadTimeout", sourceUrl));
-    callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: "timeout" });
+    callback({ url: capturer.getErrorUrl(sourceUrl, options), error: "timeout" });
     xhr_shutdown();
   };
 
   xhr.onerror = function () {
     let err = [xhr.status, xhr.statusText].join(" ");
     console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
-    callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: err });
+    callback({ url: capturer.getErrorUrl(sourceUrl, options), error: err });
     xhr_shutdown();
   };
 
   xhr.responseType = "blob";
   xhr.open("GET", sourceUrl, true);
   xhr.send();
+
+  return true; // async response
+};
+
+/**
+ * @kind invokable
+ * @param {Object} params 
+ *   - {Object} params.settings
+ *   - {Object} params.options
+ *   - {string} params.blob
+ *   - {string} params.filename
+ *   - {string} params.sourceUrl
+ */
+capturer.saveBlob = function (params, callback) {
+  isDebug && console.debug("call: saveBlob", params);
+
+  var settings = params.settings;
+  var options = params.options;
+  var timeId = settings.timeId;
+  var blob = params.blob;
+  var filename = params.filename;
+  var sourceUrl = params.sourceUrl;
+  var targetDir = options["capture.dataFolder"] + "/" + timeId;
+
+  if (!blob) {
+    callback({ url: capturer.getErrorUrl(sourceUrl, options) });
+  }
+
+  // save blob as data URI?
+  if (options["capture.saveFileAsDataUri"]) {
+    let reader = new FileReader();
+    reader.onloadend = function(event) {
+      let dataUri = event.target.result;
+      callback({ url: dataUri });
+    }
+    reader.readAsDataURL(blob);
+    return;
+  }
+
+  // download the data
+  var downloadParams = {
+    url: URL.createObjectURL(blob),
+    filename: targetDir + "/" + filename,
+    conflictAction: "uniquify",
+  };
+
+  isDebug && console.debug("download start", downloadParams);
+  chrome.downloads.download(downloadParams, function (downloadId) {
+    isDebug && console.debug("download response", downloadId);
+    if (downloadId) {
+      capturer.downloadInfo[downloadId] = {
+        timeId: timeId,
+        src: sourceUrl,
+        autoErase: true,
+        onComplete: function () {
+          // @TODO: do we need to escape the URL to be safe to included in CSS or so?
+          callback({ url: filename });
+        },
+        onError: function (err) {
+          callback({ url: capturer.getErrorUrl(sourceUrl, options), error: err });
+        }
+      };
+    } else {
+      let err = chrome.runtime.lastError.message;
+      console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
+      callback({ url: capturer.getErrorUrl(sourceUrl, options), error: err });
+    }
+  });
 
   return true; // async response
 };
