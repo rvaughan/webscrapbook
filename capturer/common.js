@@ -1353,7 +1353,7 @@ capturer.ProcessCssFileText = function (cssText, refUrl, downloader, options) {
  * @class ComplexUrlDownloader
  *******************************************************************/
 capturer.ComplexUrlDownloader = function (settings, options) {
-  var urlHash = [], urlRewrittenCount = 0;
+  var urlHash = {}, urlRewrittenCount = 0;
 
   this.getUrlHash = function (url, rewriteMethod) {
     var key = scrapbook.getUuid();
