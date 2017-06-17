@@ -79,105 +79,107 @@ capturer.captureDocument = function (doc, settings, options, callback) {
 
     // construct the node list
     var selection = doc.getSelection();
-    if (selection && selection.isCollapsed) { selection = null; }
-    if (scrapbook.getOption("capture.saveSelectionOnly") && selection) {
-      var selNodeTree = []; // @TODO: it's not enough to preserve order of sparsely selected table cells
-      for (var iRange = 0, iRangeMax = selection.rangeCount; iRange < iRangeMax; ++iRange) {
-        var myRange = selection.getRangeAt(iRange);
-        var curNode = myRange.commonAncestorContainer;
-        if (curNode.nodeName.toUpperCase() == "HTML") {
-          // in some case (e.g. view image) the selection is the html node
-          // and will cause subsequent errors.
-          // in this case we just process as if there's no selection
-          selection = null;
-          break;
-        }
+    {
+      if (selection && selection.isCollapsed) { selection = null; }
+      if (scrapbook.getOption("capture.saveSelectionOnly") && selection) {
+        let selNodeTree = []; // @TODO: it's not enough to preserve order of sparsely selected table cells
+        for (let iRange = 0, iRangeMax = selection.rangeCount; iRange < iRangeMax; ++iRange) {
+          let myRange = selection.getRangeAt(iRange);
+          let curNode = myRange.commonAncestorContainer;
+          if (curNode.nodeName.toUpperCase() == "HTML") {
+            // in some case (e.g. view image) the selection is the html node
+            // and will cause subsequent errors.
+            // in this case we just process as if there's no selection
+            selection = null;
+            break;
+          }
 
-        if (iRange === 0) {
-          rootNode = htmlNode.cloneNode(false);
-          headNode = doc.querySelector("head");
-          headNode = headNode ? headNode.cloneNode(true) : doc.createElement("head");
-          rootNode.appendChild(headNode);
-          rootNode.appendChild(doc.createTextNode("\n"));
-        }
+          if (iRange === 0) {
+            rootNode = htmlNode.cloneNode(false);
+            headNode = doc.querySelector("head");
+            headNode = headNode ? headNode.cloneNode(true) : doc.createElement("head");
+            rootNode.appendChild(headNode);
+            rootNode.appendChild(doc.createTextNode("\n"));
+          }
 
-        if (curNode.nodeName == "#text") { curNode = curNode.parentNode; }
+          if (curNode.nodeName == "#text") { curNode = curNode.parentNode; }
 
-        var tmpNodeList = [];
-        do {
-          tmpNodeList.unshift(curNode);
-          curNode = curNode.parentNode;
-        } while (curNode.nodeName.toUpperCase() != "HTML");
+          let tmpNodeList = [];
+          do {
+            tmpNodeList.unshift(curNode);
+            curNode = curNode.parentNode;
+          } while (curNode.nodeName.toUpperCase() != "HTML");
 
-        var parentNode = rootNode;
-        var branchList = selNodeTree;
-        var matchedDepth = -2;
-        for(var iDepth = 0; iDepth < tmpNodeList.length; ++iDepth) {
-          for (var iBranch = 0; iBranch < branchList.length; ++iBranch) {
-            if (tmpNodeList[iDepth] === branchList[iBranch].origNode) {
-              matchedDepth = iDepth;
-              break;
+          let parentNode = rootNode;
+          let branchList = selNodeTree;
+          let matchedDepth = -2;
+          for(let iDepth = 0; iDepth < tmpNodeList.length; ++iDepth) {
+            for (let iBranch = 0; iBranch < branchList.length; ++iBranch) {
+              if (tmpNodeList[iDepth] === branchList[iBranch].origNode) {
+                matchedDepth = iDepth;
+                break;
+              }
+            }
+
+            if (iBranch === branchList.length) {
+              let clonedNode = tmpNodeList[iDepth].cloneNode(false);
+              parentNode.appendChild(clonedNode);
+              branchList.push({
+                origNode: tmpNodeList[iDepth],
+                clonedNode: clonedNode,
+                children: []
+              });
+            }
+            parentNode = branchList[iBranch].clonedNode;
+            branchList = branchList[iBranch].children;
+          }
+          if (matchedDepth === tmpNodeList.length - 1) {
+            // @TODO:
+            // Perhaps a similar splitter should be added for any node type
+            // but some tags e.g. <td> require special care
+            if (myRange.commonAncestorContainer.nodeName === "#text") {
+              parentNode.appendChild(doc.createComment("DOCUMENT_FRAGMENT_SPLITTER"));
+              parentNode.appendChild(doc.createTextNode(" … "));
+              parentNode.appendChild(doc.createComment("/DOCUMENT_FRAGMENT_SPLITTER"));
             }
           }
-
-          if (iBranch === branchList.length) {
-            var clonedNode = tmpNodeList[iDepth].cloneNode(false);
-            parentNode.appendChild(clonedNode);
-            branchList.push({
-              origNode: tmpNodeList[iDepth],
-              clonedNode: clonedNode,
-              children: []
-            });
-          }
-          parentNode = branchList[iBranch].clonedNode;
-          branchList = branchList[iBranch].children;
+          parentNode.appendChild(doc.createComment("DOCUMENT_FRAGMENT"));
+          parentNode.appendChild(myRange.cloneContents());
+          parentNode.appendChild(doc.createComment("/DOCUMENT_FRAGMENT"));
         }
-        if (matchedDepth === tmpNodeList.length - 1) {
-          // @TODO:
-          // Perhaps a similar splitter should be added for any node type
-          // but some tags e.g. <td> require special care
-          if (myRange.commonAncestorContainer.nodeName === "#text") {
-            parentNode.appendChild(doc.createComment("DOCUMENT_FRAGMENT_SPLITTER"));
-            parentNode.appendChild(doc.createTextNode(" … "));
-            parentNode.appendChild(doc.createComment("/DOCUMENT_FRAGMENT_SPLITTER"));
-          }
+      }
+      if (!selection) {
+        rootNode = htmlNode.cloneNode(true);
+        headNode = rootNode.querySelector("head");
+        if (!headNode) {
+          headNode = doc.createElement("head");
+          rootNode.insertBefore(headNode, rootNode.firstChild);
         }
-        parentNode.appendChild(doc.createComment("DOCUMENT_FRAGMENT"));
-        parentNode.appendChild(myRange.cloneContents());
-        parentNode.appendChild(doc.createComment("/DOCUMENT_FRAGMENT"));
       }
-    }
-    if (!selection) {
-      rootNode = htmlNode.cloneNode(true);
-      headNode = rootNode.querySelector("head");
-      if (!headNode) {
-        headNode = doc.createElement("head");
-        rootNode.insertBefore(headNode, rootNode.firstChild);
-      }
-    }
 
-    // add linefeeds to head and body to improve layout
-    var headNodeBefore = headNode.previousSibling;
-    if (!headNodeBefore || headNodeBefore.nodeType != 3) {
-      rootNode.insertBefore(doc.createTextNode("\n"), headNode);
-    }
-    var headNodeStart = headNode.firstChild;
-    if (!headNodeStart || headNodeStart.nodeType != 3) {
-      headNode.insertBefore(doc.createTextNode("\n"), headNodeStart);
-    }
-    var headNodeEnd = headNode.lastChild;
-    if (!headNodeEnd || headNodeEnd.nodeType != 3) {
-      headNode.appendChild(doc.createTextNode("\n"));
-    }
-    var headNodeAfter = headNode.nextSibling;
-    if (!headNodeAfter || headNodeAfter.nodeType != 3) {
-      rootNode.insertBefore(doc.createTextNode("\n"), headNodeAfter);
-    }
-    var bodyNode = rootNode.querySelector("body");
-    if (bodyNode) {
-      var bodyNodeAfter = bodyNode.nextSibling;
-      if (!bodyNodeAfter) {
-        rootNode.insertBefore(doc.createTextNode("\n"), bodyNodeAfter);
+      // add linefeeds to head and body to improve layout
+      let headNodeBefore = headNode.previousSibling;
+      if (!headNodeBefore || headNodeBefore.nodeType != 3) {
+        rootNode.insertBefore(doc.createTextNode("\n"), headNode);
+      }
+      let headNodeStart = headNode.firstChild;
+      if (!headNodeStart || headNodeStart.nodeType != 3) {
+        headNode.insertBefore(doc.createTextNode("\n"), headNodeStart);
+      }
+      let headNodeEnd = headNode.lastChild;
+      if (!headNodeEnd || headNodeEnd.nodeType != 3) {
+        headNode.appendChild(doc.createTextNode("\n"));
+      }
+      let headNodeAfter = headNode.nextSibling;
+      if (!headNodeAfter || headNodeAfter.nodeType != 3) {
+        rootNode.insertBefore(doc.createTextNode("\n"), headNodeAfter);
+      }
+      let bodyNode = rootNode.querySelector("body");
+      if (bodyNode) {
+        let bodyNodeAfter = bodyNode.nextSibling;
+        if (!bodyNodeAfter) {
+          rootNode.insertBefore(doc.createTextNode("\n"), bodyNodeAfter);
+        }
       }
     }
 
@@ -204,7 +206,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
 
       switch (elem.nodeName.toLowerCase()) {
         // styles: style element
-        case "style":
+        case "style": {
           switch (options["capture.style"]) {
             case "blank":
               captureRewriteTextContent(elem, null);
@@ -218,8 +220,8 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               switch (options["capture.rewriteCss"]) {
                 case "url":
                   remainingTasks++;
-                  var downloader = new capturer.ComplexUrlDownloader(settings, options);
-                  var rewriteCss = capturer.ProcessCssFileText(elem.textContent, doc.URL, downloader, options);
+                  let downloader = new capturer.ComplexUrlDownloader(settings, options);
+                  let rewriteCss = capturer.ProcessCssFileText(elem.textContent, doc.URL, downloader, options);
                   downloader.startDownloads(function () {
                     elem.textContent = downloader.finalRewrite(rewriteCss);
                     remainingTasks--;
@@ -234,9 +236,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
 
         // styles: link element
-        case "link":
+        case "link": {
           if (!elem.hasAttribute("href")) { break; }
           elem.setAttribute("href", elem.href);
 
@@ -283,6 +286,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
       }
     }, this);
 
@@ -298,7 +302,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
       if (!elem.parentNode) { return; }
 
       switch (elem.nodeName.toLowerCase()) {
-        case "base":
+        case "base": {
           if (!elem.hasAttribute("href")) { break; }
           elem.setAttribute("href", elem.href);
 
@@ -315,8 +319,9 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
 
-        case "meta":
+        case "meta": {
           // force UTF-8
           if (elem.hasAttribute("http-equiv") && elem.hasAttribute("content") &&
               elem.getAttribute("http-equiv").toLowerCase() == "content-type" && 
@@ -338,18 +343,19 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               case "og:video:url":
               case "og:video:secure_url":
               case "og:url":
-                var rewriteUrl = capturer.resolveRelativeUrl(doc.URL, elem.getAttribute("content"));
+                let rewriteUrl = capturer.resolveRelativeUrl(doc.URL, elem.getAttribute("content"));
                 elem.setAttribute("content", rewriteUrl);
                 break;
             }
           }
           break;
+        }
 
-        case "link":
+        case "link": {
           if (!elem.hasAttribute("href")) { break; }
 
           // elem.rel == "" if "rel" attribute not defined
-          var rels = elem.rel.toLowerCase().split(/[ \t\r\n\v\f]+/);
+          let rels = elem.rel.toLowerCase().split(/[ \t\r\n\v\f]+/);
           if (rels.indexOf("stylesheet") >= 0) {
             // stylesheets are already processed now
             break;
@@ -384,9 +390,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             }
           }
           break;
+        }
 
         // scripts: script
-        case "script":
+        case "script": {
           if (elem.hasAttribute("src")) {
             elem.setAttribute("src", elem.src);
           }
@@ -421,9 +428,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
 
         // scripts: noscript
-        case "noscript":
+        case "noscript": {
           switch (options["capture.noscript"]) {
             case "blank":
               captureRewriteTextContent(elem, null);
@@ -437,15 +445,16 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
 
         case "body":
         case "table":
         case "tr":
         case "th":
-        case "td":
+        case "td": {
           // deprecated: background attribute (deprecated since HTML5)
           if (elem.hasAttribute("background")) {
-            var rewriteUrl = capturer.resolveRelativeUrl(doc.URL, elem.getAttribute("background"));
+            let rewriteUrl = capturer.resolveRelativeUrl(doc.URL, elem.getAttribute("background"));
             elem.setAttribute("background", rewriteUrl);
 
             switch (options["capture.imageBackground"]) {
@@ -471,11 +480,12 @@ capturer.captureDocument = function (doc, settings, options, callback) {
             }
           }
           break;
+        }
 
         case "frame":
-        case "iframe":
-          var frame = elem;
-          var frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
+        case "iframe": {
+          let frame = elem;
+          let frameSrc = origRefNodes[frame.getAttribute(origRefKey)];
           frame.removeAttribute(origRefKey);
           frame.setAttribute("src", frame.src);
           captureRewriteAttr(frame, "srcdoc", null); // prevent src being overwritten
@@ -492,7 +502,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               return;
             case "save":
             default:
-              var captureFrameCallback = function (result) {
+              let captureFrameCallback = function (result) {
                 isDebug && console.debug("captureFrameCallback", result);
                 if (result) {
                   if (!result.error) {
@@ -507,10 +517,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 captureCheckDone();
               };
 
-              var frameSettings = JSON.parse(JSON.stringify(settings));
+              let frameSettings = JSON.parse(JSON.stringify(settings));
               frameSettings.frameIsMain = false;
 
-              var frameDoc;
+              let frameDoc;
               try {
                 frameDoc = frameSrc.contentDocument;
               } catch (ex) {
@@ -532,9 +542,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
 
         case "a":
-        case "area":
+        case "area": {
           if (!elem.hasAttribute("href")) { break; }
           let url = elem.href;
 
@@ -586,9 +597,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           // normal anchors
           elem.setAttribute("href", elem.href);
           break;
+        }
 
         // images: img
-        case "img":
+        case "img": {
           if (elem.hasAttribute("src")) {
             elem.setAttribute("src", elem.src);
           }
@@ -644,9 +656,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
 
         // images: picture
-        case "picture":
+        case "picture": {
           Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
             elem.setAttribute("srcset",
               scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
@@ -684,9 +697,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
 
         // media: audio
-        case "audio":
+        case "audio": {
           Array.prototype.forEach.call(elem.querySelectorAll('source[src], track[src]'), function (elem) {
             elem.setAttribute("src", elem.src);
           }, this);
@@ -720,9 +734,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
 
         // media: video
-        case "video":
+        case "video": {
           Array.prototype.forEach.call(elem.querySelectorAll('source[src], track[src]'), function (elem) {
             elem.setAttribute("src", elem.src);
           }, this);
@@ -756,9 +771,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
 
         // media: embed
-        case "embed":
+        case "embed": {
           if (elem.hasAttribute("src")) {
             elem.setAttribute("src", elem.src);
           }
@@ -792,9 +808,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
 
         // media: embed
-        case "object":
+        case "object": {
           if (elem.hasAttribute("data")) {
             elem.setAttribute("data", elem.data);
           }
@@ -828,9 +845,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
 
         // media: applet
-        case "applet":
+        case "applet": {
           if (elem.hasAttribute("archive")) {
             let rewriteUrl = capturer.resolveRelativeUrl(doc.URL, elem.getAttribute("archive"));
             elem.setAttribute("archive", rewriteUrl);
@@ -853,7 +871,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               if (elem.hasAttribute("archive")) {
                 remainingTasks++;
                 capturer.invoke("downloadFile", {
-                  url: rewriteUrl,
+                  url: elem.getAttribute("archive"),
                   settings: settings,
                   options: options,
                 }, function (response) {
@@ -865,9 +883,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
 
         // media: canvas
-        case "canvas":
+        case "canvas": {
           let canvasOrig = origRefNodes[elem.getAttribute(origRefKey)];
           elem.removeAttribute(origRefKey);
 
@@ -886,14 +905,16 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
 
-        case "form":
+        case "form": {
           if ( elem.hasAttribute("action") ) {
               elem.setAttribute("action", elem.action);
           }
           break;
+        }
 
-        case "input":
+        case "input": {
           switch (elem.type.toLowerCase()) {
             // images: input
             case "image":
@@ -927,6 +948,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               break;
           }
           break;
+        }
       }
 
       // styles: style attribute

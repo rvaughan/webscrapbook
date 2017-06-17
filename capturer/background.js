@@ -136,7 +136,7 @@ capturer.captureFile = function (params, callback) {
   }, function (response) {
     if (params.settings.frameIsMain) {
       // for the main frame, create a index.html that redirects to the file
-      var html = '<html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;URL=' + response.url + '"></head><body></body></html>';
+      let html = '<html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;URL=' + response.url + '"></head><body></body></html>';
       capturer.saveDocument({
         frameUrl: params.url,
         settings: params.settings,
@@ -201,7 +201,7 @@ capturer.saveDocument = function (params, callback) {
   // save as data URI?
   // the main frame should still be downloaded
   if (params.options["capture.saveFileAsDataUri"] && !params.settings.frameIsMain) {
-    var dataUri = scrapbook.stringToDataUri(params.data.content, params.data.mime, params.data.charset);
+    let dataUri = scrapbook.stringToDataUri(params.data.content, params.data.mime, params.data.charset);
     callback({ timeId: timeId, frameUrl: frameUrl, targetDir: targetDir, filename: dataUri });
     return true; // async response
   }
@@ -228,7 +228,7 @@ capturer.saveDocument = function (params, callback) {
         }
       };
     } else {
-      var err = chrome.runtime.lastError.message;
+      let err = chrome.runtime.lastError.message;
       callback({ url: capturer.getErrorUrl(frameUrl, params.options), error: err });
     }
   });
@@ -261,9 +261,9 @@ capturer.downloadFile = function (params, callback) {
 
     // save blob as data URI?
     if (params.options["capture.saveFileAsDataUri"] && !sourceUrl.startsWith("data:")) {
-      var reader = new FileReader();
+      let reader = new FileReader();
       reader.onloadend = function(event) {
-        var dataUri = event.target.result;
+        let dataUri = event.target.result;
         callback({ url: dataUri });
       }
       reader.readAsDataURL(blob);
@@ -294,7 +294,7 @@ capturer.downloadFile = function (params, callback) {
           }
         };
       } else {
-        var err = chrome.runtime.lastError.message;
+        let err = chrome.runtime.lastError.message;
         console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
         callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: err });
       }
@@ -303,7 +303,7 @@ capturer.downloadFile = function (params, callback) {
 
   if (sourceUrl.startsWith("data:")) {
     if (params.options["capture.saveDataUriAsFile"] && !params.options["capture.saveFileAsDataUri"]) {
-      var file = scrapbook.dataUriToFile(sourceUrl);
+      let file = scrapbook.dataUriToFile(sourceUrl);
       if (file) {
         filename = file.name;
         filename = scrapbook.validateFilename(filename);
@@ -343,9 +343,9 @@ capturer.downloadFile = function (params, callback) {
       // determine the filename
       // if header Content-Disposition is defined, use it
       try {
-        var headerContentDisposition = xhr.getResponseHeader("Content-Disposition");
+        let headerContentDisposition = xhr.getResponseHeader("Content-Disposition");
         if (headerContentDisposition) {
-          var contentDisposition = scrapbook.parseHeaderContentDisposition(headerContentDisposition);
+          let contentDisposition = scrapbook.parseHeaderContentDisposition(headerContentDisposition);
           headers.isAttachment = (contentDisposition.type === "attachment");
           headers.filename = contentDisposition.parameters.filename;
           filename = headers.filename || filename;
@@ -354,9 +354,9 @@ capturer.downloadFile = function (params, callback) {
 
       // if no file extension, give one according to header Content-Type.
       try {
-        var headerContentType = xhr.getResponseHeader("Content-Type");
+        let headerContentType = xhr.getResponseHeader("Content-Type");
         if (headerContentType) {
-          var contentType = scrapbook.parseHeaderContentType(headerContentType);
+          let contentType = scrapbook.parseHeaderContentType(headerContentType);
           headers.contentType = contentType.contentType;
           headers.charset = contentType.charset;
           if (headers.contentType) {
@@ -404,7 +404,7 @@ capturer.downloadFile = function (params, callback) {
   };
 
   xhr.onerror = function () {
-    var err = [xhr.status, xhr.statusText].join(" ");
+    let err = [xhr.status, xhr.statusText].join(" ");
     console.warn(scrapbook.lang("ErrorFileDownloadError", [sourceUrl, err]));
     callback({ url: capturer.getErrorUrl(sourceUrl, params.options), error: err });
     xhr_shutdown();
@@ -455,7 +455,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   isDebug && console.debug(message.cmd + " receive", sender.tab.id, message.args);
 
   if (message.cmd.slice(0, 9) == "capturer.") {
-    var method = message.cmd.slice(9);
+    let method = message.cmd.slice(9);
     if (capturer[method]) {
       message.args.tabId = sender.tab.id;
       return capturer[method](message.args, function (response) {
@@ -468,6 +468,8 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 chrome.downloads.onChanged.addListener(function (downloadDelta) {
   isDebug && console.debug("downloads.onChanged", downloadDelta);
 
+  var downloadId = downloadDelta.id;
+
   var erase = function (downloadId) {
     if (capturer.downloadInfo[downloadId].autoErase) {
       chrome.downloads.erase({ id: downloadId }, function (erasedIds) {});
@@ -477,13 +479,11 @@ chrome.downloads.onChanged.addListener(function (downloadDelta) {
 
   if (downloadDelta.state && downloadDelta.state.current === "complete") {
     // erase the download history of additional downloads (those recorded in capturer.downloadEraseIds)
-    var downloadId = downloadDelta.id;
     capturer.downloadInfo[downloadId].onComplete();
     erase(downloadId);
   } else if (downloadDelta.error) {
-    var downloadId = downloadDelta.id;
     chrome.downloads.search({ id: downloadId }, function (results) {
-      var err = results[0].error;
+      let err = results[0].error;
       console.warn(scrapbook.lang("ErrorFileDownloadError", [capturer.downloadInfo[downloadId].src, err]));
       capturer.downloadInfo[downloadId].onError(err);
       erase(downloadId);

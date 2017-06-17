@@ -61,7 +61,7 @@ scrapbook.getOption = function (key, defaultValue) {
 scrapbook.getOptions = function (keyPrefix) {
   var result = {};
   var regex = new RegExp("^" + scrapbook.escapeRegExp(keyPrefix) + ".");
-  for (var key in scrapbook.options) {
+  for (let key in scrapbook.options) {
     if (regex.test(key)) {
       result[key] = scrapbook.getOption(key);
     }
@@ -80,7 +80,7 @@ scrapbook.setOption = function (key, value, callback) {
 
 scrapbook.loadOptions = function (callback) {
   chrome.storage.sync.get(scrapbook.options, function (items) {
-    for (var i in items) {
+    for (let i in items) {
       var item = items[i];
       if (Object.prototype.toString.call(item) === "[object Array]") {
         scrapbook.options[i] = item[item.pop()];
