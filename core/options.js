@@ -16,7 +16,7 @@ function getOptionFromDocument(id) {
   }
 }
 
-function setOptionFromDocument(id, value) {
+function setOptionToDocument(id, value) {
   var elem = document.getElementById(OPTION_PREFIX + id);
   switch (elem.getAttribute("type")) {
     case "checkbox":
@@ -96,7 +96,7 @@ window.addEventListener("DOMContentLoaded", function (event) {
   scrapbook.loadOptions(function (options) {
     for (var id in options) {
       var value = options[id];
-      setOptionFromDocument(id, value);
+      setOptionToDocument(id, value);
     }
   });
 });
