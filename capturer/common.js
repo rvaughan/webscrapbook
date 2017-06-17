@@ -1155,6 +1155,14 @@ capturer.getErrorUrl = function (sourceUrl, options) {
  * For case 3, a UTF-8 BOM is prepended to suppress the @charset rule.
  * We don't follow case 4 and save the CSS file as byte string so that
  * the user could fix the encoding manually.
+ *
+ * @kind rewriteMethod
+ * @param {Object} params 
+ *   - {Object} params.settings
+ *   - {Object} params.options
+ *   - {Blob} params.data
+ *   - {string} params.charset
+ *   - {string} params.url
  */
 capturer.processCssFile = function(params, callback) {
   var data = params.data;
