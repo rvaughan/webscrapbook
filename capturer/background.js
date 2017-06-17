@@ -129,27 +129,33 @@ capturer.captureUrl = function (params, callback) {
 capturer.captureFile = function (params, callback) {
   isDebug && console.debug("call: captureFile", params);
 
+  var timeId = params.settings.timeId;
+  var sourceUrl = params.url;
+  var settings = params.settings;
+  var options = params.options;
+
   capturer.downloadFile({
-    url: params.url,
-    settings: params.settings,
-    options: params.options
+    url: sourceUrl,
+    settings: settings,
+    options: options
   }, function (response) {
-    if (params.settings.frameIsMain) {
+    if (settings.frameIsMain) {
+      let meta = params.options["capture.recordDocumentMeta"] ? ' data-sb' + timeId + '-source="' + sourceUrl + '"' : "";
       // for the main frame, create a index.html that redirects to the file
-      let html = '<html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;URL=' + response.url + '"></head><body></body></html>';
+      let html = '<html' + meta + '><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;URL=' + response.url + '"></head><body></body></html>';
       capturer.saveDocument({
-        frameUrl: params.url,
-        settings: params.settings,
-        options: params.options,
+        frameUrl: sourceUrl,
+        settings: settings,
+        options: options,
         data: {
-          documentName: params.settings.documentName,
+          documentName: settings.documentName,
           mime: "text/html",
           content: html
         }
       }, callback);
     } else {
       callback({
-        frameUrl: params.url,
+        frameUrl: sourceUrl,
         filename: response.url
       });
     }
