@@ -93,9 +93,9 @@ capturer.captureTab = function (tab) {
 /**
  * @kind invokable
  * @param {Object} params 
- *   - {Object} params.settings
- *   - {Object} params.options
- *   - {string} params.url
+ *     - {Object} params.settings
+ *     - {Object} params.options
+ *     - {string} params.url
  */
 capturer.captureUrl = function (params, callback) {
   isDebug && console.debug("call: captureUrl", params);
@@ -157,9 +157,9 @@ capturer.captureUrl = function (params, callback) {
 /**
  * @kind invokable
  * @param {Object} params 
- *   - {Object} params.settings
- *   - {Object} params.options
- *   - {string} params.url
+ *     - {Object} params.settings
+ *     - {Object} params.options
+ *     - {string} params.url
  */
 capturer.captureFile = function (params, callback) {
   isDebug && console.debug("call: captureFile", params);
@@ -202,8 +202,8 @@ capturer.captureFile = function (params, callback) {
 /**
  * @kind invokable
  * @param {Object} params 
- *   - {Object} params.settings
- *   - {Object} params.options
+ *     - {Object} params.settings
+ *     - {Object} params.options
  */
 capturer.registerDocument = function (params, callback) {
   isDebug && console.debug("call: registerDocument", params);
@@ -223,10 +223,10 @@ capturer.registerDocument = function (params, callback) {
 /**
  * @kind invokable
  * @param {Object} params 
- *   - {Object} params.settings
- *   - {Object} params.options
- *   - {string} params.frameUrl
- *   - {{documentName: string, mime: string, charset: string, content: string}} params.data
+ *     - {Object} params.settings
+ *     - {Object} params.options
+ *     - {string} params.frameUrl
+ *     - {{documentName: string, mime: string, charset: string, content: string}} params.data
  */
 capturer.saveDocument = function (params, callback) {
   isDebug && console.debug("call: saveDocument", params);
@@ -279,10 +279,10 @@ capturer.saveDocument = function (params, callback) {
 /**
  * @kind invokable
  * @param {Object} params 
- *   - {Object} params.settings
- *   - {Object} params.options
- *   - {string} params.url
- *   - {string} params.rewriteMethod
+ *     - {Object} params.settings
+ *     - {Object} params.options
+ *     - {string} params.url
+ *     - {string} params.rewriteMethod
  */
 capturer.downloadFile = function (params, callback) {
   isDebug && console.debug("call: downloadFile", params);
@@ -408,10 +408,10 @@ capturer.downloadFile = function (params, callback) {
 /**
  * @kind invokable
  * @param {Object} params 
- *   - {Object} params.settings
- *   - {Object} params.options
- *   - {string} params.url
- *   - {string} params.rewriteMethod
+ *     - {Object} params.settings
+ *     - {Object} params.options
+ *     - {string} params.url
+ *     - {string} params.rewriteMethod
  */
 capturer.downloadDataUri = function (params, callback) {
   isDebug && console.debug("call: downloadDataUri", params);
@@ -473,11 +473,11 @@ capturer.downloadDataUri = function (params, callback) {
 /**
  * @kind invokable
  * @param {Object} params 
- *   - {Object} params.settings
- *   - {Object} params.options
- *   - {string} params.blob
- *   - {string} params.filename
- *   - {string} params.sourceUrl
+ *     - {Object} params.settings
+ *     - {Object} params.options
+ *     - {string} params.blob
+ *     - {string} params.filename
+ *     - {string} params.sourceUrl
  */
 capturer.saveBlob = function (params, callback) {
   isDebug && console.debug("call: saveBlob", params);

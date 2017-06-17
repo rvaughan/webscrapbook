@@ -1186,11 +1186,11 @@ capturer.getErrorUrl = function (sourceUrl, options) {
  *
  * @kind rewriteMethod
  * @param {Object} params 
- *   - {Object} params.settings
- *   - {Object} params.options
- *   - {Blob} params.data
- *   - {string} params.charset
- *   - {string} params.url
+ *     - {Object} params.settings
+ *     - {Object} params.options
+ *     - {Blob} params.data
+ *     - {string} params.charset
+ *     - {string} params.url
  */
 capturer.processCssFile = function(params, callback) {
   var data = params.data;
