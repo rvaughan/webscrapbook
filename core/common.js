@@ -71,7 +71,7 @@ scrapbook.getOptions = function (keyPrefix) {
 
 scrapbook.setOption = function (key, value, callback) {
   scrapbook.options[key] = value;
-  chrome.storage.sync.set({key: value}, function () {
+  chrome.storage.sync.set({key: value}, () => {
     if (callback) {
       callback({key: value});
     }
@@ -79,7 +79,7 @@ scrapbook.setOption = function (key, value, callback) {
 };
 
 scrapbook.loadOptions = function (callback) {
-  chrome.storage.sync.get(scrapbook.options, function (items) {
+  chrome.storage.sync.get(scrapbook.options, (items) => {
     for (let i in items) {
       var item = items[i];
       if (Object.prototype.toString.call(item) === "[object Array]") {
@@ -96,7 +96,7 @@ scrapbook.loadOptions = function (callback) {
 };
 
 scrapbook.saveOptions = function (callback) {
-  chrome.storage.sync.set(scrapbook.options, function () {
+  chrome.storage.sync.set(scrapbook.options, () => {
     if (callback) {
       callback(scrapbook.options);
     }
@@ -113,7 +113,7 @@ scrapbook.lang = function (key, args) {
 };
 
 scrapbook.loadLanguages = function (rootNode) {
-  Array.prototype.forEach.call(rootNode.getElementsByTagName("*"), function (elem) {
+  Array.prototype.forEach.call(rootNode.getElementsByTagName("*"), (elem) => {
     var str = elem.textContent;
     if (/^__MSG_(.*?)__$/.test(str)) {
       elem.textContent = scrapbook.lang(RegExp.$1);
@@ -134,7 +134,7 @@ scrapbook.loadLanguages = function (rootNode) {
  * see also: validateFilename
  */
 scrapbook.escapeFilename = function (filename) {
-  return filename.replace(/[#]+|(?:%[0-9A-Fa-f]{2})+/g, function (m) { return encodeURIComponent(m); });
+  return filename.replace(/[#]+|(?:%[0-9A-Fa-f]{2})+/g, m => encodeURIComponent(m));
 };
 
 /**
@@ -152,7 +152,7 @@ scrapbook.validateFilename = function (filename, forceAscii) {
       .replace(/[:"?*\\/|]/g, "_")
       .replace(/[<]/g, "(").replace(/[>]/g, ")");
   if (forceAscii) {
-    filename = filename.replace(/[^\x00-\x7F]+/g, function (m) { return encodeURI(m); });
+    filename = filename.replace(/[^\x00-\x7F]+/g, m => encodeURI(m));
   }
   return filename;
 };
@@ -289,7 +289,7 @@ scrapbook.crop = function (str, maxLength, byUtf8, ellipsis) {
 };
 
 scrapbook.getUuid = function () {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     var r = Math.random()*16|0, v = (c == 'x') ? r : (r&0x3|0x8);
     return v.toString(16);
   });
@@ -337,7 +337,7 @@ scrapbook.dataUriToFile = function (dataUri) {
       var base64 = false;
       var parameters = {};
 
-      metas.forEach(function (meta) {
+      metas.forEach((meta) => {
         if (/^(.*?)=(.*?)$/.test(meta)) {
           parameters[RegExp.$1.toLowerCase()] = RegExp.$2;
         } else if (meta == "base64") {
@@ -412,7 +412,7 @@ scrapbook.intToFixedStr = function (number, width, padder) {
 };
 
 scrapbook.byteStringToArrayBuffer = function (bstr) {
-  return (new Uint8Array(Array.prototype.map.call(bstr, function (x) { return x.charCodeAt(0); }))).buffer;
+  return (new Uint8Array(Array.prototype.map.call(bstr, x => x.charCodeAt(0)))).buffer;
 };
 
 scrapbook.arrayBufferToByteString = function (ab) {
@@ -452,7 +452,7 @@ scrapbook.parseHeaderContentDisposition = function (string) {
   var parts = string.split(";");
   result.type = parts.shift().trim();
 
-  parts.forEach(function (part) {
+  parts.forEach((part) => {
     if (/^(.*?)=(.*?)$/.test(part)) {
       var field = RegExp.$1.trim();
       var value = RegExp.$2.trim();
@@ -512,7 +512,7 @@ scrapbook.doctypeToString = function (doctype) {
  * @param {SrcsetReplaceFunc} replaceFunc - the function that replaces each URL into a new URL
  */
 scrapbook.parseSrcset = function (srcset, replaceFunc) {
-  return srcset.replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, function (m, m1, m2, m3) {
+  return srcset.replace(/(\s*)([^ ,][^ ]*[^ ,])(\s*(?: [^ ,]+)?\s*(?:,|$))/g, (m, m1, m2, m3) => {
     return m1 + replaceFunc(m2) + m3;
   });
 };

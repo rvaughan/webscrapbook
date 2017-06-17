@@ -28,16 +28,16 @@ function setOptionToDocument(id, value) {
   }
 }
 
-window.addEventListener("DOMContentLoaded", function (event) {
+window.addEventListener("DOMContentLoaded", (event) => {
   // load languages
   scrapbook.loadLanguages(document);
 
   // form
-  document.getElementById("options").addEventListener("submit", function (event) {
+  document.getElementById("options").addEventListener("submit", (event) => {
     for (let id in scrapbook.options) {
       scrapbook.options[id] = getOptionFromDocument(id);
     }
-    scrapbook.saveOptions(function () {
+    scrapbook.saveOptions(() => {
       window.close();
     });
     event.preventDefault();
@@ -97,7 +97,7 @@ window.addEventListener("DOMContentLoaded", function (event) {
   }
 
   // load from sync
-  scrapbook.loadOptions(function (options) {
+  scrapbook.loadOptions((options) => {
     for (let id in options) {
       let value = options[id];
       setOptionToDocument(id, value);

@@ -56,16 +56,16 @@ capturer.getUniqueFilename = function (timeId, filename, src) {
 };
 
 capturer.captureActiveTab = function () {
-  chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     capturer.captureTab(tabs[0]);
   });
 };
 
 capturer.captureAllTabs = function () {
-  chrome.tabs.query({currentWindow: true}, function (tabs) {
+  chrome.tabs.query({currentWindow: true}, (tabs) => {
     var delay = 0;
-    tabs.forEach(function (tab) {
-      setTimeout(function () {
+    tabs.forEach((tab) => {
+      setTimeout(() => {
         capturer.captureTab(tab, true);
       }, delay);
       delay += 5;
@@ -88,7 +88,7 @@ capturer.captureTab = function (tab, quiet) {
   };
 
   isDebug && console.debug(cmd + " (main) send", tabId, message);
-  chrome.tabs.sendMessage(tabId, message, {frameId: 0}, function (response) {
+  chrome.tabs.sendMessage(tabId, message, {frameId: 0}, (response) => {
     isDebug && console.debug(cmd + " (main) response", tabId, response);
     if (!response) {
       if (!quiet) {
@@ -189,7 +189,7 @@ capturer.captureFile = function (params, callback) {
     url: sourceUrl,
     settings: settings,
     options: options
-  }, function (response) {
+  }, (response) => {
     if (settings.frameIsMain) {
       let meta = params.options["capture.recordDocumentMeta"] ? ' data-sb' + timeId + '-source="' + sourceUrl + '"' : "";
       // for the main frame, create a index.html that redirects to the file
@@ -270,17 +270,17 @@ capturer.saveDocument = function (params, callback) {
   };
 
   isDebug && console.debug("download start", downloadParams);
-  chrome.downloads.download(downloadParams, function (downloadId) {
+  chrome.downloads.download(downloadParams, (downloadId) => {
     isDebug && console.debug("download response", downloadId);
     if (downloadId) {
       capturer.downloadInfo[downloadId] = {
         timeId: timeId,
         src: frameUrl,
         autoErase: autoErase,
-        onComplete: function () {
+        onComplete: () => {
           callback({timeId: timeId, frameUrl: frameUrl, targetDir: targetDir, filename: filename});
         },
-        onError: function (err) {
+        onError: (err) => {
           callback({url: capturer.getErrorUrl(frameUrl, params.options), error: err});
         }
       };
@@ -377,7 +377,7 @@ capturer.downloadFile = function (params, callback) {
             data: xhr.response,
             charset: headers.charset,
             url: xhr.responseURL
-          }, function (response) {
+          }, (response) => {
             capturer.saveBlob({
               settings: settings,
               options: options,
@@ -455,7 +455,7 @@ capturer.downloadDataUri = function (params, callback) {
             data: file,
             charset: null,
             url: null
-          }, function (response) {
+          }, (response) => {
             capturer.saveBlob({
               settings: settings,
               options: options,
@@ -529,18 +529,18 @@ capturer.saveBlob = function (params, callback) {
   };
 
   isDebug && console.debug("download start", downloadParams);
-  chrome.downloads.download(downloadParams, function (downloadId) {
+  chrome.downloads.download(downloadParams, (downloadId) => {
     isDebug && console.debug("download response", downloadId);
     if (downloadId) {
       capturer.downloadInfo[downloadId] = {
         timeId: timeId,
         src: sourceUrl,
         autoErase: true,
-        onComplete: function () {
+        onComplete: () => {
           // @TODO: do we need to escape the URL to be safe to included in CSS or so?
           callback({url: filename});
         },
-        onError: function (err) {
+        onError: (err) => {
           callback({url: capturer.getErrorUrl(sourceUrl, options), error: err});
         }
       };
@@ -559,28 +559,28 @@ capturer.saveBlob = function (params, callback) {
  * Events handling
  */
 
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   isDebug && console.debug(message.cmd + " receive", sender.tab.id, message.args);
 
   if (message.cmd.slice(0, 9) == "capturer.") {
     let method = message.cmd.slice(9);
     if (capturer[method]) {
       message.args.tabId = sender.tab.id;
-      return capturer[method](message.args, function (response) {
+      return capturer[method](message.args, (response) => {
         sendResponse(response);
       });
     }
   }
 });
 
-chrome.downloads.onChanged.addListener(function (downloadDelta) {
+chrome.downloads.onChanged.addListener((downloadDelta) => {
   isDebug && console.debug("downloads.onChanged", downloadDelta);
 
   var downloadId = downloadDelta.id;
 
   var erase = function (downloadId) {
     if (capturer.downloadInfo[downloadId].autoErase) {
-      chrome.downloads.erase({id: downloadId}, function (erasedIds) {});
+      chrome.downloads.erase({id: downloadId}, (erasedIds) => {});
     }
     delete capturer.downloadInfo[downloadId];
   };
@@ -590,7 +590,7 @@ chrome.downloads.onChanged.addListener(function (downloadDelta) {
     capturer.downloadInfo[downloadId].onComplete();
     erase(downloadId);
   } else if (downloadDelta.error) {
-    chrome.downloads.search({id: downloadId}, function (results) {
+    chrome.downloads.search({id: downloadId}, (results) => {
       let err = results[0].error;
       console.warn(scrapbook.lang("ErrorFileDownloadError", [capturer.downloadInfo[downloadId].src, err]));
       capturer.downloadInfo[downloadId].onError(err);

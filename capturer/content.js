@@ -7,7 +7,7 @@
 
 capturer.getFrameContent = function (frameElement, timeId, settings, options, callback) {
   var channel = new MessageChannel();
-  var timeout = setTimeout(function () {
+  var timeout = setTimeout(() => {
     callback(undefined);
     delete channel;
   }, 1000);
@@ -18,7 +18,7 @@ capturer.getFrameContent = function (frameElement, timeId, settings, options, ca
     settings: settings,
     options: options
   }, "*", [channel.port2]);
-  channel.port1.onmessage = function (event) {
+  channel.port1.onmessage = (event) => {
     var message = event.data;
     if (message.extension !== chrome.runtime.id) { return; }
     if (message.timeId !== timeId) { return; }
@@ -33,7 +33,7 @@ capturer.getFrameContent = function (frameElement, timeId, settings, options, ca
   };
 };
 
-window.addEventListener("message", function (event) {
+window.addEventListener("message", (event) => {
   var message = event.data;
   if (message.extension !== chrome.runtime.id) { return; }
   isDebug && console.debug("content window receive", event);
@@ -44,7 +44,7 @@ window.addEventListener("message", function (event) {
       cmd: "capturer.captureDocumentOrFile.start",
       timeId: message.timeId
     });
-    capturer.captureDocumentOrFile(document, message.settings, message.options, function (response) {
+    capturer.captureDocumentOrFile(document, message.settings, message.options, (response) => {
       event.ports[0].postMessage({
         extension: chrome.runtime.id,
         cmd: "capturer.captureDocumentOrFile.complete",
@@ -55,11 +55,11 @@ window.addEventListener("message", function (event) {
   }
 }, false);
 
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   isDebug && console.debug(message.cmd + " receive", message, sender);
 
   if (message.cmd === "capturer.captureDocumentOrFile") {
-    capturer.captureDocumentOrFile(document, message.settings, message.options, function (response) {
+    capturer.captureDocumentOrFile(document, message.settings, message.options, (response) => {
       sendResponse(response);
     });
     return true; // async response

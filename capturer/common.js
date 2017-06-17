@@ -23,7 +23,7 @@ capturer.invoke = function (method, args, callback) {
     };
 
     isDebug && console.debug(cmd + " send", args);
-    chrome.runtime.sendMessage(message, function (response) {
+    chrome.runtime.sendMessage(message, (response) => {
       isDebug && console.debug(cmd + " response", response);
       callback(response);
     });
@@ -72,7 +72,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     // e.g. cloned iframes has no content, cloned canvas has no image
     var origRefKey = "data-sb-" + timeId + "-id";
     var origRefNodes = Array.prototype.slice.call(doc.querySelectorAll("frame, iframe, canvas, link, style"));
-    origRefNodes.forEach(function (elem, index) {
+    origRefNodes.forEach((elem, index) => {
       elem.setAttribute(origRefKey, index);
     }, this);
     var clonedNodes = {};
@@ -190,14 +190,14 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     }
 
     // build the map of cloned style elements
-    Array.prototype.forEach.call(rootNode.querySelectorAll("link, style"), function (elem) {
+    Array.prototype.forEach.call(rootNode.querySelectorAll("link, style"), (elem) => {
       var idx = elem.getAttribute(origRefKey);
       clonedNodes[idx] = elem;
       elem.removeAttribute(origRefKey);
     }, this);
 
     // process internal (style) and external (link) CSS
-    Array.prototype.forEach.call(doc.styleSheets, function (css) {
+    Array.prototype.forEach.call(doc.styleSheets, (css) => {
       var elemOrig = css.ownerNode;
       var elem = clonedNodes[elemOrig.getAttribute(origRefKey)];
 
@@ -222,7 +222,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   remainingTasks++;
                   let downloader = new capturer.ComplexUrlDownloader(settings, options);
                   let rewriteCss = capturer.ProcessCssFileText(elem.textContent, doc.URL, downloader, options);
-                  downloader.startDownloads(function () {
+                  downloader.startDownloads(() => {
                     elem.textContent = downloader.finalRewrite(rewriteCss);
                     remainingTasks--;
                     captureCheckDone();
@@ -263,7 +263,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                     rewriteMethod: "processCssFile",
                     settings: settings,
                     options: options
-                  }, function (response) {
+                  }, (response) => {
                     captureRewriteUri(elem, "href", response.url);
                     remainingTasks--;
                     captureCheckDone();
@@ -276,7 +276,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                     url: elem.href,
                     settings: settings,
                     options: options
-                  }, function (response) {
+                  }, (response) => {
                     captureRewriteUri(elem, "href", response.url);
                     remainingTasks--;
                     captureCheckDone();
@@ -291,13 +291,11 @@ capturer.captureDocument = function (doc, settings, options, callback) {
     }, this);
 
     // remove the temporary map key
-    origRefNodes.forEach(function (elem) {
-      elem.removeAttribute(origRefKey);
-    }, this);
+    origRefNodes.forEach((elem) => { elem.removeAttribute(origRefKey); }, this);
 
     // inspect nodes
     var hasMeta = false;
-    Array.prototype.forEach.call(rootNode.querySelectorAll("*"), function (elem) {
+    Array.prototype.forEach.call(rootNode.querySelectorAll("*"), (elem) => {
       // skip elements that are already removed from the DOM tree
       if (!elem.parentNode) { return; }
 
@@ -381,7 +379,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   url: elem.href,
                   settings: settings,
                   options: options
-                }, function (response) {
+                }, (response) => {
                   captureRewriteUri(elem, "href", response.url);
                   remainingTasks--;
                   captureCheckDone();
@@ -419,7 +417,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   url: elem.src,
                   settings: settings,
                   options: options
-                }, function (response) {
+                }, (response) => {
                   captureRewriteUri(elem, "src", response.url);
                   remainingTasks--;
                   captureCheckDone();
@@ -471,7 +469,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   url: rewriteUrl,
                   settings: settings,
                   options: options
-                }, function (response) {
+                }, (response) => {
                   captureRewriteUri(elem, "background", response.url);
                   remainingTasks--;
                   captureCheckDone();
@@ -529,13 +527,13 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               if (frameDoc) {
                 // frame document accessible: capture the content document directly
                 remainingTasks++;
-                capturer.captureDocumentOrFile(frameDoc, frameSettings, options, function (result) {
+                capturer.captureDocumentOrFile(frameDoc, frameSettings, options, (result) => {
                   captureFrameCallback(result);
                 });
               } else {
                 // frame document inaccessible: get the content document through a messaging technique, and then capture it
                 remainingTasks++;
-                capturer.getFrameContent(frameSrc, timeId, frameSettings, options, function (response) {
+                capturer.getFrameContent(frameSrc, timeId, frameSettings, options, (response) => {
                   captureFrameCallback(response);
                 });
               }
@@ -606,7 +604,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           }
           if (elem.hasAttribute("srcset")) {
             elem.setAttribute("srcset",
-              scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
+              scrapbook.parseSrcset(elem.getAttribute("srcset"), (url) => {
                 return capturer.resolveRelativeUrl(doc.URL, url);
               })
             );
@@ -635,7 +633,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   url: elem.src,
                   settings: settings,
                   options: options
-                }, function (response) {
+                }, (response) => {
                   captureRewriteUri(elem, "src", response.url);
                   remainingTasks--;
                   captureCheckDone();
@@ -644,10 +642,10 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               if (elem.hasAttribute("srcset")) {
                 remainingTasks++;
                 let downloader = new capturer.ComplexUrlDownloader(settings, options);
-                let rewriteUrl = scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
+                let rewriteUrl = scrapbook.parseSrcset(elem.getAttribute("srcset"), (url) => {
                   return downloader.getUrlHash(url);
                 });
-                downloader.startDownloads(function () {
+                downloader.startDownloads(() => {
                   elem.setAttribute("srcset", downloader.finalRewrite(rewriteUrl));
                   remainingTasks--;
                   captureCheckDone();
@@ -660,9 +658,9 @@ capturer.captureDocument = function (doc, settings, options, callback) {
 
         // images: picture
         case "picture": {
-          Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
+          Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), (elem) => {
             elem.setAttribute("srcset",
-              scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
+              scrapbook.parseSrcset(elem.getAttribute("srcset"), (url) => {
                 return capturer.resolveRelativeUrl(doc.URL, url);
               })
             );
@@ -673,7 +671,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               // do nothing
               break;
             case "blank":
-              Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
+              Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), (elem) => {
                 captureRewriteAttr(elem, "srcset", null);
               }, this);
               break;
@@ -682,13 +680,13 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               return;
             case "save":
             default:
-              Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), function (elem) {
+              Array.prototype.forEach.call(elem.querySelectorAll('source[srcset]'), (elem) => {
                 remainingTasks++;
                 let downloader = new capturer.ComplexUrlDownloader(settings, options);
-                let rewriteUrl = scrapbook.parseSrcset(elem.getAttribute("srcset"), function (url) {
+                let rewriteUrl = scrapbook.parseSrcset(elem.getAttribute("srcset"), (url) => {
                   return downloader.getUrlHash(url);
                 }, this);
-                downloader.startDownloads(function () {
+                downloader.startDownloads(() => {
                   elem.setAttribute("srcset", downloader.finalRewrite(rewriteUrl));
                   remainingTasks--;
                   captureCheckDone();
@@ -701,7 +699,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
 
         // media: audio
         case "audio": {
-          Array.prototype.forEach.call(elem.querySelectorAll('source[src], track[src]'), function (elem) {
+          Array.prototype.forEach.call(elem.querySelectorAll('source[src], track[src]'), (elem) => {
             elem.setAttribute("src", elem.src);
           }, this);
 
@@ -710,7 +708,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               // do nothing
               break;
             case "blank":
-              Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
+              Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), (elem) => {
                 captureRewriteUri(elem, "src", "about:blank");
               }, this);
               break;
@@ -719,13 +717,13 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               return;
             case "save":
             default:
-              Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
+              Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), (elem) => {
                 remainingTasks++;
                 capturer.invoke("downloadFile", {
                   url: elem.src,
                   settings: settings,
                   options: options
-                }, function (response) {
+                }, (response) => {
                   captureRewriteUri(elem, "src", response.url);
                   remainingTasks--;
                   captureCheckDone();
@@ -738,7 +736,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
 
         // media: video
         case "video": {
-          Array.prototype.forEach.call(elem.querySelectorAll('source[src], track[src]'), function (elem) {
+          Array.prototype.forEach.call(elem.querySelectorAll('source[src], track[src]'), (elem) => {
             elem.setAttribute("src", elem.src);
           }, this);
 
@@ -747,7 +745,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               // do nothing
               break;
             case "blank":
-              Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
+              Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), (elem) => {
                 captureRewriteUri(elem, "src", "about:blank");
               }, this);
               break;
@@ -756,13 +754,13 @@ capturer.captureDocument = function (doc, settings, options, callback) {
               return;
             case "save":
             default:
-              Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), function (elem) {
+              Array.prototype.forEach.call(elem.querySelectorAll('source[src]'), (elem) => {
                 remainingTasks++;
                 capturer.invoke("downloadFile", {
                   url: elem.src,
                   settings: settings,
                   options: options
-                }, function (response) {
+                }, (response) => {
                   captureRewriteUri(elem, "src", response.url);
                   remainingTasks--;
                   captureCheckDone();
@@ -799,7 +797,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   url: elem.src,
                   settings: settings,
                   options: options
-                }, function (response) {
+                }, (response) => {
                   captureRewriteUri(elem, "src", response.url);
                   remainingTasks--;
                   captureCheckDone();
@@ -836,7 +834,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   url: elem.data,
                   settings: settings,
                   options: options
-                }, function (response) {
+                }, (response) => {
                   captureRewriteUri(elem, "data", response.url);
                   remainingTasks--;
                   captureCheckDone();
@@ -874,7 +872,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                   url: elem.getAttribute("archive"),
                   settings: settings,
                   options: options,
-                }, function (response) {
+                }, (response) => {
                   captureRewriteUri(elem, "archive", response.url);
                   remainingTasks--;
                   captureCheckDone();
@@ -938,7 +936,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                     url: elem.src,
                     settings: settings,
                     options: options
-                  }, function (response) {
+                  }, (response) => {
                     captureRewriteUri(elem, "src", response.url);
                     remainingTasks--;
                     captureCheckDone();
@@ -967,7 +965,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
                 remainingTasks++;
                 let downloader = new capturer.ComplexUrlDownloader(settings, options);
                 let rewriteCss = capturer.ProcessCssFileText(elem.getAttribute("style"), doc.URL, downloader, options);
-                downloader.startDownloads(function () {
+                downloader.startDownloads(() => {
                   elem.setAttribute("style", downloader.finalRewrite(rewriteCss));
                   remainingTasks--;
                   captureCheckDone();
@@ -989,7 +987,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
           break;
         case "remove":
         default:
-          Array.prototype.forEach.call(elem.attributes, function (attr) {
+          Array.prototype.forEach.call(elem.attributes, (attr) => {
             if (attr.name.toLowerCase().startsWith("on")) {
               captureRewriteAttr(elem, attr.name, null);
             }
@@ -1111,7 +1109,7 @@ capturer.captureDocument = function (doc, settings, options, callback) {
   capturer.invoke("registerDocument", {
     settings: settings,
     options: options
-  }, function (response) {
+  }, (response) => {
     documentName = response.documentName;
     captureMain();
   });
@@ -1199,16 +1197,16 @@ capturer.processCssFile = function(params, callback) {
 
   var readCssText = function (blob, charset, callback) {
     var reader = new FileReader();
-    reader.addEventListener("loadend", function () {
-      callback(this.result);
+    reader.addEventListener("loadend", () => {
+      callback(reader.result);
     });
     reader.readAsText(blob, charset);
   };
 
   var readCssBytes = function (blob, callback) {
     var reader = new FileReader();
-    reader.addEventListener("loadend", function () {
-      var bstr = scrapbook.arrayBufferToByteString(this.result);
+    reader.addEventListener("loadend", () => {
+      var bstr = scrapbook.arrayBufferToByteString(reader.result);
       callback(bstr);
     });
     reader.readAsArrayBuffer(blob);
@@ -1217,7 +1215,7 @@ capturer.processCssFile = function(params, callback) {
   var processCss = function (text) {
     var downloader = new capturer.ComplexUrlDownloader(params.settings, params.options);
     var rewriteCss = capturer.ProcessCssFileText(text, refUrl, downloader, params.options);
-    downloader.startDownloads(function () {
+    downloader.startDownloads(() => {
       text = downloader.finalRewrite(rewriteCss);
       if (charset) {
         var blob = new Blob([text], {type: "text/css;charset=UTF-8"});
@@ -1230,12 +1228,12 @@ capturer.processCssFile = function(params, callback) {
   };
 
   if (charset) {
-    readCssText(data, charset, function (text) {
+    readCssText(data, charset, (text) => {
       processCss(text);
     });
   } else {
     var hasCharsetRule = false;
-    readCssBytes(data, function (bytes) {
+    readCssBytes(data, (bytes) => {
       if (bytes.startsWith("\xEF\xBB\xBF")) {
         charset = "UTF-8";
       } else if (bytes.startsWith("\xFE\xFF")) {
@@ -1251,7 +1249,7 @@ capturer.processCssFile = function(params, callback) {
         hasCharsetRule = true;
       }
       if (charset) {
-        readCssText(data, charset, function (text) {
+        readCssText(data, charset, (text) => {
           // The read text does not contain a BOM.
           // This added UTF-16 BOM will be converted to UTF-8 BOM automatically when creating blob.
           if (hasCharsetRule) { text = "\ufeff" + text; }
@@ -1287,7 +1285,7 @@ capturer.ProcessCssFileText = function (cssText, refUrl, downloader, options) {
   var pRFontFace = "(" + "@font-face" + pCmSp + "{" + pES + "}" + ")"; // rule font-face; catch 1
   
   var parseUrlFunc = function (text, callback) {
-    return text.replace(new RegExp(pUrl2, "gi"), function (m, u1, u2, u3) {
+    return text.replace(new RegExp(pUrl2, "gi"), (m, u1, u2, u3) => {
       if (u2.startsWith('"') && u2.endsWith('"')) {
         var ret = callback(u2.slice(1, -1));
       } else if (u2.startsWith("'") && u2.endsWith("'")) {
@@ -1320,7 +1318,7 @@ capturer.ProcessCssFileText = function (cssText, refUrl, downloader, options) {
 
   var cssText = cssText.replace(
     new RegExp([pCm, pRImport, pRFontFace, "("+pUrl+")"].join("|"), "gi"),
-    function (m, im1, im2, im3, ff, u) {
+    (m, im1, im2, im3, ff, u) => {
       if (im2) {
         if (im2.startsWith('"') && im2.endsWith('"')) {
           var ret = 'url("' + importParseUrlFunc(im2.slice(1, -1)) + '")';
@@ -1331,7 +1329,7 @@ capturer.ProcessCssFileText = function (cssText, refUrl, downloader, options) {
         }
         return im1 + ret + im3;
       } else if (ff) {
-        return parseUrlFunc(m, function (url) {
+        return parseUrlFunc(m, (url) => {
           var dataUrl = scrapbook.unescapeCss(url);
           dataUrl = capturer.resolveRelativeUrl(refUrl, dataUrl);
           switch (options["capture.font"]) {
@@ -1350,7 +1348,7 @@ capturer.ProcessCssFileText = function (cssText, refUrl, downloader, options) {
           return dataUrl;
         });
       } else if (u) {
-        return parseUrlFunc(m, function (url) {
+        return parseUrlFunc(m, (url) => {
           var dataUrl = scrapbook.unescapeCss(url);
           dataUrl = capturer.resolveRelativeUrl(refUrl, dataUrl);
           switch (options["capture.imageBackground"]) {
