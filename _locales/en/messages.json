@@ -6,9 +6,7 @@
   "ErrorCapture": {
     "message": "Capture failed: $URL$",
     "placeholders": {
-      "url": {
-        "content" : "$1"
-      }
+      "url": {"content" : "$1"}
     }
   },
   "ErrorContentScriptNotReady": {
@@ -17,28 +15,20 @@
   "ErrorDocumentNotReady": {
     "message": "Page not load: $URL$",
     "placeholders": {
-      "url": {
-        "content" : "$1"
-      }
+      "url": {"content" : "$1"}
     }
   },
   "ErrorFileDownloadError": {
     "message": "Error when downloading file ($REASON$): $URL$",
     "placeholders": {
-      "url": {
-        "content": "$1"
-      },
-      "reason": {
-        "content": "$2"
-      }
+      "url": {"content": "$1"},
+      "reason": {"content": "$2"}
     }
   },
   "ErrorFileDownloadTimeout": {
     "message": "Timeout when downloading file: $URL$",
     "placeholders": {
-      "url": {
-        "content" : "$1"
-      }
+      "url": {"content" : "$1"}
     }
   },
   "ExtensionDescription": {
