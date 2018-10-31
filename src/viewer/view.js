@@ -5,8 +5,6 @@
  * @require {Object} scrapbook
  *******************************************************************/
 
-(function (window, undefined) {
-
 const urlObj = new URL(document.URL);
 
 const viewerData = {
@@ -24,55 +22,26 @@ const viewer = {
   // access its frames under blob: or data: scheme.
   // https://bugzilla.mozilla.org/show_bug.cgi?id=1091887
   //
-  // Serving an archive page in an iframe of a extension page is necessary at
+  // Serving an archive page in an iframe of an extension page is necessary at
   // present. Scripts in the archive page thus gain extension privilege, which
   // could introduce a security risk.
   //
-  // Fortunately it's very unlikely to happen since the potential offending
-  // code is meaningless in a regular web page and thus is unlikely written,
-  // and the page must be captured with javascripts (which is discouraged), be
-  // captured as htz or maff, and be viewed via Web ScrapBook.
-  //
-  // Though, we do our best to minimize the risk by removing privileged APIs
-  // that are not required by the viewer page.
-  deApiScriptMain() {
-    // XMLHttpRequest (or fetch) is required to load blob as document and to
-    // load external resources.
-    [
-      "browser",
-      "chrome",
-      "indexedDB",
-      "localStorage",
-      "sessionStorage",
-    ].forEach((api) => {
-      if (typeof window[api] !== "undefined") {
-        window[api] = undefined;
-        delete(window[api]);
-      }
-    });
-  },
-  get deApiScriptUrl() {
-    // @TODO: window.top is readonly and cannot be replaced
-    const script = function () {
-      [
-        "browser",
-        "chrome",
-        "indexedDB",
-        "localStorage",
-        "sessionStorage",
-        "XMLHttpRequest",
-        "fetch",
-      ].forEach((api) => {
-        if (typeof window[api] !== "undefined") {
-          window[api] = undefined;
-          delete(window[api]);
-        }
-      });
-    };
-    const text = "(" + script.toString().replace(/(?!\w\s+\w)(.)\s+/g, "$1") + ")()";
-    const url = URL.createObjectURL(new Blob([text], {type: "application/javascript"}));
-    delete viewer.deApiScriptUrl;
-    return viewer.deApiScriptUrl = url;
+  // We minimize the risk by removing privileged APIs from this page and all
+  // frames serving the web page content.
+  insertDeApiScript: function (doc) {
+    if (!viewer.deApiScript) { return; }
+
+    const self = arguments.callee;
+    if (!self.deApiScriptUrl) {
+      const text = "(" + viewer.deApiScript.toString().replace(/(?!\w\s+\w)(.)\s+/g, "$1") + ")()";
+      const url = URL.createObjectURL(new Blob([text], {type: "application/javascript"}));
+      self.deApiScriptUrl = url;
+    }
+
+    const elem = doc.createElement("script");
+    elem.src = self.deApiScriptUrl;
+    const head = doc.querySelector("head");
+    head.insertBefore(elem, head.firstChild);
   },
   inZipFiles: new Map(),
   blobUrlToInZipPath: new Map(),
@@ -327,17 +296,12 @@ Redirecting to: <a href="${scrapbook.escapeHtml(info.url)}">${scrapbook.escapeHt
           }
 
           case "script": {
-            if (!scrapbook.getOption("viewer.allowScripts")) {
-              elem.remove();
-              break;
-            }
-
             if (elem.hasAttribute("src")) {
               elem.setAttribute("src", rewriteUrl(elem.getAttribute("src"), refUrl));
 
               // External scripts are not allowed by extension CSP, retrieve and 
               // convert them into blob URLs as a shim.
-              if (!elem.src.startsWith('blob:')) {
+              if (!elem.src.startsWith('blob:') && viewer.hasCsp) {
                 tasks[tasks.length] = 
                 scrapbook.xhr({
                   url: elem.src,
@@ -351,13 +315,22 @@ Redirecting to: <a href="${scrapbook.escapeHtml(info.url)}">${scrapbook.escapeHt
                   console.error(ex);
                 });
               }
+
+              // In Chromium, "blob:" is still allowed even if it's not set in the
+              // content_security_policy, and thus offensive scripts could run.
+              // Replace the src with a dummy URL so that scripts are never loaded.
+              if (elem.src.startsWith('blob:') && !viewer.hasCsp) {
+                elem.setAttribute("src", "blob:");
+              }
             } else {
               // Inline scripts are not allowed by extension CSP, convert them into
               // blob URLs as a shim.
-              const text = elem.textContent;
-              if (text) {
-                elem.src = URL.createObjectURL(new Blob([text], {type: "application/javascript"}));
-                elem.textContent = "";
+              if (viewer.hasCsp) {
+                const text = elem.textContent;
+                if (text) {
+                  elem.src = URL.createObjectURL(new Blob([text], {type: "application/javascript"}));
+                  elem.textContent = "";
+                }
               }
             }
             break;
@@ -469,14 +442,8 @@ Redirecting to: <a href="${scrapbook.escapeHtml(info.url)}">${scrapbook.escapeHt
           }
 
 
-          // @FIXME:
-          // embed, objects, and applet doesn't seem to work as in a regular web page.
+          // @FIXME: embed, objects, and applet don't work as in a regular web page.
           case "embed": {
-            if (!scrapbook.getOption("viewer.allowScripts")) {
-              elem.remove();
-              break;
-            }
-
             if (elem.hasAttribute("src")) {
               try {
                 elem.setAttribute("src", rewriteUrl(elem.getAttribute("src"), refUrl));
@@ -488,7 +455,7 @@ Redirecting to: <a href="${scrapbook.escapeHtml(info.url)}">${scrapbook.escapeHt
               // External resources are not allowed by extension CSP, retrieve and 
               // convert them into blob URLs as a shim.
               const url = elem.getAttribute("src");
-              if (!url.startsWith('blob:')) {
+              if (!url.startsWith('blob:') && viewer.hasCsp) {
                 tasks[tasks.length] = 
                 scrapbook.xhr({
                   url,
@@ -507,11 +474,6 @@ Redirecting to: <a href="${scrapbook.escapeHtml(info.url)}">${scrapbook.escapeHt
           }
 
           case "object": {
-            if (!scrapbook.getOption("viewer.allowScripts")) {
-              elem.remove();
-              break;
-            }
-
             if (elem.hasAttribute("data")) {
               try {
                 elem.setAttribute("data", rewriteUrl(elem.getAttribute("data"), refUrl));
@@ -523,7 +485,7 @@ Redirecting to: <a href="${scrapbook.escapeHtml(info.url)}">${scrapbook.escapeHt
               // External resources are not allowed by extension CSP, retrieve and 
               // convert them into blob URLs as a shim.
               const url = elem.getAttribute("data");
-              if (!url.startsWith('blob:')) {
+              if (!url.startsWith('blob:') && viewer.hasCsp) {
                 tasks[tasks.length] = 
                 scrapbook.xhr({
                   url,
@@ -542,11 +504,6 @@ Redirecting to: <a href="${scrapbook.escapeHtml(info.url)}">${scrapbook.escapeHt
           }
 
           case "applet": {
-            if (!scrapbook.getOption("viewer.allowScripts")) {
-              elem.remove();
-              break;
-            }
-
             if (elem.hasAttribute("code")) {
               try {
                 elem.setAttribute("code", rewriteUrl(elem.getAttribute("code"), refUrl));
@@ -558,7 +515,7 @@ Redirecting to: <a href="${scrapbook.escapeHtml(info.url)}">${scrapbook.escapeHt
               // External resources are not allowed by extension CSP, retrieve and 
               // convert them into blob URLs as a shim.
               const url = elem.getAttribute("code");
-              if (!url.startsWith('blob:')) {
+              if (!url.startsWith('blob:') && viewer.hasCsp) {
                 tasks[tasks.length] = 
                 scrapbook.xhr({
                   url,
@@ -585,7 +542,7 @@ Redirecting to: <a href="${scrapbook.escapeHtml(info.url)}">${scrapbook.escapeHt
               // External resources are not allowed by extension CSP, retrieve and 
               // convert them into blob URLs as a shim.
               const url = elem.getAttribute("archive");
-              if (!url.startsWith('blob:')) {
+              if (!url.startsWith('blob:') && viewer.hasCsp) {
                 tasks[tasks.length] = 
                 scrapbook.xhr({
                   url,
@@ -634,12 +591,7 @@ Redirecting to: <a href="${scrapbook.escapeHtml(info.url)}">${scrapbook.escapeHt
       });
 
       // Remove privileged APIs to avoid a potential security risk.
-      {
-        const elem = doc.createElement("script");
-        elem.src = viewer.deApiScriptUrl;
-        const head = doc.querySelector("head");
-        head.insertBefore(elem, head.firstChild);
-      }
+      if (viewer.hasCsp) { viewer.insertDeApiScript(doc); }
 
       return Promise.all(tasks).then((results) => {
         const content = scrapbook.doctypeToString(doc.doctype) + doc.documentElement.outerHTML;
@@ -757,183 +709,188 @@ class ComplexUrlFetcher {
 
 const loadOptions = scrapbook.loadOptions();
 
-document.addEventListener("DOMContentLoaded", function () {
-  scrapbook.loadLanguages(document);
-  loadOptions.then(() => {
-    const defaultTitle = document.querySelector('title').textContent;
-    const iframe = document.getElementById('viewer');
-    const faviconElem = document.getElementById('favicon');
+scrapbook.loadLanguages(document);
+loadOptions.then(() => {
+  const defaultTitle = document.querySelector('title').textContent;
+  const iframe = document.getElementById('viewer');
+  const faviconElem = document.getElementById('favicon');
 
-    const urlSearch = "";
-    const urlHash = location.hash;
+  const urlSearch = "";
+  const urlHash = location.hash;
 
-    const frameRegisterLinkLoader = function (frame) {
-      const frameOnLoad = function (frame) {
-        let frameDoc;
-        try {
-          frameDoc = frame.contentDocument;
-          if (!frameDoc) { throw new Error("content document not accessible"); }
-        } catch (ex) {
-          if (frame === iframe) {
-            document.title = defaultTitle;
-          }
-          return;
-        }
-
-        if (frameDoc.documentElement.hasAttribute(viewer.metaRefreshIdentifier)) {
-          const anchor = frameDoc.querySelector("a");
-          const url = anchor.href;
-          (frame === iframe ? document : frameDoc).location.replace(url);
-          return;
-        }
-
+  const frameRegisterLinkLoader = function (frame) {
+    const frameOnLoad = function (frame) {
+      let frameDoc;
+      try {
+        frameDoc = frame.contentDocument;
+        if (!frameDoc) { throw new Error("content document not accessible"); }
+      } catch (ex) {
         if (frame === iframe) {
-          document.title = frameDoc.title;
-
-          // "rel" is matched case-insensitively
-          // The "~=" selector checks for "icon" separated by space,
-          // not including "-icon" or "_icon".
-          const elem = frameDoc.querySelector('link[rel~="icon"][href]');
-          if (elem) {
-            faviconElem.href = elem.href;
-          } else {
-            faviconElem.removeAttribute('href');
-          }
+          document.title = defaultTitle;
         }
+        return;
+      }
 
-        frame.contentWindow.addEventListener("click", (e) => {
-          // e.target won't work if clicking on a descendant node of an anchor
-          const elem = e.target.closest('a[href], area[href]');
-          if (!elem) { return; }
+      if (frameDoc.documentElement.hasAttribute(viewer.metaRefreshIdentifier)) {
+        const anchor = frameDoc.querySelector("a");
+        const url = anchor.href;
+        (frame === iframe ? document : frameDoc).location.replace(url);
+        return;
+      }
 
-          const url = elem.href;
-          if (frame === iframe) {
-            if (url.startsWith("blob:")) {
-              // in-zip file link
-              const [main, search, hash] = scrapbook.splitUrl(url);
-              const inZipPath = viewer.blobUrlToInZipPath.get(main);
-              if (!inZipPath) { return; }
+      if (frame === iframe) {
+        document.title = frameDoc.title;
 
-              e.preventDefault();
-              e.stopPropagation();
+        // "rel" is matched case-insensitively
+        // The "~=" selector checks for "icon" separated by space,
+        // not including "-icon" or "_icon".
+        const elem = frameDoc.querySelector('link[rel~="icon"][href]');
+        if (elem) {
+          faviconElem.href = elem.href;
+        } else {
+          faviconElem.removeAttribute('href');
+        }
+      }
 
-              const urlObj = new URL(location.href);
-              if (inZipPath !== urlObj.searchParams.get('p')) {
-                urlObj.searchParams.set('p', inZipPath);
-                urlObj.hash = hash;
-                location.href = urlObj.href;
-              } else {
-                frameDoc.location.href = url;
-                urlObj.hash = hash;
-                history.replaceState({}, null, urlObj.href);
-              }
-            } else if (url.indexOf(':') !== -1) {
-              // external link
-              e.preventDefault();
-              e.stopPropagation();
-              location.href = url;
-            } else {
-              // a relative link targeting a non-existed file in the zip, e.g. 'nonexist.html'
-              // in Chrome, url.href is ''
-              // in Firefox, url.href is raw 'nonexist.html'
-              e.preventDefault();
-              e.stopPropagation();
-              location.href = 'about:blank';
-            }
-          } else {
+      frame.contentWindow.addEventListener("click", (e) => {
+        // ignore non-left click
+        if (e.button !== 0) { return; }
+
+        // e.target won't work if clicking on a descendant node of an anchor
+        const elem = e.target.closest('a[href], area[href]');
+        if (!elem) { return; }
+
+        const url = elem.href;
+        if (frame === iframe) {
+          if (url.startsWith("blob:")) {
+            // in-zip file link
             const [main, search, hash] = scrapbook.splitUrl(url);
             const inZipPath = viewer.blobUrlToInZipPath.get(main);
             if (!inZipPath) { return; }
-            if (viewer.rewrittenBlobUrl.has(main)) { return; }
 
             e.preventDefault();
             e.stopPropagation();
 
-            const f = viewer.inZipFiles.get(inZipPath);
-            if (["text/html", "application/xhtml+xml"].indexOf(f.file.type) !== -1) {
-              return viewer.fetchPage({
-                inZipPath,
-                url,
-                recurseChain: [],
-              }).then((fetchedUrl) => {
-                const rewrittenUrl = fetchedUrl || "about:blank";
-                elem.href = rewrittenUrl;
-                frameDoc.location = rewrittenUrl;
-              });
+            const urlObj = new URL(location.href);
+            if (inZipPath !== urlObj.searchParams.get('p')) {
+              urlObj.searchParams.set('p', inZipPath);
+              urlObj.hash = hash;
+              location.href = urlObj.href;
+            } else {
+              frameDoc.location.href = url;
+              urlObj.hash = hash;
+              history.replaceState({}, null, urlObj.href);
             }
+          } else if (scrapbook.isUrlAbsolute(url)) {
+            // external link
+            e.preventDefault();
+            e.stopPropagation();
+            location.href = url;
+          } else {
+            // a relative link targeting a non-existed file in the zip, e.g. 'nonexist.html'
+            // in Chrome, url.href is ''
+            // in Firefox, url.href is raw 'nonexist.html'
+            e.preventDefault();
+            e.stopPropagation();
+            location.href = 'about:blank';
           }
-        }, false);
+        } else {
+          const [main, search, hash] = scrapbook.splitUrl(url);
+          const inZipPath = viewer.blobUrlToInZipPath.get(main);
+          if (!inZipPath) { return; }
+          if (viewer.rewrittenBlobUrl.has(main)) { return; }
 
-        Array.prototype.forEach.call(frameDoc.querySelectorAll('frame, iframe'), (elem) => {
-          frameRegisterLinkLoader(elem);
-        });
-      };
+          e.preventDefault();
+          e.stopPropagation();
 
-      frame.addEventListener("load", (e) => {
-        frameOnLoad(e.target);
+          const f = viewer.inZipFiles.get(inZipPath);
+          if (["text/html", "application/xhtml+xml"].indexOf(f.file.type) !== -1) {
+            return viewer.fetchPage({
+              inZipPath,
+              url,
+              recurseChain: [],
+            }).then((fetchedUrl) => {
+              const rewrittenUrl = fetchedUrl || "about:blank";
+              elem.href = rewrittenUrl;
+              frameDoc.location = rewrittenUrl;
+            });
+          }
+        }
+      }, false);
+
+      Array.prototype.forEach.call(frameDoc.querySelectorAll('frame, iframe'), (elem) => {
+        frameRegisterLinkLoader(elem);
       });
-
-      frameOnLoad(frame);
     };
 
-    frameRegisterLinkLoader(iframe);
-
-    return Promise.resolve(viewerData.zipId).then((uuid) => {
-      const key = {table: "viewerCache", id: uuid};
-      const dir = viewerData.dir;
-      const indexFile = viewerData.indexFile || "index.html";
-
-      return scrapbook.cache.get(key).then((zipFiles) => {
-        if (!zipFiles) {
-          throw new Error(`Archive '${uuid}' does not exist or has been cleared.`);
-        }
-
-        let p = Promise.resolve();
-        for (let inZipPath in zipFiles) {
-          const zipObj = zipFiles[inZipPath];
-          if (zipObj.dir) { continue; }
-          if (dir && !inZipPath.startsWith(dir + '/')) { continue; }
-
-          const mime = zipObj.type;
-          const key = {table: "viewerCache", id: uuid, path: inZipPath};
-          
-          p = p.then(() => {
-            return scrapbook.cache.get(key);
-          }).then((data) => {
-            // convert byte string to array buffer to pass to new File()
-            if (typeof data === 'string') {
-              data = scrapbook.byteStringToArrayBuffer(data);
-            }
-
-            const f = new File([data], inZipPath.replace(/.*\//, ""), {type: mime});
-            const u = URL.createObjectURL(f);
-            viewer.inZipFiles.set(inZipPath, {file: f, url: u});
-            viewer.blobUrlToInZipPath.set(u, inZipPath);
-          });
-        }
-        return p;
-      }).then(() => {
-        return viewer.fetchPage({
-          inZipPath: indexFile,
-          url: urlSearch + urlHash,
-          recurseChain: [],
-        });
-      }).then((fetchedUrl) => {
-        if (!fetchedUrl) {
-          throw new Error(`Specified file '${indexFile}' not found.`);
-        }
-
-        // remove iframe temporarily to avoid generating a history entry
-        const p = iframe.parentNode, n = iframe.nextSibling;
-        iframe.remove();
-        iframe.src = fetchedUrl;
-        p.insertBefore(iframe, n);
-      });
-    }).catch((ex) => {
-      console.error(ex);
-      alert(`Unable to view: ${ex.message}`);
+    frame.addEventListener("load", (e) => {
+      frameOnLoad(e.target);
     });
+
+    frameOnLoad(frame);
+  };
+
+  frameRegisterLinkLoader(iframe);
+
+  return Promise.resolve(viewerData.zipId).then((uuid) => {
+    const key = {table: "viewerCache", id: uuid};
+    const dir = viewerData.dir;
+    const indexFile = viewerData.indexFile || "index.html";
+
+    return scrapbook.cache.get(key).then((zipFiles) => {
+      if (!zipFiles) {
+        throw new Error(`Archive '${uuid}' does not exist or has been cleared.`);
+      }
+
+      let p = Promise.resolve();
+      for (let inZipPath in zipFiles) {
+        const zipObj = zipFiles[inZipPath];
+        if (zipObj.dir) { continue; }
+        if (dir && !inZipPath.startsWith(dir + '/')) { continue; }
+
+        const mime = zipObj.type;
+        const key = {table: "viewerCache", id: uuid, path: inZipPath};
+        
+        p = p.then(() => {
+          return scrapbook.cache.get(key);
+        }).then((data) => {
+          // convert byte string to array buffer to pass to new File()
+          if (typeof data === 'string') {
+            data = scrapbook.byteStringToArrayBuffer(data);
+          }
+
+          const f = new File([data], inZipPath.replace(/.*\//, ""), {type: mime});
+          const u = URL.createObjectURL(f);
+          viewer.inZipFiles.set(inZipPath, {file: f, url: u});
+          viewer.blobUrlToInZipPath.set(u, inZipPath);
+        });
+      }
+      return p;
+    }).then(() => {
+      // remove privileged APIs in this page
+      // An error happens if browser.* is called when window.chrome
+      // is removed in Chrome, so defer the removal until extension
+      // APIs are no more needed.
+      if (viewer.hasCsp) { viewer.deApiScript(); }
+    }).then(() => {
+      return viewer.fetchPage({
+        inZipPath: indexFile,
+        url: urlSearch + urlHash,
+        recurseChain: [],
+      });
+    }).then((fetchedUrl) => {
+      if (!fetchedUrl) {
+        throw new Error(`Specified file '${indexFile}' not found.`);
+      }
+
+      // remove iframe temporarily to avoid generating a history entry
+      const p = iframe.parentNode, n = iframe.nextSibling;
+      iframe.remove();
+      iframe.src = fetchedUrl;
+      p.insertBefore(iframe, n);
+    });
+  }).catch((ex) => {
+    console.error(ex);
+    alert(`Unable to view: ${ex.message}`);
   });
 });
-
-})(window, undefined);

@@ -21,7 +21,7 @@
     <p title="__MSG_OptionCaptureSaveAsTooltip__">
       <label for="opt_capture.saveAs">__MSG_OptionCaptureSaveAsLabel__</label>
       <select id="opt_capture.saveAs">
-        <option value="downloads" title="__MSG_OptionCaptureSaveAsFolderTooltip__">__MSG_OptionCaptureSaveAsFolderLabel__</option>
+        <option value="folder" title="__MSG_OptionCaptureSaveAsFolderTooltip__">__MSG_OptionCaptureSaveAsFolderLabel__</option>
         <option value="zip" title="__MSG_OptionCaptureSaveAsZipTooltip__">__MSG_OptionCaptureSaveAsZipLabel__</option>
         <option value="maff" title="__MSG_OptionCaptureSaveAsMaffTooltip__">__MSG_OptionCaptureSaveAsMaffLabel__</option>
         <option value="singleHtml" title="__MSG_OptionCaptureSaveAsSingleHtmlTooltip__">__MSG_OptionCaptureSaveAsSingleHtmlLabel__</option>
@@ -63,7 +63,7 @@
         <option value="save" title="__MSG_OptionCaptureCommonSaveTooltip__">__MSG_OptionCaptureCommonSaveLabel__</option>
         <option value="save-used" title="__MSG_OptionCaptureImageBackgroundSaveUsedTooltip__">__MSG_OptionCaptureCommonSaveUsedLabel__</option>
         <option value="link" title="__MSG_OptionCaptureCommonLinkTooltip__">__MSG_OptionCaptureCommonLinkLabel__</option>
-        <option value="remove" title="__MSG_OptionCaptureCommonRemoveTooltip__">__MSG_OptionCaptureCommonRemoveLabel__</option>
+        <option value="blank" title="__MSG_OptionCaptureCommonBlankTooltip__">__MSG_OptionCaptureCommonBlankLabel__</option>
       </select>
     </p>
     <p>
@@ -119,7 +119,6 @@
         <option value="save-used" title="__MSG_OptionCaptureFontSaveUsedTooltip__">__MSG_OptionCaptureCommonSaveUsedLabel__</option>
         <option value="link" title="__MSG_OptionCaptureCommonLinkTooltip__">__MSG_OptionCaptureCommonLinkLabel__</option>
         <option value="blank" title="__MSG_OptionCaptureCommonBlankTooltip__">__MSG_OptionCaptureCommonBlankLabel__</option>
-        <option value="remove" title="__MSG_OptionCaptureCommonRemoveTooltip__">__MSG_OptionCaptureCommonRemoveLabel__</option>
       </select>
     </p>
     <p>
@@ -134,9 +133,9 @@
     <p>
       <label for="opt_capture.styleInline">__MSG_OptionCaptureStyleInlineLabel__</label>
       <select id="opt_capture.styleInline">
-        <option value="save" title="__MSG_OptionCaptureCommonSaveTooltip__">__MSG_OptionCaptureCommonSaveLabel__</option>
-        <option value="blank" title="__MSG_OptionCaptureCommonBlankTooltip__">__MSG_OptionCaptureCommonBlankLabel__</option>
-        <option value="remove" title="__MSG_OptionCaptureCommonRemoveTooltip__">__MSG_OptionCaptureCommonRemoveLabel__</option>
+        <option value="save">__MSG_OptionCaptureCommonSaveLabel__</option>
+        <option value="blank">__MSG_OptionCaptureCommonBlankLabel__</option>
+        <option value="remove">__MSG_OptionCaptureCommonRemoveLabel__</option>
       </select>
     </p>
     <p>
@@ -251,16 +250,24 @@
       <label for="opt_viewer.useFileSystemApi">__MSG_OptionViewerUseFileSystemApiLabel__</label>
       <input type="checkbox" id="opt_viewer.useFileSystemApi">
     </p>
-    <p title="__MSG_OptionViewerAllowScriptsTooltip__">
-      <label for="opt_viewer.allowScripts">__MSG_OptionViewerAllowScriptsLabel__</label>
-      <input type="checkbox" id="opt_viewer.allowScripts">
-    </p>
   </fieldset>
   <fieldset>
     <legend>__MSG_OptionGroupIndexer__</legend>
     <p title="__MSG_OptionIndexerAutoDownloadTooltip__">
       <label for="opt_indexer.autoDownload">__MSG_OptionIndexerAutoDownloadLabel__</label>
       <input type="checkbox" id="opt_indexer.autoDownload">
+    </p>
+    <p>
+      <label for="opt_indexer.fulltextCache">__MSG_OptionIndexerFulltextCacheLabel__</label>
+      <input type="checkbox" id="opt_indexer.fulltextCache">
+    </p>
+    <p>
+      <label for="opt_indexer.fulltextCacheFrameAsPageContent">__MSG_OptionIndexerFulltextCacheFrameAsPageContentLabel__</label>
+      <input type="checkbox" id="opt_indexer.fulltextCacheFrameAsPageContent">
+    </p>
+    <p title="__MSG_OptionIndexerServerScriptsTooltip__">
+      <label for="opt_indexer.serverScripts">__MSG_OptionIndexerServerScripts__</label>
+      <input type="checkbox" id="opt_indexer.serverScripts">
     </p>
   </fieldset>
 </div>
@@ -272,5 +279,6 @@
   <input id="import-input" type="file" style="display: none;">
 </div>
 </form>
+<iframe id="downloader"></iframe>
 </body>
 </html>

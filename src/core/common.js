@@ -26,12 +26,13 @@ scrapbook.options = {
   "capture.scrapbookFolder": "WebScrapBook",
   "capture.saveAs": "zip", // "folder", "zip", "maff", "singleHtml", "singleHtmlJs"
   "capture.saveInScrapbook": false,
+  "capture.saveInMemory": false,
   "capture.saveAsciiFilename": false,
   "capture.saveBeyondSelection": false,
   "capture.saveFileAsHtml": false,
-  "capture.saveDataUriAsFile": false,
+  "capture.saveDataUriAsFile": true,
   "capture.image": "save", // "save", "save-current", "link", "blank", "remove"
-  "capture.imageBackground": "save", // "save", "save-used", "link", "remove"
+  "capture.imageBackground": "save", // "save", "save-used", "link", "blank"
   "capture.favicon": "save", // "save", "link", "blank", "remove"
   "capture.canvas": "save", // "save", "blank", "remove"
   "capture.audio": "save", // "save", "save-current", "link", "blank", "remove"
@@ -40,7 +41,7 @@ scrapbook.options = {
   "capture.object": "blank", // "save", "link", "blank", "remove"
   "capture.applet": "blank", // "save", "link", "blank", "remove"
   "capture.frame": "save", // "save", "link", "blank", "remove"
-  "capture.font": "save", // "save", "save-used", "link", "blank", "remove"
+  "capture.font": "save", // "save", "save-used", "link", "blank"
   "capture.style": "save", // "save", "link", "blank", "remove"
   "capture.styleInline": "save", // "save", "blank", "remove"
   "capture.rewriteCss": "url", // "none", "url"
@@ -57,11 +58,13 @@ scrapbook.options = {
   "capture.recordRewrittenAttr": false,
   "capture.recordSourceUri": false,
   "capture.recordErrorUri": true,
-  "viewer.useFileSystemApi": true,
+  "viewer.useFileSystemApi": false,
   "viewer.viewHtz": true,
   "viewer.viewMaff": true,
-  "viewer.allowScripts": false,
   "indexer.autoDownload": false,
+  "indexer.fulltextCache": true,
+  "indexer.fulltextCacheFrameAsPageContent": true,
+  "indexer.serverScripts": false,
 };
 
 scrapbook.isOptionsSynced = false;
@@ -445,53 +448,6 @@ scrapbook.validateFilename = function (filename, forceAscii) {
   return fn;
 };
 
-scrapbook.urlToFilename = function (url) {
-  let name = url, pos;
-  pos = name.indexOf("?");
-  if (pos !== -1) { name = name.substring(0, pos); }
-  pos = name.indexOf("#");
-  if (pos !== -1) { name = name.substring(0, pos); }
-  pos = name.lastIndexOf("/");
-  if (pos !== -1) { name = name.substring(pos + 1); }
-
-  // decode %xx%xx%xx only if it's correctly UTF-8 encoded
-  // @TODO: decode using a specified charset
-  try {
-    name = decodeURIComponent(name);
-  } catch (ex) {}
-  return name;
-};
-
-scrapbook.splitUrl = function (url) {
-  let name = url, search = "", hash = "", pos;
-  pos = name.indexOf("#");
-  if (pos !== -1) { hash = name.slice(pos); name = name.slice(0, pos); }
-  pos = name.indexOf("?");
-  if (pos !== -1) { search = name.slice(pos); name = name.slice(0, pos); }
-  return [name, search, hash];
-};
-
-scrapbook.splitUrlByAnchor = function (url) {
-  let [name, search, hash] = scrapbook.splitUrl(url);
-  return [name + search, hash];
-};
-
-scrapbook.filepathParts = function (filepath) {
-  let pos = Math.max(filepath.lastIndexOf("/"), filepath.lastIndexOf("\\"));
-  if (pos != -1) {
-    return [filepath.slice(0, pos), filepath.slice(pos + 1, filepath.length)];
-  }
-  return ["", filepath];
-};
-
-scrapbook.filenameParts = function (filename) {
-  let pos = filename.lastIndexOf(".");
-  if (pos != -1) {
-    return [filename.substring(0, pos), filename.substring(pos + 1, filename.length)];
-  }
-  return [filename, ""];
-};
-
 /**
  * Returns the ScrapBook ID from a given Date object
  *
@@ -514,7 +470,7 @@ scrapbook.dateToId = function (date) {
  */
 scrapbook.idToDate = function (id) {
   let dd;
-  if (id.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{3})$/)) {
+  if (/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{3})$/.test(id)) {
     dd = new Date(
         parseInt(RegExp.$1, 10), parseInt(RegExp.$2, 10) - 1, parseInt(RegExp.$3, 10),
         parseInt(RegExp.$4, 10), parseInt(RegExp.$5, 10), parseInt(RegExp.$6, 10), parseInt(RegExp.$7, 10)
@@ -547,7 +503,7 @@ scrapbook.dateToIdOld = function (date) {
  */
 scrapbook.idToDateOld = function (id) {
   let dd;
-  if (id.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/)) {
+  if (/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.test(id)) {
     dd = new Date(
         parseInt(RegExp.$1, 10), parseInt(RegExp.$2, 10) - 1, parseInt(RegExp.$3, 10),
         parseInt(RegExp.$4, 10), parseInt(RegExp.$5, 10), parseInt(RegExp.$6, 10)
@@ -660,7 +616,7 @@ scrapbook.unescapeHtml = function (str) {
 scrapbook.escapeRegExp = function (str) {
   // Escaping "-" allows the result to be inserted into a character class.
   // Escaping "/" allow the result to be used in a JS regex literal.
-  return str.replace(/[-\/\\^$*+?.|()[\]{}]/g, "\\$&");
+  return str.replace(/[-/\\^$*+?.|()[\]{}]/g, "\\$&");
 };
 
 scrapbook.escapeHtmlComment = function (str) {
@@ -782,6 +738,62 @@ scrapbook.arrayBufferToByteString = function (ab) {
     bstr += String.fromCharCode.apply(null, u8ar.subarray(i, i + CHUNK_SIZE));
   }
   return bstr;
+};
+
+
+/********************************************************************
+ * String handling - URL and filename
+ *******************************************************************/
+
+scrapbook.isUrlAbsolute = function (url) {
+  return /^[a-z][a-z0-9+.-]*:/i.test(url || "");
+};
+
+scrapbook.urlToFilename = function (url) {
+  let name = url, pos;
+  pos = name.indexOf("?");
+  if (pos !== -1) { name = name.substring(0, pos); }
+  pos = name.indexOf("#");
+  if (pos !== -1) { name = name.substring(0, pos); }
+  pos = name.lastIndexOf("/");
+  if (pos !== -1) { name = name.substring(pos + 1); }
+
+  // decode %xx%xx%xx only if it's correctly UTF-8 encoded
+  // @TODO: decode using a specified charset
+  try {
+    name = decodeURIComponent(name);
+  } catch (ex) {}
+  return name;
+};
+
+scrapbook.splitUrl = function (url) {
+  let name = url, search = "", hash = "", pos;
+  pos = name.indexOf("#");
+  if (pos !== -1) { hash = name.slice(pos); name = name.slice(0, pos); }
+  pos = name.indexOf("?");
+  if (pos !== -1) { search = name.slice(pos); name = name.slice(0, pos); }
+  return [name, search, hash];
+};
+
+scrapbook.splitUrlByAnchor = function (url) {
+  let [name, search, hash] = scrapbook.splitUrl(url);
+  return [name + search, hash];
+};
+
+scrapbook.filepathParts = function (filepath) {
+  let pos = Math.max(filepath.lastIndexOf("/"), filepath.lastIndexOf("\\"));
+  if (pos != -1) {
+    return [filepath.slice(0, pos), filepath.slice(pos + 1, filepath.length)];
+  }
+  return ["", filepath];
+};
+
+scrapbook.filenameParts = function (filename) {
+  let pos = filename.lastIndexOf(".");
+  if (pos != -1) {
+    return [filename.substring(0, pos), filename.substring(pos + 1, filename.length)];
+  }
+  return [filename, ""];
 };
 
 
@@ -921,7 +933,7 @@ scrapbook.parseHeaderRefresh = function (string) {
 /**
  * A simple tool to compress javascript code
  *
- * Note: this not handle comments inside a string
+ * Note: this does not handle comments inside a string
  */
 scrapbook.compressJsFunc = function (func) {
   return func.toString()
@@ -1021,7 +1033,7 @@ scrapbook.dataUriToFile = function (dataUri, useFilename = true) {
     if (useFilename && parameters.filename) {
       filename = decodeURIComponent(parameters.filename);
     } else {
-      let ext = parameters.filename || Mime.prototype.extension(mime);
+      let ext = parameters.filename && scrapbook.filenameParts(parameters.filename)[1] || Mime.extension(mime);
       ext = ext ? ("." + ext) : "";
       filename = scrapbook.sha1(ab, "ARRAYBUFFER") + ext;
     }
@@ -1092,11 +1104,13 @@ scrapbook.parseCssFile = function (data, charset, rewriter) {
         charset = RegExp.$1;
       }
       if (charset) {
-        // Add BOM to make the browser read as UTF-8 despite @charset rule
         return scrapbook.readFileAsText(data, charset).then((text) => {
-          // The read text does not contain a BOM if the original file has.
-          // This added UTF-16 BOM will be converted to UTF-8 BOM automatically when creating blob.
-          return "\ufeff" + text;
+          // Add a BOM to invalidate the @charset rule sine we'll save as UTF-8
+          if (/^@charset "([^"]*)";/.test(text)) {
+            return "\ufeff" + text;
+          }
+
+          return text;
         });
       }
       return bytes;
@@ -1141,16 +1155,16 @@ scrapbook.parseCssText = function (cssText, options = {}) {
 
   const pCm = "(?:/\\*[\\s\\S]*?\\*/)"; // comment
   const pSp = "(?:[ \\t\\r\\n\\v\\f]*)"; // space equivalents
-  const pCmSp = "(?:" + "(?:" + pCm + "|" + pSp + ")" + "*" + ")"; // comment or space
-  const pChar = "(?:\\\\.|[^\\\\])"; // a char, or a escaped char sequence
-  const pStr = "(?:" + pChar + "*?" + ")"; // string
-  const pSStr = "(?:" + pCmSp + pStr + pCmSp + ")"; // spaced string
-  const pDQStr = "(?:" + '"' + pStr + '"' + ")"; // double quoted string
-  const pSQStr = "(?:" + "'" + pStr + "'" + ")"; // single quoted string
+  const pCmSp = "(?:(?:" + pCm + "|" + pSp + ")*)"; // comment or space
+  const pChar = "(?:\\\\.|[^\\\\\"'])"; // a non-quote char or an escaped char sequence
+  const pStr = "(?:" + pChar + "*?)"; // string
+  const pSStr = "(?:" + pCmSp + pStr + pCmSp + ")"; // comment-or-space enclosed string
+  const pDQStr = '(?:"' + pStr + '")'; // double quoted string
+  const pSQStr = "(?:'" + pStr + "')"; // single quoted string
   const pES = "(?:" + "(?:" + [pCm, pDQStr, pSQStr, pChar].join("|") + ")*?" + ")"; // embeded string
-  const pUrl = "(?:" + "url\\(" + pSp + "(?:" + [pDQStr, pSQStr, pSStr].join("|") + ")" + pSp + "\\)" + ")"; // URL
-  const pUrl2 = "(" + "url\\(" + pSp + ")(" + [pDQStr, pSQStr, pSStr].join("|") + ")(" + pSp + "\\)" + ")"; // URL; catch 3
-  const pRImport = "(" + "@import" + pCmSp + ")(" + [pUrl, pDQStr, pSQStr].join("|") + ")(" + pCmSp + ";" + ")"; // rule import; catch 3
+  const pUrl = "(?:" + "\\burl\\(" + pSp + "(?:" + [pDQStr, pSQStr, pSStr].join("|") + ")" + pSp + "\\)" + ")"; // URL
+  const pUrl2 = "(" + "\\burl\\(" + pSp + ")(" + [pDQStr, pSQStr, pSStr].join("|") + ")(" + pSp + "\\)" + ")"; // URL; catch 3
+  const pRImport = "(" + "@import" + pCmSp + ")(" + [pUrl, pDQStr, pSQStr].join("|") + ")"; // rule import; catch 2
   const pRFontFace = "(" + "@font-face" + pCmSp + "{" + pES + "}" + ")"; // rule font-face; catch 1
 
   const getRecordUrl = function (url, recordUrl) {
@@ -1182,23 +1196,23 @@ scrapbook.parseCssText = function (cssText, options = {}) {
 
   const newCssText = cssText.replace(
     new RegExp([pCm, pRImport, pRFontFace, "("+pUrl+")"].join("|"), "gi"),
-    (m, im1, im2, im3, ff, u) => {
+    (m, im1, im2, ff, u) => {
       if (im2) {
         let rewritten;
         if (im2.startsWith('"') && im2.endsWith('"')) {
           let u = scrapbook.unescapeCss(im2.slice(1, -1));
           let {url: rewrittenUrl, recordUrl} = rewriteImportUrl(u);
           let record = getRecordUrl(rewrittenUrl, recordUrl);
-          rewritten = record + 'url("' + scrapbook.escapeQuotes(rewrittenUrl) + '")';
+          rewritten = record + '"' + scrapbook.escapeQuotes(rewrittenUrl) + '"';
         } else if (im2.startsWith("'") && im2.endsWith("'")) {
           let u = scrapbook.unescapeCss(im2.slice(1, -1));
           let {url: rewrittenUrl, recordUrl} = rewriteImportUrl(u);
           let record = getRecordUrl(rewrittenUrl, recordUrl);
-          rewritten = record + 'url("' + scrapbook.escapeQuotes(rewrittenUrl) + '")';
+          rewritten = record + '"' + scrapbook.escapeQuotes(rewrittenUrl) + '"';
         } else {
           rewritten = parseUrl(im2, rewriteImportUrl);
         }
-        return im1 + rewritten + im3;
+        return im1 + rewritten;
       } else if (ff) {
         return parseUrl(m, rewriteFontFaceUrl);
       } else if (u) {
@@ -1411,10 +1425,11 @@ scrapbook.delay = function (ms) {
 
 /********************************************************************
  * Zip utilities
+ *
+ * @require JSZip
  *******************************************************************/
 
-// @TODO:
-// fix the modification date of auto-generated folders
+// @TODO: fix the modification date of auto-generated folders
 scrapbook.zipAddFile = function (zipObj, filename, blob, isText, options = {}) {
   if (typeof isText === 'undefined' || isText === null) {
     isText = /^text\/|\b(?:xml|json|javascript)\b/.test(blob.type);
@@ -1443,6 +1458,76 @@ scrapbook.zipAddFile = function (zipObj, filename, blob, isText, options = {}) {
 // https://github.com/Stuk/jszip/issues/369
 scrapbook.zipFixModifiedTime = function (dateInZip) {
   return new Date(dateInZip.valueOf() + dateInZip.getTimezoneOffset() * 60 * 1000);
+};
+
+scrapbook.getMaffIndexFiles = function (zipObj) {
+  return Promise.resolve().then(() => {
+    // get the list of top-folders
+    const topdirs = new Set();
+    for (const inZipPath in zipObj.files) {
+      const depth = inZipPath.split("/").length - 1;
+      if (depth === 1) {
+        const dirname = inZipPath.replace(/\/.*$/, "");
+        topdirs.add(dirname + '/');
+      }
+    }
+
+    // get index files in each topdir
+    const indexFiles = [];
+    let p = Promise.resolve();
+    topdirs.forEach((topdir) => {
+      p = p.then(() => {
+        const zipDir = zipObj.folder(topdir);
+        const zipRdfFile = zipDir.file('index.rdf');
+        if (zipRdfFile) {
+          return zipRdfFile.async('arraybuffer').then((ab) => {
+            return new File([ab], 'index.rdf', {type: "application/rdf+xml"});
+          }, (ex) => {
+            throw new Error(`'index.rdf' cannot be loaded.`);
+          }).then((file) => {
+            return scrapbook.readFileAsDocument(file);
+          }).then((doc) => {
+            if (!doc) {
+              throw new Error(`'index.rdf' is corrupted.`);
+            }
+
+            const meta = scrapbook.parseMaffRdfDocument(doc);
+
+            if (!meta.indexfilename) {
+              throw new Error(`'index.rdf' specifies no index file.`);
+            }
+
+            if (!/^index[.][^./]+$/.test(meta.indexfilename)) {
+              throw new Error(`'index.rdf' specified index file '${meta.indexfilename}' is invalid.`);
+            }
+
+            const zipIndexFile = zipDir.file(meta.indexfilename);
+            if (!zipIndexFile) {
+              throw new Error(`'index.rdf' specified index file '${meta.indexfilename}' not found.`);
+            }
+
+            return zipIndexFile.name;
+          }).catch((ex) => {
+            throw ex;
+          });
+        }
+
+        const indexFiles = zipDir.file(/^index[.][^./]+$/);
+        if (indexFiles.length) {
+          return indexFiles[0].name;
+        }
+      }).then((indexFilename) => {
+        if (!indexFilename) { throw new Error(`'index.*' file not found.`); }
+
+        indexFiles.push(indexFilename);
+      }).catch((ex) => {
+        throw new Error(`Unable to get index file in directory: '${topdir}': ${ex.message}`);
+      });
+    });
+    return p.then(() => {
+      return indexFiles;
+    });
+  });
 };
 
 

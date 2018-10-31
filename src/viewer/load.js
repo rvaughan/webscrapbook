@@ -25,9 +25,12 @@ Promise.resolve().then(() => {
  * onDragOver .dropmask
  * onDragOver .dropmask
  * ...
- * onDragLeave .dropmask (document in Firefox, which is weird?)
+ * onDragLeave .dropmask[1]
  *  or
  * onDrop   .dropmask (in this case onDragLeave doesn't fire)
+ *
+ * [1]: In Firefox, we get document (e10s) or XULDocument (non-e10s).
+ *      https://bugzilla.mozilla.org/show_bug.cgi?id=1420590
  */
 function onDragEnter(e) {
   viewer.dropmask.style.display = '';
@@ -40,7 +43,18 @@ function onDragOver(e) {
 };
 
 function onDragLeave(e) {
-  if (e.target === viewer.lastDropTarget || e.target === document) {
+  let shouldUnMask = false;
+  try {
+    if (e.target === viewer.lastDropTarget || 
+        e.target === document || 
+        e.target.nodeName === "#document"/* XULDocument */) {
+      shouldUnMask = true;
+    }
+  } catch (ex) {
+    // access to XULDocument may throw
+    shouldUnMask = true;
+  }
+  if (shouldUnMask) {
     viewer.dropmask.style.display = 'none';
   }
 };
@@ -158,6 +172,7 @@ const viewer = {
   urlSearch: "",
   urlHash: "",
   pageList: [],
+  autoLoading: false,
 
   initEvents() {
     window.addEventListener("dragenter", onDragEnter, false);
@@ -213,7 +228,11 @@ const viewer = {
         return;
       }
 
-      window.location.replace(url);
+      if (this.autoLoading) {
+        window.location.replace(url);
+      } else {
+        window.location.assign(url);
+      }
     });
   },
 
@@ -236,11 +255,12 @@ const viewer = {
 
       if (!scrapbook.getOption("viewer.useFileSystemApi")) { return; }
 
-      // filesystem scheme never works in an incognito window,
-      // but sometimes the requestFileSystem call doesn't throw, 
-      // and an error occurs afterwards instead. Add a chesk
-      // to prevent such error.
-      return browser.tabs.getCurrent().then((tab) => {
+      // In Firefox < 58, browser.tabs is undefined when redirected to load.html
+      return browser.tabs && browser.tabs.getCurrent().then((tab) => {
+        // filesystem scheme never works in an incognito window,
+        // but sometimes the requestFileSystem call doesn't throw, 
+        // and an error occurs afterwards instead. Add a check
+        // to prevent such error.
         if (tab.incognito) { return; }
 
         return new Promise((resolve, reject) => {
@@ -279,14 +299,18 @@ const viewer = {
           } catch (ex) {}
         }
 
-        const file = new File([xhr.response], filename, {type: Mime.prototype.lookup(filename)});
+        const file = new File([xhr.response], filename, {type: Mime.lookup(filename)});
+        this.autoLoading = true;
         return [file];
       }).catch((ex) => {
-        this.error(`Unable to fetch specified zip file '${zipSourceUrl}'`);
+        this.error(`Unable to fetch specified ZIP file '${zipSourceUrl}'`);
         return [];
       });
     }).then((files) => {
       return this.loadFiles(files);
+    }).catch((ex) => {
+      console.error(ex);
+      this.error(`Unexpected error: ${ex.message}`);
     });
   },
 
@@ -321,6 +345,7 @@ const viewer = {
         this.log('');
         return this.openUrls(this.pageList);
       } else {
+        this.autoLoading = false;
         this.initEvents();
         this.filesSelector.disabled = false;
         this.filesSelector.value = null;
@@ -341,7 +366,6 @@ const viewer = {
       const zipData = {
         name: zipFile.name,
         files: {},
-        blobs: {},
       };
 
       // @TODO: JSZip.loadAsync cannot load a large zip file
@@ -361,7 +385,7 @@ const viewer = {
             //     is very slow and unuseful.  We currently use the faster
             //     method.
             return zipObj.async("arraybuffer").then((ab) => {
-              const mime = Mime.prototype.lookup(inZipPath);
+              const mime = Mime.lookup(inZipPath);
 
               zipData.files[inZipPath] = {
                 dir: false,
@@ -378,11 +402,6 @@ const viewer = {
                 data = scrapbook.arrayBufferToByteString(ab);
               } else {
                 data = new Blob([ab], {type: mime});
-              }
-
-              // store blob data for special files that could be used later
-              if (type === 'maff' && /^[^/]+[/]index.rdf$/.test(inZipPath)) {
-                zipData.blobs[inZipPath] = new Blob([ab], {type: mime});
               }
 
               /* Filesystem API view */
@@ -406,80 +425,26 @@ const viewer = {
           /* In-memory view */
           const key = {table: "viewerCache", id: uuid};
           return scrapbook.cache.set(key, zipData.files);
+        }).then(() => {
+          return zip;
         });
-      }).then(() => {
+      }).then((zip) => {
         switch (type) {
           case "maff": {
-            // get the list of top-folders
-            const topdirs = new Set();
-            for (let inZipPath in zipData.files) {
-              const depth = Array.prototype.filter.call(inZipPath, x => x == "/").length;
-              if (depth === 1) {
-                const dirname = inZipPath.replace(/\/.*$/, "");
-                topdirs.add(dirname + '/');
-              }
-            }
-
-            // get index files in each topdir
-            const indexFiles = [];
-            let p = Promise.resolve();
-            topdirs.forEach((topdir) => {
-              p = p.then(() => {
-                if (zipData.files[topdir + 'index.rdf']) {
-                  const file = zipData.blobs[topdir + 'index.rdf'];
-                  return scrapbook.readFileAsDocument(file).then((doc) => {
-                    if (!doc) {
-                      throw new Error(`'index.rdf' is corrupted.`);
-                    }
-
-                    const meta = scrapbook.parseMaffRdfDocument(doc);
-                    if (!meta.indexfilename) {
-                      throw new Error(`'index.rdf' specifies no index file.`);
-                    }
-
-                    const indexFilename = topdir + (meta.indexfilename || '');
-                    if (!zipData.files[indexFilename]) {
-                      throw new Error(`'index.rdf' specified index file '${meta.indexfilename}' not found.`);
-                    }
-
-                    return indexFilename;
-                  }).catch((ex) => {
-                    throw ex;
-                  });
-                }
-
-                let indexFilename;
-                for (const inZipPath in zipData.files) {
-                  if (!inZipPath.startsWith(topdir)) { continue; }
-
-                  const filename = inZipPath.slice(inZipPath.lastIndexOf("/") + 1);
-                  if (filename.startsWith("index.")) {
-                    indexFilename = inZipPath;
-                    break;
-                  }
-                }
-                return indexFilename;
-              }).then((indexFilename) => {
-                if (!indexFilename) { throw new Error(`'index.*' file not found.`); }
-
-                indexFiles.push(indexFilename);
-              }).catch((ex) => {
-                this.error(`Unable to get index file in directory: '${topdir}': ${ex.message}`);
-              });
-            });
-            return p.then(() => {
-              return indexFiles;
+            return scrapbook.getMaffIndexFiles(zip).catch((ex) => {
+              this.error(ex.message);
+              return [];
             });
           }
           case "htz":
           default: {
-            if (!zipData.files["index.html"]) { return []; }
+            if (!zip.files["index.html"]) { return []; }
 
             return ["index.html"];
           }
         }
       }, (ex) => {
-        throw new Error(`Zip file invalid or unsupported.`);
+        throw new Error(`ZIP file invalid or unsupported.`);
       }).then((indexFiles) => {
         if (!indexFiles.length) {
           throw new Error(`No available page found.`);

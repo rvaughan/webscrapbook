@@ -5,37 +5,37 @@
  * Distributed under the MIT License
  * https://opensource.org/licenses/MIT
  */
-function Mime() {}
+const Mime = {
+  /**
+   * Lookup a mime type based on extension
+   */
+  lookup(path, fallback) {
+    const ext = path.replace(/.*[\.\/\\]/, '').toLowerCase();
 
-/**
- * Lookup a mime type based on extension
- */
-Mime.prototype.lookup = function (path, fallback) {
-  const ext = path.replace(/.*[\.\/\\]/, '').toLowerCase();
+    return this.types[ext] || fallback || "application/octet-stream";
+  },
 
-  return this.types[ext] || fallback || "application/octet-stream";
-};
+  /**
+   * Return the first file extension associated with a mime type
+   */
+  extension(mimeType) {
+    const type = mimeType.match(/^\s*([^;\s]*)(?:;|\s|$)/)[1].toLowerCase();
+    if (this.db[type] && this.db[type].extensions) {
+      return this.db[type].extensions[0];
+    }
+    return null;
+  },
 
-/**
- * Return the first file extension associated with a mime type
- */
-Mime.prototype.extension = function (mimeType) {
-  const type = mimeType.match(/^\s*([^;\s]*)(?:;|\s|$)/)[1].toLowerCase();
-  if (this.db[type] && this.db[type].extensions) {
-    return this.db[type].extensions[0];
-  }
-  return null;
-};
-
-/**
- * Return the file extensions associated with a mime type
- */
-Mime.prototype.allExtensions = function (mimeType) {
-  const type = mimeType.match(/^\s*([^;\s]*)(?:;|\s|$)/)[1].toLowerCase();
-  if (this.db[type] && this.db[type].extensions) {
-    return JSON.parse(JSON.stringify(this.db[type].extensions));
-  }
-  return [];
+  /**
+   * Return the file extensions associated with a mime type
+   */
+  allExtensions(mimeType) {
+    const type = mimeType.match(/^\s*([^;\s]*)(?:;|\s|$)/)[1].toLowerCase();
+    if (this.db[type] && this.db[type].extensions) {
+      return JSON.parse(JSON.stringify(this.db[type].extensions));
+    }
+    return [];
+  },
 };
 
 /**
@@ -43,7 +43,7 @@ Mime.prototype.allExtensions = function (mimeType) {
  *
  * ref: https://github.com/jshttp/mime-db
  */
-Mime.prototype.db = {
+Mime.db = {
   "application/1d-interleaved-parityfec": {
     "source": "iana"
   },
@@ -171,6 +171,9 @@ Mime.prototype.db = {
     "source": "iana"
   },
   "application/cbor": {
+    "source": "iana"
+  },
+  "application/cccex": {
     "source": "iana"
   },
   "application/ccmp+xml": {
@@ -411,6 +414,9 @@ Mime.prototype.db = {
   "application/fdt+xml": {
     "source": "iana"
   },
+  "application/fido.trusted-apps+json": {
+    "compressible": true
+  },
   "application/fits": {
     "source": "iana"
   },
@@ -441,6 +447,9 @@ Mime.prototype.db = {
   "application/geo+json-seq": {
     "source": "iana"
   },
+  "application/geoxacml+xml": {
+    "source": "iana"
+  },
   "application/gml+xml": {
     "source": "iana",
     "extensions": ["gml"]
@@ -463,6 +472,9 @@ Mime.prototype.db = {
   },
   "application/held+xml": {
     "source": "iana"
+  },
+  "application/hjson": {
+    "extensions": ["hjson"]
   },
   "application/html+zip": {
     "extensions": ["htz"]
@@ -543,7 +555,11 @@ Mime.prototype.db = {
     "source": "iana",
     "charset": "UTF-8",
     "compressible": true,
-    "extensions": ["js"]
+    "extensions": ["js","mjs"]
+  },
+  "application/jf2feed+json": {
+    "source": "iana",
+    "compressible": true
   },
   "application/jose": {
     "source": "iana"
@@ -729,6 +745,9 @@ Mime.prototype.db = {
   "application/mikey": {
     "source": "iana"
   },
+  "application/mmt-usd+xml": {
+    "source": "iana"
+  },
   "application/mods+xml": {
     "source": "iana",
     "extensions": ["mods"]
@@ -854,6 +873,9 @@ Mime.prototype.db = {
     "source": "iana"
   },
   "application/parityfec": {
+    "source": "iana"
+  },
+  "application/passport": {
     "source": "iana"
   },
   "application/patch-ops-error+xml": {
@@ -984,6 +1006,10 @@ Mime.prototype.db = {
   "application/qsig": {
     "source": "iana"
   },
+  "application/raml+yaml": {
+    "compressible": true,
+    "extensions": ["raml"]
+  },
   "application/raptorfec": {
     "source": "iana"
   },
@@ -1031,6 +1057,15 @@ Mime.prototype.db = {
   "application/rls-services+xml": {
     "source": "iana",
     "extensions": ["rs"]
+  },
+  "application/route-apd+xml": {
+    "source": "iana"
+  },
+  "application/route-s-tsid+xml": {
+    "source": "iana"
+  },
+  "application/route-usd+xml": {
+    "source": "iana"
   },
   "application/rpki-ghostbusters": {
     "source": "iana",
@@ -1297,16 +1332,43 @@ Mime.prototype.db = {
   "application/vividence.scriptfile": {
     "source": "apache"
   },
+  "application/vnd.1000minds.decision-model+xml": {
+    "source": "iana"
+  },
   "application/vnd.3gpp-prose+xml": {
     "source": "iana"
   },
   "application/vnd.3gpp-prose-pc3ch+xml": {
     "source": "iana"
   },
+  "application/vnd.3gpp-v2x-local-service-information": {
+    "source": "iana"
+  },
   "application/vnd.3gpp.access-transfer-events+xml": {
     "source": "iana"
   },
   "application/vnd.3gpp.bsf+xml": {
+    "source": "iana"
+  },
+  "application/vnd.3gpp.gmop+xml": {
+    "source": "iana"
+  },
+  "application/vnd.3gpp.mcptt-affiliation-command+xml": {
+    "source": "iana"
+  },
+  "application/vnd.3gpp.mcptt-floor-request+xml": {
+    "source": "iana"
+  },
+  "application/vnd.3gpp.mcptt-info+xml": {
+    "source": "iana"
+  },
+  "application/vnd.3gpp.mcptt-location-info+xml": {
+    "source": "iana"
+  },
+  "application/vnd.3gpp.mcptt-mbms-usage-info+xml": {
+    "source": "iana"
+  },
+  "application/vnd.3gpp.mcptt-signed+xml": {
     "source": "iana"
   },
   "application/vnd.3gpp.mid-call+xml": {
@@ -1507,6 +1569,10 @@ Mime.prototype.db = {
   "application/vnd.autopackage": {
     "source": "iana"
   },
+  "application/vnd.avalon+json": {
+    "source": "iana",
+    "compressible": true
+  },
   "application/vnd.avistar+xml": {
     "source": "iana"
   },
@@ -1514,6 +1580,9 @@ Mime.prototype.db = {
     "source": "iana"
   },
   "application/vnd.balsamiq.bmpr": {
+    "source": "iana"
+  },
+  "application/vnd.bbf.usp.msg": {
     "source": "iana"
   },
   "application/vnd.bekitzur-stech+json": {
@@ -1524,6 +1593,9 @@ Mime.prototype.db = {
     "source": "iana"
   },
   "application/vnd.biopax.rdf+xml": {
+    "source": "iana"
+  },
+  "application/vnd.blink-idb-value-wrapper": {
     "source": "iana"
   },
   "application/vnd.blueice.multipass": {
@@ -1605,6 +1677,18 @@ Mime.prototype.db = {
     "extensions": ["c11amz"]
   },
   "application/vnd.coffeescript": {
+    "source": "iana"
+  },
+  "application/vnd.collabio.xodocuments.document": {
+    "source": "iana"
+  },
+  "application/vnd.collabio.xodocuments.document-template": {
+    "source": "iana"
+  },
+  "application/vnd.collabio.xodocuments.presentation": {
+    "source": "iana"
+  },
+  "application/vnd.collabio.xodocuments.spreadsheet": {
     "source": "iana"
   },
   "application/vnd.collection+json": {
@@ -1881,6 +1965,9 @@ Mime.prototype.db = {
   "application/vnd.ecdis-update": {
     "source": "iana"
   },
+  "application/vnd.ecip.rlp": {
+    "source": "iana"
+  },
   "application/vnd.ecowin.chart": {
     "source": "iana",
     "extensions": ["mag"]
@@ -2016,6 +2103,15 @@ Mime.prototype.db = {
     "source": "iana"
   },
   "application/vnd.eudora.data": {
+    "source": "iana"
+  },
+  "application/vnd.evolv.ecig.profile": {
+    "source": "iana"
+  },
+  "application/vnd.evolv.ecig.settings": {
+    "source": "iana"
+  },
+  "application/vnd.evolv.ecig.theme": {
     "source": "iana"
   },
   "application/vnd.ezpix-album": {
@@ -2840,6 +2936,10 @@ Mime.prototype.db = {
     "source": "apache",
     "compressible": true
   },
+  "application/vnd.ms-outlook": {
+    "compressible": false,
+    "extensions": ["msg"]
+  },
   "application/vnd.ms-package.obfuscated-opentype": {
     "source": "apache"
   },
@@ -3660,6 +3760,9 @@ Mime.prototype.db = {
   "application/vnd.paos.xml": {
     "source": "apache"
   },
+  "application/vnd.patentdive": {
+    "source": "iana"
+  },
   "application/vnd.pawaafile": {
     "source": "iana",
     "extensions": ["paw"]
@@ -3926,6 +4029,9 @@ Mime.prototype.db = {
     "source": "iana",
     "extensions": ["ipk"]
   },
+  "application/vnd.sigrok.session": {
+    "source": "iana"
+  },
   "application/vnd.simtech-mindmapper": {
     "source": "iana",
     "extensions": ["twd","twds"]
@@ -4008,7 +4114,9 @@ Mime.prototype.db = {
     "source": "iana"
   },
   "application/vnd.sun.wadl+xml": {
-    "source": "iana"
+    "source": "iana",
+    "compressible": true,
+    "extensions": ["wadl"]
   },
   "application/vnd.sun.xml.calc": {
     "source": "apache",
@@ -4401,8 +4509,16 @@ Mime.prototype.db = {
   "application/vq-rtcpxr": {
     "source": "iana"
   },
+  "application/wasm": {
+    "compressible": true,
+    "extensions": ["wasm"]
+  },
   "application/watcherinfo+xml": {
     "source": "iana"
+  },
+  "application/webpush-options+json": {
+    "source": "iana",
+    "compressible": true
   },
   "application/whoispp-query": {
     "source": "iana"
@@ -4451,6 +4567,10 @@ Mime.prototype.db = {
   "application/x-apple-diskimage": {
     "source": "apache",
     "extensions": ["dmg"]
+  },
+  "application/x-arj": {
+    "compressible": false,
+    "extensions": ["arj"]
   },
   "application/x-authorware-bin": {
     "source": "apache",
@@ -4597,11 +4717,6 @@ Mime.prototype.db = {
     "source": "apache",
     "extensions": ["psf"]
   },
-  "application/x-font-otf": {
-    "source": "apache",
-    "compressible": true,
-    "extensions": ["otf"]
-  },
   "application/x-font-pcf": {
     "source": "apache",
     "extensions": ["pcf"]
@@ -4615,11 +4730,6 @@ Mime.prototype.db = {
   },
   "application/x-font-sunos-news": {
     "source": "apache"
-  },
-  "application/x-font-ttf": {
-    "source": "apache",
-    "compressible": true,
-    "extensions": ["ttf","ttc"]
   },
   "application/x-font-type1": {
     "source": "apache",
@@ -4917,6 +5027,38 @@ Mime.prototype.db = {
   "application/x-ustar": {
     "source": "apache",
     "extensions": ["ustar"]
+  },
+  "application/x-virtualbox-hdd": {
+    "compressible": true,
+    "extensions": ["hdd"]
+  },
+  "application/x-virtualbox-ova": {
+    "compressible": true,
+    "extensions": ["ova"]
+  },
+  "application/x-virtualbox-ovf": {
+    "compressible": true,
+    "extensions": ["ovf"]
+  },
+  "application/x-virtualbox-vbox": {
+    "compressible": true,
+    "extensions": ["vbox"]
+  },
+  "application/x-virtualbox-vbox-extpack": {
+    "compressible": false,
+    "extensions": ["vbox-extpack"]
+  },
+  "application/x-virtualbox-vdi": {
+    "compressible": true,
+    "extensions": ["vdi"]
+  },
+  "application/x-virtualbox-vhd": {
+    "compressible": true,
+    "extensions": ["vhd"]
+  },
+  "application/x-virtualbox-vmdk": {
+    "compressible": true,
+    "extensions": ["vmdk"]
   },
   "application/x-wais-source": {
     "source": "apache",
@@ -5536,6 +5678,9 @@ Mime.prototype.db = {
   "audio/vnd.octel.sbc": {
     "source": "iana"
   },
+  "audio/vnd.presonus.multitrack": {
+    "source": "iana"
+  },
   "audio/vnd.qcelp": {
     "source": "iana"
   },
@@ -5666,9 +5811,29 @@ Mime.prototype.db = {
     "source": "apache",
     "extensions": ["xyz"]
   },
-  "font/opentype": {
+  "font/collection": {
+    "source": "iana",
+    "extensions": ["ttc"]
+  },
+  "font/otf": {
+    "source": "iana",
     "compressible": true,
     "extensions": ["otf"]
+  },
+  "font/sfnt": {
+    "source": "iana"
+  },
+  "font/ttf": {
+    "source": "iana",
+    "extensions": ["ttf"]
+  },
+  "font/woff": {
+    "source": "iana",
+    "extensions": ["woff"]
+  },
+  "font/woff2": {
+    "source": "iana",
+    "extensions": ["woff2"]
   },
   "image/apng": {
     "compressible": false,
@@ -5709,7 +5874,9 @@ Mime.prototype.db = {
     "source": "iana"
   },
   "image/jp2": {
-    "source": "iana"
+    "source": "iana",
+    "compressible": false,
+    "extensions": ["jp2","jpg2"]
   },
   "image/jpeg": {
     "source": "iana",
@@ -5717,10 +5884,14 @@ Mime.prototype.db = {
     "extensions": ["jpeg","jpg","jpe"]
   },
   "image/jpm": {
-    "source": "iana"
+    "source": "iana",
+    "compressible": false,
+    "extensions": ["jpm"]
   },
   "image/jpx": {
-    "source": "iana"
+    "source": "iana",
+    "compressible": false,
+    "extensions": ["jpx","jpf"]
   },
   "image/ktx": {
     "source": "iana",
@@ -6032,7 +6203,13 @@ Mime.prototype.db = {
   },
   "model/gltf+json": {
     "source": "iana",
-    "compressible": true
+    "compressible": true,
+    "extensions": ["gltf"]
+  },
+  "model/gltf-binary": {
+    "source": "iana",
+    "compressible": true,
+    "extensions": ["glb"]
   },
   "model/iges": {
     "source": "iana",
@@ -6149,6 +6326,9 @@ Mime.prototype.db = {
     "source": "iana",
     "compressible": false
   },
+  "multipart/multilingual": {
+    "source": "iana"
+  },
   "multipart/parallel": {
     "source": "iana"
   },
@@ -6195,6 +6375,7 @@ Mime.prototype.db = {
   },
   "text/css": {
     "source": "iana",
+    "charset": "UTF-8",
     "compressible": true,
     "extensions": ["css"]
   },
@@ -6226,9 +6407,6 @@ Mime.prototype.db = {
   },
   "text/grammar-ref-list": {
     "source": "iana"
-  },
-  "text/hjson": {
-    "extensions": ["hjson"]
   },
   "text/html": {
     "source": "iana",
@@ -6324,6 +6502,9 @@ Mime.prototype.db = {
   "text/sgml": {
     "source": "iana",
     "extensions": ["sgml","sgm"]
+  },
+  "text/shex": {
+    "extensions": ["shex"]
   },
   "text/slim": {
     "extensions": ["slim","slm"]
@@ -6515,6 +6696,10 @@ Mime.prototype.db = {
     "source": "apache",
     "extensions": ["opml"]
   },
+  "text/x-org": {
+    "compressible": true,
+    "extensions": ["org"]
+  },
   "text/x-pascal": {
     "source": "apache",
     "extensions": ["p","pas"]
@@ -6565,266 +6750,272 @@ Mime.prototype.db = {
     "extensions": ["yaml","yml"]
   },
   "video/1d-interleaved-parityfec": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/3gpp": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["3gp","3gpp"]
   },
   "video/3gpp-tt": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/3gpp2": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["3g2"]
   },
   "video/bmpeg": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/bt656": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/celb": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/dv": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/encaprtp": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/h261": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["h261"]
   },
   "video/h263": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["h263"]
   },
   "video/h263-1998": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/h263-2000": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/h264": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["h264"]
   },
   "video/h264-rcdo": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/h264-svc": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/h265": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/iso.segment": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/jpeg": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["jpgv"]
   },
   "video/jpeg2000": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/jpm": {
     "source": "apache",
     "extensions": ["jpm","jpgm"]
   },
   "video/mj2": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["mj2","mjp2"]
   },
   "video/mp1s": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/mp2p": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/mp2t": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["ts"]
   },
   "video/mp4": {
-    "source": "apache",
+    "source": "iana",
     "compressible": false,
     "extensions": ["mp4","mp4v","mpg4"]
   },
   "video/mp4v-es": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/mpeg": {
-    "source": "apache",
+    "source": "iana",
     "compressible": false,
     "extensions": ["mpeg","mpg","mpe","m1v","m2v"]
   },
   "video/mpeg4-generic": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/mpv": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/nv": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/ogg": {
-    "source": "apache",
+    "source": "iana",
     "compressible": false,
     "extensions": ["ogv"]
   },
   "video/parityfec": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/pointer": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/quicktime": {
-    "source": "apache",
+    "source": "iana",
     "compressible": false,
     "extensions": ["qt","mov"]
   },
   "video/raptorfec": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/raw": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/rtp-enc-aescm128": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/rtploopback": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/rtx": {
-    "source": "apache"
+    "source": "iana"
+  },
+  "video/smpte291": {
+    "source": "iana"
   },
   "video/smpte292m": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/ulpfec": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vc1": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.cctv": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.dece.hd": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["uvh","uvvh"]
   },
   "video/vnd.dece.mobile": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["uvm","uvvm"]
   },
   "video/vnd.dece.mp4": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.dece.pd": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["uvp","uvvp"]
   },
   "video/vnd.dece.sd": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["uvs","uvvs"]
   },
   "video/vnd.dece.video": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["uvv","uvvv"]
   },
   "video/vnd.directv.mpeg": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.directv.mpeg-tts": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.dlna.mpeg-tts": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.dvb.file": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["dvb"]
   },
   "video/vnd.fvt": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["fvt"]
   },
   "video/vnd.hns.video": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.iptvforum.1dparityfec-1010": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.iptvforum.1dparityfec-2005": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.iptvforum.2dparityfec-1010": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.iptvforum.2dparityfec-2005": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.iptvforum.ttsavc": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.iptvforum.ttsmpeg2": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.motorola.video": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.motorola.videop": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.mpegurl": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["mxu","m4u"]
   },
   "video/vnd.ms-playready.media.pyv": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["pyv"]
   },
   "video/vnd.nokia.interleaved-multimedia": {
-    "source": "apache"
+    "source": "iana"
+  },
+  "video/vnd.nokia.mp4vr": {
+    "source": "iana"
   },
   "video/vnd.nokia.videovoip": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.objectvideo": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.radgamettools.bink": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.radgamettools.smacker": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.sealed.mpeg1": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.sealed.mpeg4": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.sealed.swf": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.sealedmedia.softseal.mov": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/vnd.uvvu.mp4": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["uvu","uvvu"]
   },
   "video/vnd.vivo": {
-    "source": "apache",
+    "source": "iana",
     "extensions": ["viv"]
   },
   "video/vp8": {
-    "source": "apache"
+    "source": "iana"
   },
   "video/webm": {
     "source": "apache",
@@ -6906,14 +7097,14 @@ Mime.prototype.db = {
   }
 };
 
-Mime.prototype.types = (() => {
+Mime.types = (() => {
   const table = {};
-  const db = Mime.prototype.db;
-  Object.keys(db).forEach((mime) => {
+  const db = Mime.db;
+  for (mime in db) {
     const exts = db[mime].extensions;
     exts && exts.forEach((ext) => {
       table[ext] = mime;
     });
-  });
+  }
   return table;
 })();

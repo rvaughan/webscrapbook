@@ -38,15 +38,11 @@
   "CaptureTabSource": {
     "message": "获取分页 (原样)"
   },
-  "CaptureAllTabs": {
-    "message": "获取所有分页"
+  "CaptureFollowingTabs": {
+    "message": "获取以后分页"
   },
-  "ErrorCapture": {
-    "message": "获取失败 ($SOURCE$): $REASON$",
-    "placeholders": {
-      "source": {"content": "$1"},
-      "reason": {"content": "$2"}
-    }
+  "CapturerTitle": {
+    "message": "获取页面"
   },
   "ErrorContentScriptExecute": {
     "message": "无法执行内容处理脚本 ($SOURCE$): $REASON$",
@@ -80,7 +76,7 @@
     "message": "网页剪贴簿"
   },
   "IndexerDesc": {
-    "message": "索引建立完成后，会产生一个 ZIP 压缩文件供下载。可将其内容解压缩放入原文件夹，并开启 ./tree/map.html 或 ./tree/frame.html，即可检视产生的页面列表。\n\n产生的数据文件如 ./tree/meta.js 和 ./tree/toc.js，分别为各页面的元信息以及目录表，可以人工修改，只要保持数据格式正确即可。\n\n获取新页面或修改数据文件后可再次执行此索引器以加入新项目或检查潜在错误，再重新整理 ./tree/map.html 或 ./tree/frame.html 检视更新结果。\n\n可到选项页面勾选“自动下载更新的索引文件”使系统自动下载新文件及覆盖旧的。"
+    "message": "获取数据必须保存于剪贴簿中（默认为 <下载文件夹>/<剪贴簿文件夹>/data/ 根目录），索引器才能运作，如果没有则须手动搬移。\n\n指定剪贴簿文件夹后即会开始建立索引，完成后会产生一个 ZIP 压缩文件供下载，将其内容解压缩放入原剪贴簿文件夹，并开启 ./tree/map.html 或 ./tree/frame.html，即可检视产生的页面列表。\n\n产生的资料文件如 ./tree/meta.js 和 ./tree/toc.js，分别为各页面的元信息及目录表，可人工修改，只要保持数据格式正确即可。\n\n获取新页面或修改数据文件后可再次执行此索引器以加入新项目或检查潜在错误，再重新整理 ./tree/map.html 或 ./tree/frame.html 检视更新结果。\n\n索引器相关选项可到选项页面设定。"
   },
   "IndexerHeader": {
     "message": "选择网页剪贴簿文件夹或其 ZIP 压缩文件。你可以拖放它们至此视窗，或使用以下按钮："
@@ -93,6 +89,12 @@
   },
   "IndexerPickFiles": {
     "message": "选择 ZIP 压缩文件"
+  },
+  "IndexerSearchTitle": {
+    "message": "$BOOK$ :: 搜索",
+    "placeholders": {
+      "book": {"content": "$1"}
+    }
   },
   "IndexerSourceLinkTitle": {
     "message": "来源链接"
@@ -198,7 +200,7 @@
     "message": "比对网址扩展名"
   },
   "OptionCaptureDownLinkUrlFilterDesc": {
-    "message": "过滤掉网址匹配以下规则的链接。以下每行为一个正则表达式（/<规则>/<修饰>）或网址。以 \"#\" 开头的行会被略过。"
+    "message": "过滤掉网址（去除 \"#\" 以后的部分）匹配以下规则的链接。以下每行为一个正则表达式（/<规则>/<修饰>）或完整网址（\"#\" 以后会被去除）。以 \"#\" 开头的行会被略过。"
   },
   "OptionCaptureDownLinkUrlFilterError": {
     "message": "以下网址过滤器的正则表达式语法有误，执行时会忽略它们，要停下来修正吗？\n\n$LINES$",
@@ -389,6 +391,18 @@
   "OptionIndexerAutoDownloadTooltip": {
     "message": "输入做站台索引的文件夹必须是设定的剪贴簿文件夹，否则可能造成错误覆盖及数据丟失。"
   },
+  "OptionIndexerFulltextCacheFrameAsPageContentLabel": {
+    "message": "将框架页内容缓存为主页内容:"
+  },
+  "OptionIndexerFulltextCacheLabel": {
+    "message": "更新全文搜索缓存:"
+  },
+  "OptionIndexerServerScripts": {
+    "message": "产生服务器脚本 [实验中]:"
+  },
+  "OptionIndexerServerScriptsTooltip": {
+    "message": "服务器脚本可架设临时服务器供本地存取站台，以提供更好的浏览体验，尤其当数据以封存格式保存时。系统需安装 Python 3.5+ 才能运作。"
+  },
   "OptionPageTitle": {
     "message": "选项设定"
   },
@@ -406,12 +420,6 @@
   },
   "OptionsResetLabel": {
     "message": "重设"
-  },
-  "OptionViewerAllowScriptsLabel": {
-    "message": "允许执行页面程式码及外挂物件:"
-  },
-  "OptionViewerAllowScriptsTooltip": {
-    "message": "选中时，封存页面中的代码及外挂程式物件将在特殊权限下执行，这可能导它们无法正常运作，还可能让恶意代码在无保护下执行而造成安全风险。一般而言此类页面不建议以检视器检视。"
   },
   "OptionViewerUseFileSystemApiLabel": {
     "message": "使用 Filesystem API:"
@@ -440,7 +448,7 @@
   "ViewerTitle": {
     "message": "检视封存页面"
   },
-  "WarnCaptureCyclicRefercing": {
+  "WarnCaptureCircular": {
     "message": "资源 '$SOURCE$' 循环参照至 '$TARGET$'，由于目前的获取设定不支援循环参照，参照目标将转向至空值。",
     "placeholders": {
       "source": {"content": "$1"},

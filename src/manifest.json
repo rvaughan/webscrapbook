@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "__MSG_ExtensionName__",
   "description": "__MSG_ExtensionDescription__",
-  "version": "0.19.0",
+  "version": "0.27.0",
   "author": "Danny Lin",
   "default_locale": "en",
 
@@ -17,11 +17,10 @@
     "128": "core/scrapbook_128.png"
   },
 
-  "content_security_policy": "script-src 'self' 'unsafe-eval' blob: filesystem: chrome-extension-resource:; object-src 'self' blob: filesystem:",
-
   "permissions": [
     "contextMenus",
     "downloads",
+    "history",
     "storage",
     "tabs",
     "unlimitedStorage",
@@ -36,15 +35,11 @@
   "background": {
     "persistent": true,
     "scripts": [
-      "lib/sha_dev.js",
-      "lib/mime.js",
-      "lib/jszip.js",
       "core/polyfill.js",
       "core/common.js",
       "core/optionsAuto.js",
       "core/background.js",
-      "capturer/common.js",
-      "capturer/background.js",
+      "capturer/extension.js",
       "viewer/background.js"
     ]
   },
